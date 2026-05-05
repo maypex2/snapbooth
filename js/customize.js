@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Build strip (cloned from app.js) ──
 function buildStrip() {
-  if (currentTemplate) { buildTemplateStrip(); return; }
+  if (currentTemplate) { return buildTemplateStrip(); }
   if (currentMode === 'tilt3') { buildTilt3Strip(); return; }
   // Default placeholder dimensions when no photos are uploaded yet,
   // so the layout still renders with empty slots the user can fill.
@@ -530,7 +530,7 @@ function buildTemplateStrip() {
     drawAllStickers();
   };
 
-  loadTemplateImage(tpl.file)
+  return loadTemplateImage(tpl.file)
     .then(drawPhotosAndOverlay)
     .catch(() => drawPhotosAndOverlay(null));
 }
@@ -1092,8 +1092,8 @@ function initTabs() {
 }
 
 // ── Download / share ──
-function downloadStrip() {
-  buildStrip();
+async function downloadStrip() {
+  await Promise.resolve(buildStrip());
   const a = document.createElement('a');
   a.download = 'snapbooth-' + currentMode + '-' + Date.now() + '.png';
   a.href = stripCanvas.toDataURL('image/png');
@@ -1102,7 +1102,7 @@ function downloadStrip() {
 }
 
 async function shareStrip() {
-  buildStrip();
+  await Promise.resolve(buildStrip());
   try {
     if (navigator.share && navigator.canShare) {
       stripCanvas.toBlob(async blob => {
