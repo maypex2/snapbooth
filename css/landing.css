@@ -447,8 +447,8 @@ body::before {
 /* Real preview cards — single rendered image instead of a stitched grid.
    The rendered file already contains the strip background and footer text,
    so we just need a borderless container that hugs the image. */
-.sc-frame--real { padding: 0; overflow: hidden; }
-.sc-preview { width: 100%; display: block; }
+.sc-frame--real { padding: 0; overflow: hidden; background: #FAF6EE; }
+.sc-preview { width: 100%; display: block; background: #ECE3D0; }
 .sc-double-polaroid { grid-template-rows: 1fr 1fr; aspect-ratio: 0.65; }
 .sc-single        { grid-template-columns: 1fr; aspect-ratio: 1.33; }
 .sc-polaroid      { grid-template-columns: 1fr; aspect-ratio: 1.33; }
