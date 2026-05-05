@@ -234,6 +234,24 @@ function captureFrame() {
   });
 }
 
+// Wait for the user to click the capture button (used in Manual timer mode).
+function waitForSnap() {
+  return new Promise(resolve => {
+    const btn = document.getElementById('snap-btn');
+    btn.disabled = false;
+    const originalLabel = btn.dataset.label || btn.textContent;
+    btn.dataset.label = originalLabel;
+    btn.textContent = 'Capture';
+    const handler = () => {
+      btn.removeEventListener('click', handler);
+      btn.disabled = true;
+      btn.textContent = originalLabel;
+      resolve();
+    };
+    btn.addEventListener('click', handler);
+  });
+}
+
 // ── Sessions ──
 async function startPhotoSession() {
   const max = maxShots();
@@ -244,13 +262,18 @@ async function startPhotoSession() {
 
   for (let i = 0; i < max; i++) {
     if (shots.length >= max) break;
-    await countdown(currentTimer);
+    if (currentTimer > 0) {
+      await countdown(currentTimer);
+    } else {
+      showToast(`Tap Capture for shot ${i + 1} of ${max}`);
+      await waitForSnap();
+    }
     flashEffect();
     const img = await captureFrame();
     if (shots.length >= max) break;
     shots.push(img);
     updateShotDots();
-    if (i < max - 1) await sleep(600);
+    if (i < max - 1 && currentTimer > 0) await sleep(600);
   }
 
   document.getElementById('rec-ring').classList.remove('active');
@@ -266,7 +289,12 @@ async function startGifSession() {
   // isRunning + button-disabled were set in startSession()
   document.getElementById('rec-ring').classList.add('active');
 
-  await countdown(currentTimer);
+  if (currentTimer > 0) {
+    await countdown(currentTimer);
+  } else {
+    showToast('Tap Capture to start recording');
+    await waitForSnap();
+  }
 
   const GIF_W        = 480;
   const GIF_H        = Math.round(GIF_W * (canvas.height / canvas.width));
