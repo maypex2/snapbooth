@@ -257,21 +257,29 @@ function buildStrip() {
   if (currentMode !== 'photocard' && !bgOverride) drawFrameDecorations(sctx, currentFrame, sw, sh);
 
   // Themed frame title in the top reserved zone replaced by user's
-  // custom text when provided.
+  // custom text when provided. Falls back to bottom space (e.g. polaroid,
+  // photocard) when there's no usable top area.
   const topReserve = positions[0] ? positions[0].y : 0;
-  if (topReserve > 30) {
-    if (customText.trim()) {
-      sctx.fillStyle = 'rgba(0,0,0,0.85)';
+  const lastPos = positions[positions.length - 1];
+  const bottomReserve = lastPos ? Math.max(0, sh - (lastPos.y + lastPos.h)) : 0;
+  const txt = customText.trim();
+  if (txt) {
+    sctx.fillStyle = 'rgba(0,0,0,0.85)';
+    sctx.textAlign = 'center';
+    sctx.textBaseline = 'middle';
+    if (topReserve >= 30) {
       const fs = Math.min(72, Math.max(36, Math.floor(topReserve * 0.42)));
       sctx.font = 'italic ' + fs + 'px "DM Serif Display", serif';
-      sctx.textAlign = 'center';
-      sctx.textBaseline = 'middle';
-      sctx.fillText(customText, sw/2, topReserve/2 + 6);
-      sctx.textAlign = 'start';
-      sctx.textBaseline = 'alphabetic';
-    } else {
-      drawFrameTitle(sctx, currentFrame, sw, sh, topReserve);
+      sctx.fillText(txt, sw/2, topReserve/2 + 6);
+    } else if (bottomReserve >= 30) {
+      const fs = Math.min(64, Math.max(28, Math.floor(bottomReserve * 0.38)));
+      sctx.font = 'italic ' + fs + 'px "DM Serif Display", serif';
+      sctx.fillText(txt, sw/2, sh - bottomReserve/2);
     }
+    sctx.textAlign = 'start';
+    sctx.textBaseline = 'alphabetic';
+  } else if (topReserve > 30) {
+    drawFrameTitle(sctx, currentFrame, sw, sh, topReserve);
   }
 
   positions.forEach((pos, i) => {
@@ -518,6 +526,30 @@ function buildTemplateStrip() {
       sctx.lineWidth = 1;
       sctx.strokeRect(x, y, w, h);
     });
+
+    // Custom text overlay on templates: place in available top or bottom
+    // space relative to the first/last slot.
+    const txt = customText.trim();
+    if (txt) {
+      const firstSlot = tpl.slots[0];
+      const lastSlot = tpl.slots[tpl.slots.length - 1];
+      const topRes = firstSlot.y * sh;
+      const bottomRes = sh - (lastSlot.y + lastSlot.h) * sh;
+      sctx.fillStyle = 'rgba(0,0,0,0.85)';
+      sctx.textAlign = 'center';
+      sctx.textBaseline = 'middle';
+      if (topRes >= 30) {
+        const fs = Math.min(72, Math.max(28, Math.floor(topRes * 0.42)));
+        sctx.font = 'italic ' + fs + 'px "DM Serif Display", serif';
+        sctx.fillText(txt, sw/2, topRes/2 + 6);
+      } else if (bottomRes >= 30) {
+        const fs = Math.min(64, Math.max(24, Math.floor(bottomRes * 0.38)));
+        sctx.font = 'italic ' + fs + 'px "DM Serif Display", serif';
+        sctx.fillText(txt, sw/2, sh - bottomRes/2);
+      }
+      sctx.textAlign = 'start';
+      sctx.textBaseline = 'alphabetic';
+    }
 
     // Snapshot for sticker drag fast-path
     if (!_baseCanvas) _baseCanvas = document.createElement('canvas');
