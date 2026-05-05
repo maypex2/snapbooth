@@ -412,6 +412,7 @@ body::before {
 .sc-frame:has(.sc-6cut),
 .sc-frame:has(.sc-3horiz),
 .sc-frame:has(.sc-squaregrid),
+.sc-frame:has(.sc-4plus1),
 .sc-frame:has(.sc-grid4),
 .sc-frame:has(.sc-single),
 .sc-frame:has(.sc-1large3small) { padding-bottom: 16px; }
@@ -440,6 +441,8 @@ body::before {
 .sc-squaregrid    { grid-template: 1fr 1fr / 1fr 1fr; aspect-ratio: 1.33; }
 .sc-1large3small  { grid-template: 3fr 1fr / 1fr 1fr 1fr; aspect-ratio: 1.0; }
 .sc-grid4         { grid-template: 1fr 1fr / 1fr 1fr; aspect-ratio: 1.33; }
+.sc-4plus1        { grid-template: 1fr 1fr 1.4fr / 1fr 1fr; aspect-ratio: 0.85; gap: 4px; }
+.sc-4plus1 img:nth-child(5) { grid-column: 1 / -1; }
 .sc-double-polaroid { grid-template-rows: 1fr 1fr; aspect-ratio: 0.65; }
 .sc-single        { grid-template-columns: 1fr; aspect-ratio: 1.33; }
 .sc-polaroid      { grid-template-columns: 1fr; aspect-ratio: 1.33; }

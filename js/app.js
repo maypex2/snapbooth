@@ -109,7 +109,7 @@ video.addEventListener('loadedmetadata', () => {
 const MODE_SHOTS = {
   '4cut': 4, '3cut': 3, '2cut': 2, '6cut': 6, '3horiz': 3,
   'squaregrid': 4, '1large3small': 4, 'grid4': 4, 'single': 1, 'polaroid': 1,
-  'double-polaroid': 2, 'photocard': 1, 'gif': 1, 'tilt3': 3,
+  'double-polaroid': 2, 'photocard': 1, 'gif': 1, 'tilt3': 3, '4plus1': 5,
 };
 
 function maxShots() { return MODE_SHOTS[currentMode] || 1; }
@@ -509,6 +509,21 @@ function buildStrip() {
       { x: PAD + W + GAP, y: TOP, w: W, h: H },
       { x: PAD, y: TOP + H + GAP, w: W, h: H },
       { x: PAD + W + GAP, y: TOP + H + GAP, w: W, h: H },
+    ];
+  } else if (currentMode === '4plus1') {
+    const PAD = 40, GAP = 16, TOP = 80, BOT = 100;
+    const smallW = W;
+    const smallH = Math.round(H * 0.7);
+    const wideW = smallW * 2 + GAP;
+    const wideH = Math.round(H * 0.95);
+    sw = wideW + PAD * 2;
+    sh = smallH * 2 + GAP + wideH + GAP + TOP + BOT;
+    positions = [
+      { x: PAD,                y: TOP,                        w: smallW, h: smallH },
+      { x: PAD + smallW + GAP, y: TOP,                        w: smallW, h: smallH },
+      { x: PAD,                y: TOP + smallH + GAP,         w: smallW, h: smallH },
+      { x: PAD + smallW + GAP, y: TOP + smallH + GAP,         w: smallW, h: smallH },
+      { x: PAD,                y: TOP + smallH * 2 + GAP * 2, w: wideW,  h: wideH  },
     ];
   } else if (currentMode === 'photocard') {
     const BX = 40, BT = 30, BB = 100;
