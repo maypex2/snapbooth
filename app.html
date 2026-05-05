@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#FAF6EE">
+
+  <title>Photo Booth App Take Photos Now | SnapBooth</title>
+  <meta name="description"
+    content="Use SnapBooth's free photo booth tool. Take 4-cut strips, polaroids, and GIF boomerangs with filters no sign-up needed.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://snapbooth.app/app.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SnapBooth Free Online Photo Booth">
+  <meta property="og:description"
+    content="Take fun photo strips with filters, frames, stickers and GIF mode free, no sign-up!">
+  <meta property="og:url" content="https://snapbooth.app/">
+  <meta property="og:image" content="https://snapbooth.app/assets/og-image.jpg">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream: '#FAF6EE',
+            cream2: '#F3ECDD',
+            sand: '#E8DCC4',
+            ink: '#2A2520',
+            ink2: '#5A4F42',
+            muted: '#9A8E7E',
+            accent: '#C9A07A',
+            accentd: '#8B6F47',
+            blush: '#F2C6CC',
+            rose: '#D89BA3',
+          },
+          fontFamily: {
+            serif: ['"DM Serif Display"', 'serif'],
+            sans: ['"DM Sans"', 'sans-serif'],
+          },
+          boxShadow: {
+            soft: '0 1px 2px rgba(60,40,20,.05), 0 8px 24px -8px rgba(60,40,20,.08)',
+            card: '0 2px 8px rgba(60,40,20,.06), 0 20px 40px -20px rgba(60,40,20,.12)',
+            warm: '0 1px 0 rgba(255,255,255,.6) inset, 0 -1px 0 rgba(139,111,71,.15) inset, 0 6px 16px -6px rgba(139,111,71,.25)',
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #FAF6EE;
+      color: #2A2520;
+    }
+
+    main {
+      background: transparent;
+    }
+
+    .font-serif-i {
+      font-family: 'DM Serif Display', serif;
+      font-style: italic;
+    }
+
+    .filter-thumb {
+      background-image: url('assets/sample.jpg');
+      background-size: cover;
+      background-position: center;
+    }
+
+    .filter-thumb[data-filter="bw"] {
+      filter: grayscale(100%) contrast(1.05);
+    }
+
+    .filter-thumb[data-filter="vintage"] {
+      filter: sepia(60%) contrast(1.05) saturate(1.1) hue-rotate(-5deg);
+    }
+
+    .filter-thumb[data-filter="retro"] {
+      filter: contrast(1.1) saturate(1.4) hue-rotate(-10deg) brightness(1.05);
+    }
+
+    .filter-thumb[data-filter="glow"] {
+      filter: brightness(1.18) saturate(1.15) blur(.3px);
+    }
+
+    .filter-thumb[data-filter="warm"] {
+      filter: sepia(20%) saturate(1.3) hue-rotate(-10deg) brightness(1.05);
+    }
+
+    .filter-thumb[data-filter="cool"] {
+      filter: saturate(1.2) hue-rotate(15deg) brightness(1.02);
+    }
+
+    .filter-thumb[data-filter="noir"] {
+      filter: grayscale(100%) contrast(1.5) brightness(.85);
+    }
+
+    .filter-thumb[data-filter="fade"] {
+      filter: contrast(.85) saturate(.7) brightness(1.1);
+    }
+
+    .filter-thumb[data-filter="sunset"] {
+      filter: sepia(40%) saturate(1.6) hue-rotate(-20deg) brightness(1.05);
+    }
+
+    .filter-thumb[data-filter="dreamy"] {
+      filter: saturate(1.2) brightness(1.12) contrast(.95);
+    }
+
+    .filter-thumb[data-filter="drama"] {
+      filter: contrast(1.4) saturate(1.2) brightness(.95);
+    }
+
+    .filter-thumb[data-filter="pastel"] {
+      filter: saturate(.65) brightness(1.15) contrast(.9);
+    }
+
+    .filter-thumb[data-filter="punch"] {
+      filter: saturate(1.6) contrast(1.2);
+    }
+
+    .filter-btn .filter-thumb {
+      transition: box-shadow .15s ease, transform .15s ease;
+    }
+
+    .filter-btn.active .filter-thumb {
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #C9A07A;
+      transform: scale(1.05);
+    }
+
+    .filter-btn.active .filter-label {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .ratio-btn {
+      color: rgba(255, 255, 255, .75);
+    }
+
+    .ratio-btn:hover {
+      color: #fff;
+    }
+
+    .ratio-btn.active {
+      background: #fff;
+      color: #2A2520;
+      font-weight: 600;
+    }
+
+    /* Truly fullscreen camera (Full aspect mode) */
+
+    #cam-wrap {
+      background: #18181b !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    body.cam-fullscreen {
+      overflow: hidden;
+    }
+
+    body.cam-fullscreen #cam-wrap {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      /* dvh respects mobile address bar / nav bar, falls back to vh */
+      height: 100dvh !important;
+      max-width: 100vw !important;
+      border-radius: 0 !important;
+      border: 0 !important;
+      z-index: 9999;
+    }
+
+    /* Capture button sits above the home-indicator / gesture area */
+    #snap-btn-inner {
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 28px) !important;
+    }
+
+    /* Camera */
+    #video,
+    #canvas,
+    #overlay-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #video {
+      transform: scaleX(-1);
+      opacity: 0;
+      transition: opacity .4s ease;
+    }
+
+    #video.cam-active {
+      opacity: 1;
+    }
+
+    #canvas,
+    #overlay-canvas {
+      display: none;
+    }
+
+    .flash {
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .flash.pop {
+      animation: flash .12s ease-out;
+    }
+
+    @keyframes flash {
+      0% {
+        opacity: .9
+      }
+
+      100% {
+        opacity: 0
+      }
+    }
+
+    .countdown-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Serif Display', serif;
+      font-size: 140px;
+      color: #fff;
+      text-shadow: 0 4px 24px rgba(0, 0, 0, .4);
+      pointer-events: none;
+    }
+
+    .countdown-overlay.show {
+      display: flex;
+    }
+
+    .recording-ring {
+      position: absolute;
+      inset: 8px;
+      border: 3px solid #ef4444;
+      border-radius: 18px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .recording-ring.active {
+      opacity: 1;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: .3
+      }
+
+      50% {
+        opacity: 1
+      }
+    }
+
+    .shot-counter {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      display: flex;
+      gap: 6px;
+    }
+
+    .gif-progress {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(42, 37, 32, .6);
+      color: #fff;
+      backdrop-filter: blur(4px);
+    }
+
+    .gif-progress-bar-wrap {
+      width: 60%;
+      height: 6px;
+      background: rgba(255, 255, 255, .2);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .gif-progress-bar {
+      height: 100%;
+      width: 0;
+      background: #C9A07A;
+      transition: width .2s ease;
+    }
+
+    /* ── Showcase layout cards (below camera) ────────────────────── */
+    section.mt-10 {
+      background: transparent;
+    }
+
+    .mt-10 h2 {
+      color: #2A2520 !important;
+    }
+
+    .mt-10 p {
+      color: #8a8a8e !important;
+    }
+
+    .sc-card {
+      flex-shrink: 0;
+      width: 168px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      transition: transform .2s ease;
+    }
+
+    .sc-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .sc-frame {
+      position: relative;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 16px 24px rgba(0, 0, 0, 0.12);
+      padding: 10px 10px 22px;
+      transition: box-shadow .2s ease, transform .2s ease;
+    }
+
+    /* Per-mode footer padding to mirror canvas BOT proportions */
+    .sc-frame:has(.sc-4cut),
+    .sc-frame:has(.sc-3cut),
+    .sc-frame:has(.sc-2cut) { padding-bottom: 34px; }
+
+    .sc-frame:has(.sc-polaroid),
+    .sc-frame:has(.sc-double-polaroid),
+    .sc-frame:has(.sc-photocard) { padding-bottom: 18px; }
+
+    .sc-frame:has(.sc-6cut),
+    .sc-frame:has(.sc-3horiz),
+    .sc-frame:has(.sc-squaregrid),
+    .sc-frame:has(.sc-grid4),
+    .sc-frame:has(.sc-single),
+    .sc-frame:has(.sc-1large3small) { padding-bottom: 14px; }
+
+    .sc-card.active .sc-frame {
+      box-shadow: 0 0 0 2px #C9A07A, 0 18px 36px -12px rgba(60, 40, 20, .32);
+      outline: none;
+    }
+
+    .sc-frame.is-tilt3 {
+      background: transparent;
+      padding: 0;
+    }
+
+    .sc-grid {
+      display: grid;
+      gap: 4px;
+    }
+
+    .sc-grid img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: 2px;
+    }
+
+    /* Aspect ratios match the actual photo-zone aspect of buildStrip output
+       (W=1280, H=960; strip modes use cinematic crop pH=H*0.78=749). */
+    .sc-4cut          { grid-template-rows: repeat(4, 1fr); aspect-ratio: 0.42; }
+    .sc-3cut          { grid-template-rows: repeat(3, 1fr); aspect-ratio: 0.56; }
+    .sc-2cut          { grid-template-rows: repeat(2, 1fr); aspect-ratio: 0.84; }
+    .sc-6cut          { grid-template: repeat(3, 1fr) / repeat(2, 1fr); aspect-ratio: 0.89; }
+    .sc-3horiz        { grid-template-columns: repeat(3, 1fr); aspect-ratio: 2.27; }
+    .sc-squaregrid    { grid-template: 1fr 1fr / 1fr 1fr; aspect-ratio: 1.33; }
+    .sc-1large3small  { grid-template: 3fr 1fr / 1fr 1fr 1fr; aspect-ratio: 1.0; }
+    .sc-grid4         { grid-template: 1fr 1fr / 1fr 1fr; aspect-ratio: 1.33; }
+    .sc-double-polaroid { grid-template-rows: 1fr 1fr; aspect-ratio: 0.65; }
+    .sc-single        { grid-template-columns: 1fr; aspect-ratio: 1.33; }
+    .sc-polaroid      { grid-template-columns: 1fr; aspect-ratio: 1.33; }
+    .sc-photocard     { grid-template-columns: 1fr; aspect-ratio: 1.33; }
+    .sc-gif           { grid-template-columns: 1fr; aspect-ratio: 1.33; position: relative; }
+
+    .sc-1large3small img:first-child { grid-column: 1 / -1; }
+
+    /* Tilted strip variant */
+    .sc-tilt3 {
+      background: #5C0000;
+      border-radius: 4px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      aspect-ratio: 0.42;
+    }
+
+    .sc-tilt3 img {
+      flex: 1;
+      width: 100%;
+      object-fit: cover;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      display: block;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, .25);
+    }
+
+    .sc-tilt3 img:nth-child(1) { transform: rotate(-2deg); }
+    .sc-tilt3 img:nth-child(2) { transform: rotate(2deg); }
+    .sc-tilt3 img:nth-child(3) { transform: rotate(-2deg); }
+
+    .sc-badge {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: #FAF6EE;
+      background: #2A2520;
+      border: 1px solid #E8DCC4;
+      box-shadow: 0 4px 10px -2px rgba(42, 37, 32, .25);
+      z-index: 2;
+    }
+
+    .sc-badge.try {
+      background: #C9A07A;
+      color: #2A2520;
+      border: 1px solid #8B6F47;
+      box-shadow: 0 4px 10px -2px rgba(201, 160, 122, .3);
+    }
+
+    .sc-gif-tag {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, .7);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .15em;
+    }
+
+    .sc-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent2);
+      text-align: center;
+    }
+
+    .sc-meta {
+      font-size: 12px;
+      color: #9A8E7E;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #2A2520;
+      color: #FAF6EE;
+      padding: 12px 22px;
+      border-radius: 9999px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all .3s ease;
+      z-index: 60;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-none {
+      scrollbar-width: none;
+    }
+
+    /* ── Preview overlay ──────────────────────────────────────────
+       --header-h is set by JS to the actual sticky header height so
+       the modal never slides underneath it on any layout height.
+    ─────────────────────────────────────────────────────────────── */
+    :root {
+      --header-h: 64px;
+      /* fallback; overridden by JS */
+      --modal-gap: 12px;
+      /* breathing room above/below card */
+    }
+
+    #preview-overlay {
+      /* Shift the centring area down by the header height */
+      padding-top: calc(var(--header-h) + var(--modal-gap));
+      padding-bottom: var(--modal-gap);
+      padding-left: 16px;
+      padding-right: 16px;
+      /* Align card to top of the remaining safe area so it never
+         gets clipped at the bottom on very tall layouts */
+      align-items: flex-start;
+    }
+
+    #preview-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #preview-overlay.open .preview-card {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    body:has(#preview-overlay.open) header {
+      display: none !important;
+    }
+
+    /* Card must never exceed the visible area between header and
+       bottom of viewport */
+    .preview-card {
+      max-height: calc(100dvh - var(--header-h) - var(--modal-gap) * 2);
+      /* Fallback for browsers without dvh */
+      max-height: calc(100vh - var(--header-h) - var(--modal-gap) * 2);
+      max-height: calc(100dvh - var(--header-h) - var(--modal-gap) * 2);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      /* children scroll independently */
+    }
+
+    /* The two-column content area scrolls, not the whole card,
+       so the card header (title + close btn) stays pinned */
+    .preview-card>.preview-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      min-height: 0;
+      /* required for flex children to shrink */
+    }
+
+    /* Canvas area: fills available height, lets image scale down */
+    #strip-canvas,
+    #gif-result {
+      max-width: 100%;
+      /* Fill the available column height without ever overflowing */
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .preview-img-wrap {
+      /* Stretch to fill the grid cell then clip */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      /* Limit so the canvas can never push the card taller than
+         the modal itself — important for 4-cut / 3-cut strips */
+      max-height: calc(100dvh - var(--header-h) - 220px);
+      max-height: calc(100vh - var(--header-h) - 220px);
+      max-height: calc(100dvh - var(--header-h) - 220px);
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+</head>
+
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top ad -->
+  <!--
+  <div class="hidden md:block w-full bg-cream2/60 border-b border-sand/60 py-3 text-center">
+    <span class="text-[10px] tracking-[0.25em] uppercase text-muted">Advertisement</span>
+  </div>
+  -->
+
+  <!-- Header -->
+  <header class="sticky top-0 z-[100] bg-cream/90 backdrop-blur border-b border-sand/60">
+    <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="text-2xl font-serif text-ink no-underline">Snap<span
+          class="font-serif-i text-accentd">Booth</span></a>
+      <a href="index.html"
+        class="flex items-center gap-2 px-4 py-2 rounded-full border border-sand bg-white/60 hover:bg-white transition text-sm text-ink no-underline">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M19 12H5M12 5l-7 7 7 7" />
+        </svg>
+        Home
+      </a>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="flex-1 max-w-[1200px] w-full mx-auto px-4 md:px-6 py-4 md:py-6">
+
+    <!-- Camera column -->
+    <div class="relative">
+
+      <div class="min-w-0">
+
+        <div id="cam-container" class="w-full mx-auto" style="max-width:min(100%,52vh);">
+          <!-- Controls above camera -->
+          <div class="flex items-center justify-between mb-3 gap-2 px-1">
+            <!-- Layout indicator -->
+            <div class="px-3 py-1.5 rounded-full bg-white/60 border border-sand shadow-sm text-ink text-[11px] font-medium tracking-wide flex items-center gap-1.5 transition-all" id="mode-indicator-wrap">
+              <span id="mode-indicator-name">4-Cut Strip</span>
+              <span class="text-muted">•</span>
+              <span id="mode-indicator-count" class="text-ink2">4 shots</span>
+            </div>
+
+            <!-- Timer selector -->
+            <div class="flex items-center p-0.5 rounded-full bg-sand/30 border border-sand shadow-sm text-[11px] font-medium text-ink2">
+              <button class="timer-btn active px-3 py-1 rounded-full transition bg-white text-ink shadow-sm" onclick="setTimer(this, 3)">3s</button>
+              <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 5)">5s</button>
+              <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 8)">8s</button>
+            </div>
+          </div>
+
+          <!-- Camera -->
+          <div id="cam-wrap"
+            class="relative w-full rounded-[28px] overflow-hidden bg-white shadow-card border border-sand/70"
+            style="aspect-ratio:1/1;">
+          <video id="video" autoplay muted playsinline></video>
+          <canvas id="canvas"></canvas>
+          <canvas id="overlay-canvas"></canvas>
+
+          <div class="countdown-overlay" id="countdown">3</div>
+          <div class="shot-counter" id="shot-counter"></div>
+          <div class="flash" id="flash"></div>
+          <div class="recording-ring" id="rec-ring"></div>
+
+          <div class="gif-progress" id="gif-progress">
+            <div class="gif-progress-bar-wrap mb-3">
+              <div class="gif-progress-bar" id="gif-progress-bar"></div>
+            </div>
+            <div class="text-sm" id="gif-progress-label">Encoding GIF…</div>
+          </div>
+
+          <!-- Aspect-ratio selector (top-left, dark pill over camera) -->
+          <div
+            class="absolute top-3 left-3 z-20 flex items-center gap-1 p-1 rounded-full bg-black/55 backdrop-blur text-white text-[11px]">
+            <button data-ratio="1/1" data-max="52vh" class="ratio-btn active px-2.5 py-1 rounded-full transition"
+              onclick="setAspect(this)">1:1</button>
+            <button data-ratio="4/3" data-max="60vh" class="ratio-btn px-2.5 py-1 rounded-full transition"
+              onclick="setAspect(this)">4:3</button>
+            <button data-ratio="9/16" data-max="38vh" class="ratio-btn px-2.5 py-1 rounded-full transition"
+              onclick="setAspect(this)">9:16</button>
+            <button data-ratio="full" data-max="100%" class="ratio-btn px-2.5 py-1 rounded-full transition"
+              onclick="setAspect(this)">Full</button>
+          </div>
+
+          <!-- Filters: burger button (top-right) + slide-down panel -->
+          <button id="filters-toggle" type="button" onclick="toggleFiltersPanel()"
+            class="absolute top-3 right-3 z-20 inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/70 backdrop-blur text-white text-xs transition"
+            aria-expanded="false" aria-controls="filters-panel">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M3 6h18M3 12h18M3 18h18" />
+            </svg>
+            <span class="font-medium">Filters</span>
+            <span id="filters-active-label" class="text-white/70">· None</span>
+          </button>
+
+          <div id="filters-panel"
+            class="hidden absolute top-14 right-3 z-20 w-[280px] max-h-[68%] overflow-y-auto scrollbar-none rounded-2xl bg-black/70 backdrop-blur-md border border-white/10 shadow-card p-3">
+            <div class="flex items-center justify-between px-1 pb-2 mb-2 border-b border-white/10">
+              <span class="text-[11px] uppercase tracking-[0.18em] text-white/60">Choose a filter</span>
+              <button onclick="toggleFiltersPanel()" class="text-white/60 hover:text-white" aria-label="Close">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div class="grid grid-cols-3 gap-2.5">
+              <button data-f="none" data-name="None"
+                class="filter-btn active flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="none"></div>
+                <span class="filter-label text-[10px] text-white/85">None</span>
+              </button>
+              <button data-f="bw" data-name="B&amp;W"
+                class="filter-btn flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="bw"></div>
+                <span class="filter-label text-[10px] text-white/85">B&amp;W</span>
+              </button>
+              <button data-f="vintage" data-name="Vintage"
+                class="filter-btn flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="vintage"></div>
+                <span class="filter-label text-[10px] text-white/85">Vintage</span>
+              </button>
+              <button data-f="retro" data-name="Retro"
+                class="filter-btn flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="retro"></div>
+                <span class="filter-label text-[10px] text-white/85">Retro</span>
+              </button>
+              <button data-f="glow" data-name="Glow"
+                class="filter-btn flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="glow"></div>
+                <span class="filter-label text-[10px] text-white/85">Glow</span>
+              </button>
+              <button data-f="warm" data-name="Warm"
+                class="filter-btn flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="warm"></div>
+                <span class="filter-label text-[10px] text-white/85">Warm</span>
+              </button>
+              <button data-f="cool" data-name="Cool"
+                class="filter-btn flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="cool"></div>
+                <span class="filter-label text-[10px] text-white/85">Cool</span>
+              </button>
+              <button data-f="noir" data-name="Noir"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="noir"></div>
+                <span class="filter-label text-[10px] text-white/85">Noir</span>
+              </button>
+              <button data-f="fade" data-name="Fade"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="fade"></div>
+                <span class="filter-label text-[10px] text-white/85">Fade</span>
+              </button>
+              <button data-f="sunset" data-name="Sunset"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="sunset"></div>
+                <span class="filter-label text-[10px] text-white/85">Sunset</span>
+              </button>
+              <button data-f="dreamy" data-name="Dreamy"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="dreamy"></div>
+                <span class="filter-label text-[10px] text-white/85">Dreamy</span>
+              </button>
+              <button data-f="drama" data-name="Drama"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="drama"></div>
+                <span class="filter-label text-[10px] text-white/85">Drama</span>
+              </button>
+              <button data-f="pastel" data-name="Pastel"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="pastel"></div>
+                <span class="filter-label text-[10px] text-white/85">Pastel</span>
+              </button>
+              <button data-f="punch" data-name="Punch"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="punch"></div>
+                <span class="filter-label text-[10px] text-white/85">Punch</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Inline capture button (always visible — overlays inside camera) -->
+          <button id="snap-btn-inner" onclick="document.getElementById('snap-btn').click()" type="button"
+            aria-label="Capture"
+            class="absolute left-1/2 -translate-x-1/2 bottom-6 z-[20] w-16 h-16 rounded-full bg-ink hover:bg-black text-white shadow-card border-4 border-white/90 ring-2 ring-black/30 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M8 2h8l2 3H6l2-3z" />
+              <rect x="2" y="5" width="20" height="16" rx="3" />
+            </svg>
+          </button>
+
+          <!-- Camera states -->
+          <div id="cam-state" class="absolute inset-0 flex items-center justify-center transition-opacity duration-300">
+            <div id="cam-idle" class="flex flex-col items-center text-center px-6">
+              <div class="font-serif text-2xl text-white/90">Tap to start Camera</div>
+              <div class="text-sm text-white/60 mt-1">Camera access required</div>
+            </div>
+            <div id="cam-loading" class="flex-col items-center" style="display:none">
+              <div class="w-12 h-12 border-4 border-sand border-t-accent rounded-full animate-spin mb-3"></div>
+              <div class="text-sm text-white/80">Starting camera…</div>
+            </div>
+            <div id="cam-error" class="flex-col items-center text-center px-6" style="display:none">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)"
+                stroke-width="1.5" stroke-linecap="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+              <div class="font-serif text-xl text-white/90 mt-3">Camera access was denied</div>
+              <button onclick="enableCamera()"
+                class="mt-4 px-5 py-2 rounded-full bg-white text-ink text-sm hover:bg-cream transition font-medium">Try
+                again</button>
+              <div class="text-xs text-white/60 mt-2">Allow camera in your browser settings</div>
+            </div>
+          </div>
+        </div>
+        </div><!-- /cam-container -->
+
+        <!-- Hidden snap-btn / snap-label still referenced by app.js -->
+        <button id="snap-btn" onclick="startSession()" class="hidden"><span id="snap-label">Capture</span></button>
+
+        <!-- Layouts showcase: big photo-strip preview cards in a horizontal carousel -->
+        <section class="mt-10 max-w-[1100px] mx-auto">
+          <div class="text-center mb-6">
+            <h2 class="font-serif text-xl md:text-2xl text-ink2">Choose your layout</h2>
+            <p class="text-sm text-muted mt-1">Tap a style — we'll set up the right number of shots for you</p>
+          </div>
+
+          <div class="relative">
+            <button id="layout-prev" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-12 h-12 rounded-full bg-[#18181b] border border-white/10 text-[#f0efe8]
+  flex items-center justify-center
+  hover:bg-[#222226] shadow-soft transition" aria-label="Previous">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <button id="layout-next" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-12 h-12 rounded-full bg-[#18181b] border border-white/10 text-[#f0efe8]
+  flex items-center justify-center
+  hover:bg-[#222226] shadow-soft transition" aria-label="Next">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+
+            <div id="layout-scroll" class="flex gap-6 overflow-x-auto scrollbar-none px-10 py-6 snap-x snap-mandatory">
+
+              <!-- 4-Cut Strip -->
+              <div class="sc-card active snap-start" id="mode-4cut" onclick="setMode('4cut')">
+                <div class="sc-frame">
+                  <span class="sc-badge try">TRY IT NOW</span>
+                  <div class="sc-grid sc-4cut">
+                    <img src="assets/layouts/4cut-1.webp" alt="">
+                    <img src="assets/layouts/4cut-2.webp" alt="">
+                    <img src="assets/layouts/4cut-3.webp" alt="">
+                    <img src="assets/layouts/4cut-4.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">4-Cut Strip</div>
+                <div class="sc-meta">Size 6 × 2 Strip<br>(4 Pose)</div>
+              </div>
+
+              <!-- 3-Cut Strip -->
+              <div class="sc-card snap-start" id="mode-3cut" onclick="setMode('3cut')">
+                <div class="sc-frame">
+                  <div class="sc-grid sc-3cut">
+                    <img src="assets/layouts/3cut-1.webp" alt="">
+                    <img src="assets/layouts/3cut-2.webp" alt="">
+                    <img src="assets/layouts/3cut-3.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">3-Cut Strip</div>
+                <div class="sc-meta">Size 6 × 2 Strip<br>(3 Pose)</div>
+              </div>
+
+              <!-- 2-Cut Strip -->
+              <div class="sc-card snap-start" id="mode-2cut" onclick="setMode('2cut')">
+                <div class="sc-frame">
+                  <div class="sc-grid sc-2cut">
+                    <img src="assets/layouts/2cut-1.webp" alt="">
+                    <img src="assets/layouts/2cut-2.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">2-Cut Strip</div>
+                <div class="sc-meta">Couples format<br>(2 Pose)</div>
+              </div>
+
+              <!-- 6-Cut Grid -->
+              <div class="sc-card snap-start" id="mode-6cut" onclick="setMode('6cut')">
+                <div class="sc-frame">
+                  <span class="sc-badge">POPULAR</span>
+                  <div class="sc-grid sc-6cut">
+                    <img src="assets/layouts/grid-1.webp" alt="">
+                    <img src="assets/layouts/grid-2.webp" alt="">
+                    <img src="assets/layouts/grid-3.webp" alt="">
+                    <img src="assets/layouts/grid-4.webp" alt="">
+                    <img src="assets/layouts/grid-5.webp" alt="">
+                    <img src="assets/layouts/grid-6.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">6-Cut Grid</div>
+                <div class="sc-meta">Contact sheet<br>(6 Pose)</div>
+              </div>
+
+              <!-- 3-Cut Horizontal -->
+              <div class="sc-card snap-start" id="mode-3horiz" onclick="setMode('3horiz')">
+                <div class="sc-frame">
+                  <div class="sc-grid sc-3horiz">
+                    <img src="assets/layouts/horizontal3-1.webp" alt="">
+                    <img src="assets/layouts/horizontal3-2.webp" alt="">
+                    <img src="assets/layouts/horizontal3-3.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">3-Cut Horizontal</div>
+                <div class="sc-meta">Panorama / story<br>(3 Pose)</div>
+              </div>
+
+              <!-- Square Collage -->
+              <div class="sc-card snap-start" id="mode-squaregrid" onclick="setMode('squaregrid')">
+                <div class="sc-frame">
+                  <div class="sc-grid sc-squaregrid">
+                    <img src="assets/layouts/square-1.webp" alt="">
+                    <img src="assets/layouts/square-2.webp" alt="">
+                    <img src="assets/layouts/square-3.webp" alt="">
+                    <img src="assets/layouts/square-1.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">Square Collage</div>
+                <div class="sc-meta">IG-post ready<br>(4 Pose)</div>
+              </div>
+
+              <!-- 1 Large + 3 Small -->
+              <div class="sc-card snap-start" id="mode-1large3small" onclick="setMode('1large3small')">
+                <div class="sc-frame">
+                  <div class="sc-grid sc-1large3small">
+                    <img src="assets/layouts/1large3small-1.webp" alt="">
+                    <img src="assets/layouts/1large3small-2.webp" alt="">
+                    <img src="assets/layouts/1large3small-3.webp" alt="">
+                    <img src="assets/layouts/1large3small-4.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">1 Large + 3 Small</div>
+                <div class="sc-meta">Featured layout<br>(4 Pose)</div>
+              </div>
+
+              <!-- 2x2 Grid -->
+              <div class="sc-card snap-start" id="mode-grid4" onclick="setMode('grid4')">
+                <div class="sc-frame">
+                  <div class="sc-grid sc-grid4">
+                    <img src="assets/layouts/2x2grid-1.webp" alt="">
+                    <img src="assets/layouts/2x2grid-2.webp" alt="">
+                    <img src="assets/layouts/2x2grid-3.webp" alt="">
+                    <img src="assets/layouts/2x2grid-4.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">2x2 Grid</div>
+                <div class="sc-meta">Classic grid<br>(4 Pose)</div>
+              </div>
+
+              <!-- Double Polaroid -->
+              <div class="sc-card snap-start" id="mode-double-polaroid" onclick="setMode('double-polaroid')">
+                <div class="sc-frame">
+                  <div class="sc-grid sc-double-polaroid">
+                    <img src="assets/layouts/polaroid-1.webp" alt="">
+                    <img src="assets/layouts/photocard-1.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">Double Polaroid</div>
+                <div class="sc-meta">Stacked print<br>(2 Pose)</div>
+              </div>
+
+              <!-- Tilted 3-Cut -->
+              <div class="sc-card snap-start" id="mode-tilt3" onclick="setMode('tilt3')">
+                <div class="sc-frame is-tilt3">
+                  <span class="sc-badge">NEW LAYOUT</span>
+                  <div class="sc-tilt3">
+                    <img src="assets/layouts/tilt3-1.webp" alt="">
+                    <img src="assets/layouts/tilt3-2.webp" alt="">
+                    <img src="assets/layouts/tilt3-3.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">Tilted 3-Cut</div>
+                <div class="sc-meta">Solace style<br>(3 Pose)</div>
+              </div>
+
+              <!-- Polaroid -->
+              <div class="sc-card snap-start" id="mode-polaroid" onclick="setMode('polaroid')">
+                <div class="sc-frame">
+                  <div class="sc-grid sc-polaroid">
+                    <img src="assets/layouts/polaroid-1.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">Polaroid</div>
+                <div class="sc-meta">Classic instant<br>(1 Pose)</div>
+              </div>
+
+              <!-- Photo Card -->
+              <div class="sc-card snap-start" id="mode-photocard" onclick="setMode('photocard')">
+                <div class="sc-frame">
+                  <div class="sc-grid sc-photocard">
+                    <img src="assets/layouts/photocard-1.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">Photo Card</div>
+                <div class="sc-meta">Instax mini<br>(1 Pose)</div>
+              </div>
+
+              <!-- Single Shot -->
+              <div class="sc-card snap-start" id="mode-single" onclick="setMode('single')">
+                <div class="sc-frame">
+                  <div class="sc-grid sc-single">
+                    <img src="assets/layouts/single-1.webp" alt="">
+                  </div>
+                </div>
+                <div class="sc-label">Single Shot</div>
+                <div class="sc-meta">One framed photo<br>(1 Pose)</div>
+              </div>
+
+              <!-- GIF -->
+              <div class="sc-card snap-start" id="mode-gif" onclick="setMode('gif')">
+                <div class="sc-frame">
+                  <span class="sc-badge">FUN</span>
+                  <div class="sc-grid sc-gif">
+                    <img src="assets/layouts/gif-1.webp" alt="">
+                    <span class="sc-gif-tag">GIF</span>
+                  </div>
+                </div>
+                <div class="sc-label">GIF / Boomerang</div>
+                <div class="sc-meta">2-second loop<br>(animated)</div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /camera column -->
+    </div><!-- /grid -->
+
+
+  </main>
+
+  <!-- Post-capture preview overlay -->
+  <!--
+    Layout: fixed overlay that starts BELOW the sticky header (via --header-h CSS var).
+    .preview-card uses flex-col so its inner header stays pinned and only .preview-body scrolls.
+    The canvas is constrained by .preview-img-wrap so tall strips (4-cut, 3-cut) can never
+    overflow — they simply scale down to fit the available height.
+  -->
+  <div id="preview-overlay"
+    class="fixed inset-0 z-[70] bg-ink/70 backdrop-blur-md flex justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div
+      class="preview-card w-full max-w-4xl bg-ink rounded-3xl shadow-2xl border border-ink2 translate-y-6 opacity-0 transition-all duration-400">
+
+      <!-- Pinned modal header -->
+      <div class="flex-shrink-0 px-6 py-5 border-b border-ink2 flex items-center justify-between">
+        <div>
+          <h3 class="font-serif text-2xl text-cream">Looking great!</h3>
+          <p class="text-sm text-muted mt-0.5">Customize your photo or download as is</p>
+        </div>
+        <button onclick="closePreview()"
+          class="w-9 h-9 rounded-full bg-ink2 text-cream flex items-center justify-center hover:bg-ink2/80 transition"
+          aria-label="Close">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Scrollable body: photo + action buttons -->
+      <div class="preview-body">
+        <div class="grid md:grid-cols-[1fr_280px] gap-5 p-5">
+
+          <!-- Photo / canvas area — constrained so tall strips never overflow -->
+          <div class="preview-img-wrap bg-[#161210] rounded-2xl p-3 border border-ink2/40 shadow-inner">
+            <canvas id="strip-canvas"
+              class="rounded-lg shadow-[0_12px_48px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.04)]"></canvas>
+            <img id="gif-result" class="rounded-lg shadow-[0_12px_48px_rgba(0,0,0,0.7)] hidden" alt="">
+          </div>
+
+          <!-- Action buttons -->
+          <div class="flex flex-col gap-3 justify-center py-2">
+            <button onclick="goCustomize()"
+              class="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-cream text-ink hover:bg-sand transition shadow-lg">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+              </svg>
+              <span class="font-serif text-lg">Customize Photo</span>
+            </button>
+            <button onclick="downloadStrip()"
+              class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-ink2 text-cream hover:bg-ink2/80 transition">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7,10 12,15 17,10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span id="download-label">Download PNG</span>
+            </button>
+            <button onclick="shareStrip()"
+              class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-ink2 text-cream hover:bg-ink2/80 transition">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+              Share
+            </button>
+            <button onclick="retake()"
+              class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-[#5C0000] text-cream hover:bg-[#7A0000] transition mt-2">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              Retake Photos
+            </button>
+          </div>
+
+        </div>
+      </div><!-- /preview-body -->
+    </div><!-- /preview-card -->
+  </div><!-- /preview-overlay -->
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Footer -->
+  <footer class="border-t border-sand/60 bg-cream2/40 mt-auto">
+    <div class="max-w-[1100px] mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      <a href="index.html" class="text-xl font-serif text-ink no-underline">Snap<span
+          class="font-serif-i text-accentd">Booth</span></a>
+      <nav class="flex gap-6 text-sm text-ink2">
+        <a href="about.html" class="hover:text-ink no-underline">About</a>
+        <a href="privacy.html" class="hover:text-ink no-underline">Privacy</a>
+        <a href="terms.html" class="hover:text-ink no-underline">Terms</a>
+        <a href="contact.html" class="hover:text-ink no-underline">Contact</a>
+      </nav>
+      <p class="text-xs text-muted">&copy; 2026 SnapBooth</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/filters.js"></script>
+  <script src="js/frames.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/app.js?v=3"></script>
+
+  <script>
+      // ── Header-height CSS variable ──────────────────────────────────
+      // Reads the actual rendered header height and keeps --header-h in
+      // sync so the preview modal is always positioned below it.
+      (function trackHeaderHeight() {
+        const header = document.querySelector('header');
+        if (!header) return;
+        function update() {
+          document.documentElement.style.setProperty(
+            '--header-h', header.getBoundingClientRect().height + 'px'
+          );
+        }
+        update();
+        // Update on resize (orientation change, zoom, etc.)
+        window.addEventListener('resize', update, { passive: true });
+        // Also observe if the header DOM changes (e.g. ad banner above it)
+        new ResizeObserver(update).observe(header);
+      })();
+
+    // Mirror disabled state from outer capture button to the in-camera one
+    (function syncSnapDisabled() {
+      const outer = document.getElementById('snap-btn');
+      const inner = document.getElementById('snap-btn-inner');
+      if (!outer || !inner) return;
+      new MutationObserver(() => { inner.disabled = outer.disabled; })
+        .observe(outer, { attributes: true, attributeFilter: ['disabled'] });
+    })();
+
+    // Camera aspect-ratio selector
+    function setAspect(btn) {
+      const ratio = btn.dataset.ratio;
+      const max = btn.dataset.max;
+      const wrap = document.getElementById('cam-wrap');
+      const container = document.getElementById('cam-container');
+      if (ratio === 'full') {
+        wrap.style.aspectRatio = '';
+        if (container) container.style.maxWidth = '';
+        wrap.style.height = '';
+        document.body.classList.add('cam-fullscreen');
+      } else {
+        document.body.classList.remove('cam-fullscreen');
+        wrap.style.aspectRatio = ratio;
+        if (container) container.style.maxWidth = 'min(100%,' + max + ')';
+        wrap.style.height = '';
+      }
+      document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // Timer selector
+    function setTimer(btn, seconds) {
+      if (typeof currentTimer !== 'undefined') currentTimer = seconds;
+      document.querySelectorAll('.timer-btn').forEach(b => {
+        b.classList.remove('active', 'bg-white', 'text-ink', 'shadow-sm');
+        b.classList.add('hover:text-ink');
+      });
+      btn.classList.add('active', 'bg-white', 'text-ink', 'shadow-sm');
+      btn.classList.remove('hover:text-ink');
+    }
+
+    // Filter burger panel
+    function toggleFiltersPanel() {
+      const panel = document.getElementById('filters-panel');
+      const toggle = document.getElementById('filters-toggle');
+      const open = panel.classList.toggle('hidden') === false;
+      toggle.setAttribute('aria-expanded', String(open));
+    }
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('filters-panel');
+      const toggle = document.getElementById('filters-toggle');
+      if (!panel || panel.classList.contains('hidden')) return;
+      if (panel.contains(e.target) || toggle.contains(e.target)) return;
+      panel.classList.add('hidden');
+      toggle.setAttribute('aria-expanded', 'false');
+    });
+    // Update the toggle's active-filter label when a filter is picked
+    document.getElementById('filters-panel').addEventListener('click', (e) => {
+      const btn = e.target.closest('.filter-btn');
+      if (!btn) return;
+      const name = btn.getAttribute('data-name') || 'None';
+      document.getElementById('filters-active-label').textContent = '· ' + name;
+    });
+  </script>
+
+</body>
+
+</html>

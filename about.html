@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0e0e0f">
+  <title>About Us | SnapBooth</title>
+  <meta name="description" content="Learn about SnapBooth the free online photo booth that lets anyone take Korean 4-cut strips, polaroids, and GIF boomerangs with no signup.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://snapbooth.app/about.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Snap<span>Booth</span></a>
+    <ul class="nav-links" role="list">
+      <li><a href="index.html#features">Features</a></li>
+      <li><a href="index.html#how">How it Works</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="app.html" class="nav-cta">Try it free →</a></li>
+    </ul>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+  <div id="mobile-menu" style="display:none;flex-direction:column;padding:16px 24px 20px;gap:4px;border-top:1px solid var(--border)">
+    <a href="index.html#features" style="font-size:14px;color:var(--muted);text-decoration:none;padding:8px 0;border-bottom:1px solid var(--border)">Features</a>
+    <a href="index.html#how"      style="font-size:14px;color:var(--muted);text-decoration:none;padding:8px 0;border-bottom:1px solid var(--border)">How it Works</a>
+    <a href="contact.html"        style="font-size:14px;color:var(--muted);text-decoration:none;padding:8px 0;border-bottom:1px solid var(--border)">Contact</a>
+    <a href="app.html"            style="display:inline-block;margin-top:12px;background:var(--accent);color:#1a1612;font-size:14px;font-weight:500;padding:12px 24px;border-radius:24px;text-decoration:none;text-align:center">Try it free →</a>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <span class="section-eyebrow">Our Story</span>
+    <h1>About <em>SnapBooth</em></h1>
+    <p style="font-size:16px;color:var(--muted);line-height:1.7;margin-top:12px;max-width:560px">
+      We believe everyone deserves a fun, free photo booth experience no app downloads, no account signups, no strings attached.
+    </p>
+  </div>
+</div>
+
+<main class="page-body">
+
+  <div class="prose-section">
+    <h2>What is SnapBooth?</h2>
+    <p>SnapBooth is a free, browser-based photo booth that runs entirely on your device. Open the website, allow camera access, and within seconds you can take Korean-style 4-cut photo strips, classic polaroids, single portraits, and animated GIF boomerangs all without installing an app or creating an account.</p>
+    <p>Everything happens locally in your browser. Your photos are never uploaded to a server, never stored in a database, and never shared with anyone. When you close the tab, everything is gone. The only thing that leaves your device is the PNG or GIF file you choose to download.</p>
+    <div class="prose-highlight">
+      <p><strong style="color:var(--text)">Privacy by design.</strong> We didn't bolt privacy on as a feature we built the entire app around the principle that your photos belong to you and only you.</p>
+    </div>
+  </div>
+
+  <div class="prose-section">
+    <h2>Our Mission</h2>
+    <p>Photo booths used to mean expensive rented kiosks at weddings or mall arcades. Then came apps that required sign-ups, watermarked your photos unless you paid, or quietly uploaded your selfies to train AI models. We thought that was wrong.</p>
+    <p>Our mission is simple: <strong style="color:var(--text)">make the joy of photo booth strips accessible to absolutely everyone, for free, with zero compromises on privacy.</strong> Whether you're a teenager at a birthday party, a couple on date night, or an office team having fun at a work event SnapBooth should just work, instantly, beautifully.</p>
+  </div>
+
+  <div class="prose-section">
+    <h2>Why We Built It</h2>
+    <p>The idea came from frustration. Every "free" photo booth app we tried had at least one of these problems:</p>
+    <ul>
+      <li>Required creating an account before taking a single photo</li>
+      <li>Added an ugly watermark unless you paid a subscription</li>
+      <li>Uploaded photos to the cloud "for sharing" without a clear opt-out</li>
+      <li>Worked only as a native app, not in the browser</li>
+      <li>Looked dated and clunky</li>
+    </ul>
+    <p>So we built the photo booth we wanted to use ourselves. The rule was: if it can be done in the browser without sending data anywhere, do it in the browser. It turns out the modern Web is powerful enough WebRTC for the camera, Canvas API for processing, gif.js for encoding animations to deliver a genuinely great experience without any backend.</p>
+  </div>
+
+  <div class="prose-section">
+    <h2>Features We're Proud Of</h2>
+    <div class="about-features">
+      <div class="about-feature-card">
+        <div class="icon">📸</div>
+        <h3>4-Cut Strips</h3>
+        <p>Korean-style 4-shot strips with automatic countdown, shot-counter dots, and a printed watermark at the bottom.</p>
+      </div>
+      <div class="about-feature-card">
+        <div class="icon">🎨</div>
+        <h3>Live Filters</h3>
+        <p>Seven CSS filters B&amp;W, Vintage, Retro, Soft Glow, Warm Film, Cool Tone applied in real time to the camera feed.</p>
+      </div>
+      <div class="about-feature-card">
+        <div class="icon">🖼️</div>
+        <h3>Themed Frames</h3>
+        <p>Nine frame themes including Valentine, Graduation, New Year, and Holiday each with hand-drawn emoji decorations.</p>
+      </div>
+      <div class="about-feature-card">
+        <div class="icon">🎞️</div>
+        <h3>GIF Boomerang</h3>
+        <p>Record a two-second clip and get a smooth forward-backward looping GIF, encoded entirely in your browser.</p>
+      </div>
+      <div class="about-feature-card">
+        <div class="icon">✨</div>
+        <h3>Draggable Stickers</h3>
+        <p>Thirty-plus emoji stickers you can add and reposition anywhere on your strip by dragging with touch or mouse.</p>
+      </div>
+      <div class="about-feature-card">
+        <div class="icon">📱</div>
+        <h3>Works Everywhere</h3>
+        <p>Fully responsive works on desktop, tablet, and mobile. iPhone and Android browsers both supported.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="prose-section">
+    <h2>Made with Love</h2>
+    <p>SnapBooth is an independent project built with vanilla HTML, CSS, and JavaScript no frameworks, no build pipelines, no complexity. Just a clean, fast, well-crafted tool that does one thing really well.</p>
+    <p>If SnapBooth made your party more fun, put a smile on someone's face, or helped you create a memory worth keeping that's exactly why we built it.</p>
+    <p style="margin-top:20px">
+      <a href="app.html" style="display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#1a1612;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:13px 26px;border-radius:30px;text-decoration:none;transition:background .2s">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M8 2h8l2 3H6l2-3z"/><rect x="2" y="5" width="20" height="16" rx="3"/></svg>
+        Try SnapBooth it's free
+      </a>
+    </p>
+  </div>
+
+  <div class="prose-section">
+    <h2>Get in Touch</h2>
+    <p>Questions, feedback, feature requests, or just want to say hi? We'd love to hear from you.</p>
+    <ul>
+      <li>Email: <a href="mailto:support@snapbooth.app">support@snapbooth.app</a></li>
+      <li><a href="contact.html">Contact form →</a></li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="index.html" class="footer-logo">Snap<span>Booth</span></a>
+      <p class="footer-tagline">Free online photo booth.<br>Take 4-cut strips, polaroids &amp; GIFs<br>right in your browser.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="app.html">Photo Booth</a></li>
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#how">How it Works</a></li>
+        <li><a href="index.html#faq">FAQ</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+        <li><a href="terms.html">Terms of Service</a></li>
+        <li><a href="privacy.html#cookies">Cookie Policy</a></li>
+        <li><a href="about.html">About Us</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Connect</h4>
+      <ul>
+        <li><a href="contact.html">Contact Us</a></li>
+        <li><a href="mailto:support@snapbooth.app">support@snapbooth.app</a></li>
+        <li><a href="#">Instagram</a></li>
+        <li><a href="#">TikTok</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-copy">&copy; 2026 SnapBooth. All rights reserved.</p>
+    <p class="footer-note">All photos processed locally in your browser nothing is uploaded.</p>
+  </div>
+</footer>
+
+<script src="js/landing.js"></script>
+</body>
+</html>

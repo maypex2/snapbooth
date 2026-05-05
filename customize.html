@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#FAFAFA">
+
+  <title>Customize Photo | SnapBooth</title>
+  <meta name="robots" content="noindex">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Dancing+Script:wght@700&family=Pacifico&family=Fredoka:wght@500;600&family=Playfair+Display:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: {
+          cream: '#FAFAFA', cream2: '#F4F4F5', sand: '#E4E4E7',
+          ink: '#2A2520', ink2: '#5A4F42', muted: '#9A8E7E',
+          accent: '#C9A07A', accentd: '#8B6F47',
+          blush: '#F2C6CC', rose: '#D89BA3',
+        },
+        fontFamily: { serif: ['"DM Serif Display"','serif'], sans: ['"DM Sans"','sans-serif'] },
+        boxShadow: {
+          soft: '0 1px 2px rgba(0,0,0,.04), 0 8px 24px -8px rgba(0,0,0,.08)',
+          card: '0 2px 8px rgba(0,0,0,.05), 0 20px 40px -20px rgba(0,0,0,.1)',
+          warm: '0 1px 0 rgba(255,255,255,.6) inset, 0 -1px 0 rgba(0,0,0,.1) inset, 0 6px 16px -6px rgba(0,0,0,.15)',
+        },
+      }}
+    }
+  </script>
+
+  <style>
+    body { font-family: 'DM Sans', sans-serif; background: #F7F7F8; color: #2A2520; }
+    .font-serif-i { font-family: 'DM Serif Display', serif; font-style: italic; }
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { scrollbar-width: none; }
+    #strip-canvas {
+      max-width: 100%; max-height: 70vh; border-radius: 10px; cursor: grab;
+      box-shadow:
+        0 1px 2px rgba(0,0,0,.06),
+        0 8px 16px rgba(0,0,0,.1),
+        0 24px 48px -12px rgba(0,0,0,.2),
+        0 48px 96px -24px rgba(0,0,0,.22);
+    }
+    #strip-canvas:active { cursor: grabbing; }
+
+    .frame-chip { min-height: 110px; padding: 14px 8px; }
+    .frame-chip.active { box-shadow: 0 0 0 2px #2A2520, 0 0 0 4px #FAFAFA; }
+    .template-card.active { box-shadow: 0 0 0 2px #2A2520, 0 0 0 4px #FAFAFA; background: #F4F4F5; }
+    .template-card--disabled { opacity: .45; filter: grayscale(0.4); cursor: not-allowed; }
+    .template-card--disabled:hover { background: transparent; }
+    .color-swatch { width: 38px; height: 38px; border-radius: 9999px; border: 2px solid rgba(0,0,0,.06); cursor: pointer; transition: transform .15s ease; background-size: cover; background-position: center; }
+    .color-swatch:hover { transform: scale(1.08); }
+    .color-swatch.active { box-shadow: 0 0 0 2px #2A2520, 0 0 0 4px #FAFAFA; }
+
+    .sticker-card { aspect-ratio: 1; border-radius: 12px; background: #fff; border: 1px solid rgba(228,228,231,.8); padding: 6px; cursor: pointer; transition: all .15s ease; }
+    .sticker-card:hover { background: #F4F4F5; transform: translateY(-2px); }
+    .sticker-card img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #2A2520; color: #FAFAFA; padding: 12px 22px; border-radius: 9999px; font-size: 14px; opacity: 0; pointer-events: none; transition: all .3s ease; z-index: 60; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .tab-btn.active { background: #2A2520; color: #FAFAFA; }
+
+    /* Mini layout cards in customize sidebar */
+    .layout-mini { display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 6px; border-radius:14px; border:1px solid #E4E4E7; background:#fff; cursor:pointer; transition:all .15s ease; }
+    .layout-mini:hover { background:#F4F4F5; }
+    .layout-mini.active { background:#2A2520; color:#FAFAFA; border-color:#2A2520; }
+    .layout-mini .lm-shape { width:34px; height:46px; display:grid; gap:2px; background:transparent; }
+    .layout-mini .lm-shape > span { background:#C9A07A; border-radius:1px; }
+    .layout-mini.active .lm-shape > span { background:#C9A07A; }
+    .layout-mini.active .lm-name { color:#FAFAFA; }
+    .layout-mini .lm-name { font-size:10px; font-weight:500; line-height:1; }
+    .layout-mini .lm-count { font-size:9px; color:#9A8E7E; }
+    .layout-mini.active .lm-count { color:#C9A07A; }
+
+    /* Text sticker UI */
+    .ts-cats { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+    .ts-cat-pill { padding:5px 12px; border-radius:9999px; border:1px solid #E4E4E7; background:#fff; font-size:11px; font-weight:500; color:#5A4F42; cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .ts-cat-pill:hover { background:#F4F4F5; }
+    .ts-cat-pill.active { background:#2A2520; color:#FAFAFA; border-color:#2A2520; }
+    .ts-card { border-radius:12px; background:#fff; border:1px solid rgba(228,228,231,.8); padding:8px 6px; cursor:pointer; transition:all .15s ease; display:flex; align-items:center; justify-content:center; min-height:56px; text-align:center; overflow:hidden; }
+    .ts-card:hover { background:#F4F4F5; transform:translateY(-2px); }
+    .ts-card span { display:block; line-height:1.15; pointer-events:none; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<!-- Header -->
+<header class="sticky top-0 z-30 bg-cream/90 backdrop-blur border-b border-sand/60">
+  <div class="max-w-[1400px] mx-auto px-4 md:px-6 py-3 md:py-4 grid grid-cols-[auto_1fr_auto] items-center gap-3 md:gap-6">
+    <a href="app.html" class="flex items-center gap-1.5 text-xs md:text-sm text-ink2 hover:text-ink no-underline whitespace-nowrap">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      <span class="hidden sm:inline">Back to camera</span>
+      <span class="sm:hidden">Back</span>
+    </a>
+    <div class="text-center text-lg md:text-2xl font-serif truncate">Customize <span class="font-serif-i text-accentd">Photo</span></div>
+    <a href="index.html" class="text-xs md:text-sm text-ink2 hover:text-ink no-underline whitespace-nowrap justify-self-end">Home</a>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="flex-1 max-w-[1400px] w-full mx-auto px-4 md:px-6 py-8 grid lg:grid-cols-[1fr_380px] gap-6">
+
+  <!-- Preview -->
+  <section class="bg-white rounded-3xl border border-sand/50 shadow-card p-6 md:p-10 flex items-center justify-center min-h-[420px]">
+    <canvas id="strip-canvas"></canvas>
+  </section>
+
+  <!-- Tools -->
+  <aside class="bg-white rounded-3xl border border-sand/50 shadow-soft overflow-hidden flex flex-col">
+    <!-- Tabs -->
+    <div class="grid grid-cols-6 p-2 gap-1 border-b border-sand/40 bg-cream2/30">
+      <button data-tab="layout" class="tab-btn active py-2.5 rounded-xl text-[11px] font-medium transition">Layout</button>
+      <button data-tab="templates" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Templates</button>
+      <button data-tab="frame" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Frame</button>
+      <button data-tab="color" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Color</button>
+      <button data-tab="text" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Text</button>
+      <button data-tab="stickers" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Stickers</button>
+    </div>
+
+    <!-- Tab content -->
+    <div class="flex-1 overflow-y-auto">
+
+      <!-- Layout (default visible tab) -->
+      <div data-panel="layout" class="p-5">
+        <h3 class="font-serif text-lg mb-1">Layout</h3>
+        <p class="text-xs text-muted mb-4">Pick a layout, then upload photos one by one.</p>
+        <div id="layout-grid" class="grid grid-cols-3 gap-2"></div>
+      </div>
+
+      <!-- Templates -->
+      <div data-panel="templates" class="p-5 hidden">
+        <h3 class="font-serif text-lg mb-1">Templates</h3>
+        <p class="text-xs text-muted mb-4">Pick a designed template — your photos snap into the boxes. Templates are designed for the <strong>4-Cut Strip</strong> layout.</p>
+        <div id="template-banner" class="hidden mb-4 px-3 py-2.5 rounded-xl bg-blush/40 border border-rose/40 text-[11px] text-ink2">
+          These templates are only available on <strong>4-Cut Strip</strong>. Switch your layout in the Layout tab to use them.
+        </div>
+        <div id="templates-grid" class="grid grid-cols-2 gap-3"></div>
+        <button id="clear-template" class="mt-4 w-full py-2.5 rounded-xl bg-cream2 text-ink2 text-sm hover:bg-sand hover:text-ink transition">Clear template</button>
+      </div>
+
+      <!-- Frame -->
+      <div data-panel="frame" class="p-5 hidden" >
+        <h3 class="font-serif text-lg mb-1">Frame Style</h3>
+        <p class="text-xs text-muted mb-4">Choose a designed frame</p>
+        <div id="frames-grid" class="grid grid-cols-2 gap-3"></div>
+        <div class="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-cream2/40">
+          <svg width="14" height="14" fill="none" stroke="#9A8E7E" stroke-width="2" viewBox="0 0 24 24" class="mt-0.5 shrink-0"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+          <p class="text-[11px] text-muted leading-snug">Tip: stickers can be dragged anywhere on the strip pick one in the Stickers tab, then drag it on the preview.</p>
+        </div>
+      </div>
+
+      <!-- Color / patterns -->
+      <div data-panel="color" class="p-5 hidden">
+        <h3 class="font-serif text-lg mb-1">Frame Color</h3>
+        <p class="text-xs text-muted mb-4">Solid colors and patterns</p>
+
+        <div class="grid grid-cols-7 gap-2.5 mb-5" id="color-swatches">
+          <!-- populated by JS -->
+        </div>
+
+        <label class="block text-xs font-medium uppercase tracking-[0.18em] text-ink2 mb-2">Custom color</label>
+        <div class="flex items-center gap-3">
+          <input type="color" id="custom-color" value="#ffffff" class="w-12 h-12 rounded-xl border border-sand/60 cursor-pointer">
+          <button id="apply-custom" class="flex-1 py-3 rounded-xl bg-ink text-cream text-sm hover:bg-ink2 transition">Apply</button>
+          <button id="reset-color" class="px-4 py-3 rounded-xl bg-cream2 text-ink2 text-sm hover:bg-sand hover:text-ink transition">Reset</button>
+        </div>
+      </div>
+
+      <!-- Text -->
+      <div data-panel="text" class="p-5 hidden">
+        <h3 class="font-serif text-lg mb-1">Custom Text</h3>
+        <p class="text-xs text-muted mb-4">Add a title at the top of the strip (replaces the frame title).</p>
+        <input id="custom-text-input" type="text" maxlength="40" placeholder="e.g. Best Day Ever" class="w-full px-4 py-3 rounded-xl bg-cream2 border border-sand/60 text-ink placeholder-muted focus:outline-none focus:border-accent transition">
+        <div class="flex gap-2 mt-3">
+          <button id="custom-text-clear" class="flex-1 py-2.5 rounded-xl bg-white border border-sand/60 text-ink2 text-sm hover:bg-cream2 hover:text-ink transition">Clear</button>
+        </div>
+        <p class="text-[11px] text-muted mt-3">Tip: works best on strip layouts (4-cut, 2-cut, 6-cut).</p>
+      </div>
+
+      <!-- Stickers -->
+      <div data-panel="stickers" class="p-5 hidden">
+        <h3 class="font-serif text-lg mb-1">Stickers</h3>
+        
+        <!-- Toggle -->
+        <div class="flex p-1 bg-cream2 rounded-xl mb-4">
+          <button id="toggle-stickers-img" class="flex-1 py-1.5 text-xs font-medium rounded-lg bg-white shadow-sm text-ink transition">Images</button>
+          <button id="toggle-stickers-text" class="flex-1 py-1.5 text-xs font-medium rounded-lg text-muted hover:text-ink transition">Text Library</button>
+        </div>
+
+        <div id="stickers-img-view">
+          <p class="text-xs text-muted mb-4">Click a sticker below to add it to the strip.</p>
+          <div class="mb-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-cream2/40">
+            <svg width="14" height="14" fill="none" stroke="#9A8E7E" stroke-width="2" viewBox="0 0 24 24" class="mt-0.5 shrink-0"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+            <p class="text-[11px] text-muted leading-snug">Tip: <strong>drag</strong> a sticker on the preview to move it · <strong>scroll wheel</strong> or pinch to resize · drag a corner handle to resize precisely.</p>
+          </div>
+          <div id="stickers-grid" class="grid grid-cols-4 gap-2"></div>
+        </div>
+
+        <div id="stickers-text-view" class="hidden">
+          <div id="ts-grid" class="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1 scrollbar-none mt-2">
+            <!-- Stickers populated by JS -->
+          </div>
+        </div>
+
+        <div id="sticker-selection-controls" class="hidden mt-4 bg-cream2/60 p-3 rounded-xl border border-sand/60 flex flex-col gap-2">
+          <p class="text-[11px] text-muted text-center">Tip: Select a sticker, then click 'Delete' to remove it.</p>
+          <button id="delete-selected-sticker" class="w-full py-2 rounded-lg bg-white text-ink2 text-sm hover:bg-rose/90 hover:text-white transition border border-sand/60 shadow-sm">Delete selected sticker</button>
+        </div>
+
+        <button id="clear-stickers" class="mt-4 w-full py-2.5 rounded-xl bg-cream2 text-ink2 text-sm hover:bg-sand hover:text-ink transition">Clear all stickers</button>
+      </div>
+
+    </div>
+
+    <!-- Footer actions -->
+    <div class="border-t border-sand/60 p-4 bg-cream2/30 flex flex-col gap-2">
+      <div id="upload-counter" class="text-[11px] font-medium uppercase tracking-[0.18em] text-ink2 text-center">0 / 0 photos</div>
+      <input type="file" id="replace-input" accept="image/*" multiple class="hidden">
+      <div class="flex gap-2">
+        <button id="replace-btn" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-cream2 text-ink2 hover:bg-sand hover:text-ink text-sm transition border border-sand/60">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span id="upload-label">Upload Photos</span>
+        </button>
+        <button id="clear-photos-btn" class="px-4 py-2.5 rounded-2xl bg-white text-ink2 hover:bg-cream2 hover:text-ink text-sm transition border border-sand/60" title="Remove all photos">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
+      <button id="download-btn" class="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-ink text-cream font-medium hover:bg-ink2 transition shadow-card">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PNG
+      </button>
+      <button id="share-btn" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white border border-sand/60 text-ink2 hover:bg-cream2 hover:text-ink transition">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Share
+      </button>
+    </div>
+  </aside>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<footer class="border-t border-sand/60 bg-cream2/40 mt-auto">
+  <div class="max-w-[1100px] mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-2">
+    <a href="index.html" class="text-lg font-serif no-underline text-ink">Snap<span class="font-serif-i text-accentd">Booth</span></a>
+    <p class="text-xs text-muted">&copy; 2026 SnapBooth</p>
+  </div>
+</footer>
+
+<script src="js/frames.js"></script>
+<script src="js/templates.js"></script>
+<script src="js/stickers.js"></script>
+<script src="js/db.js"></script>
+<script src="js/customize.js?v=3"></script>
+
+<script>
+/**
+ * ── Text Sticker Assets Logic ──
+ * Replaces the dynamic text generation with pre-made SVG assets from assets/text-stickers/
+ */
+(function() {
+  const TEXT_ASSETS = [
+    "Your text here (1).svg",
+    "Your text here (10).svg",
+    "Your text here (11).svg",
+    "Your text here (12).svg",
+    "Your text here (13).svg",
+    "Your text here (14).svg",
+    "Your text here (15).svg",
+    "Your text here (16).svg",
+    "Your text here (17).svg",
+    "Your text here (18).svg",
+    "Your text here (19).svg",
+    "Your text here (2).svg",
+    "Your text here (20).svg",
+    "Your text here (21).svg",
+    "Your text here (22).svg",
+    "Your text here (23).svg",
+    "Your text here (24).svg",
+    "Your text here (25).svg",
+    "Your text here (26).svg",
+    "Your text here (27).svg",
+    "Your text here (28).svg",
+    "Your text here (29).svg",
+    "Your text here (3).svg",
+    "Your text here (30).svg",
+    "Your text here (31).svg",
+    "Your text here (32).svg",
+    "Your text here (33).svg",
+    "Your text here (34).svg",
+    "Your text here (35).svg",
+    "Your text here (36).svg",
+    "Your text here (37).svg",
+    "Your text here (38).svg",
+    "Your text here (39).svg",
+    "Your text here (4).svg",
+    "Your text here (40).svg",
+    "Your text here (41).svg",
+    "Your text here (42).svg",
+    "Your text here (43).svg",
+    "Your text here (5).svg",
+    "Your text here (6).svg",
+    "Your text here (7).svg",
+    "Your text here (8).svg",
+    "Your text here (9).svg",
+    "Your text here.svg",
+    "happybirthday.svg",
+    "hapybirthday.svg"
+  ];
+
+  function init() {
+    const btnImg = document.getElementById('toggle-stickers-img');
+    const btnText = document.getElementById('toggle-stickers-text');
+    const viewImg = document.getElementById('stickers-img-view');
+    const viewText = document.getElementById('stickers-text-view');
+
+    btnImg.addEventListener('click', () => {
+      btnImg.classList.add('bg-white', 'shadow-sm', 'text-ink'); btnImg.classList.remove('text-muted');
+      btnText.classList.remove('bg-white', 'shadow-sm', 'text-ink'); btnText.classList.add('text-muted');
+      viewImg.classList.remove('hidden'); viewText.classList.add('hidden');
+    });
+
+    btnText.addEventListener('click', () => {
+      btnText.classList.add('bg-white', 'shadow-sm', 'text-ink'); btnText.classList.remove('text-muted');
+      btnImg.classList.remove('bg-white', 'shadow-sm', 'text-ink'); btnImg.classList.add('text-muted');
+      viewText.classList.remove('hidden'); viewImg.classList.add('hidden');
+    });
+
+    renderTextStickers();
+  }
+
+  function renderTextStickers() {
+    const grid = document.getElementById('ts-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    TEXT_ASSETS.forEach(file => {
+      const fullPath = 'assets/text-stickers/' + file;
+      
+      // Preload image
+      if (typeof stickerImgCache !== 'undefined' && !stickerImgCache[fullPath]) {
+        const img = new Image();
+        img.src = fullPath;
+        stickerImgCache[fullPath] = img;
+      }
+
+      const card = document.createElement('button');
+      card.className = 'ts-card';
+      
+      const imgEl = document.createElement('img');
+      imgEl.src = fullPath;
+      imgEl.alt = "Text Sticker";
+      imgEl.style.width = '100%';
+      imgEl.style.maxHeight = '48px';
+      imgEl.style.objectFit = 'contain';
+      imgEl.style.pointerEvents = 'none';
+
+      card.appendChild(imgEl);
+      card.onclick = () => {
+        if (typeof addSticker === 'function') {
+          addSticker({ name: "Text", file: fullPath });
+        }
+      };
+      grid.appendChild(card);
+    });
+  }
+
+  window.addEventListener('load', () => {
+    setTimeout(init, 100);
+  });
+})();
+</script>
+
+</body>
+</html>

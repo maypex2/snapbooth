@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <rect x="6" y="8" width="62" height="48" rx="14" fill="white" stroke="#f2b8c6" stroke-width="2.5"/>
+  <path d="M22 56 L16 72 L34 60" fill="white" stroke="#f2b8c6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <text x="37" y="38" text-anchor="middle" font-family="DM Sans, Arial, sans-serif" font-size="18" font-weight="700" fill="#f2b8c6">Cute!</text>
+</svg>
