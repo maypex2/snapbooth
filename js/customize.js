@@ -163,10 +163,11 @@ document.addEventListener('DOMContentLoaded', () => {
 function buildStrip() {
   if (currentTemplate) { return buildTemplateStrip(); }
   if (currentMode === 'tilt3') { buildTilt3Strip(); return; }
-  // Default placeholder dimensions when no photos are uploaded yet,
-  // so the layout still renders with empty slots the user can fill.
-  const W = (shots[0] && shots[0].naturalWidth)  || 1280;
-  const H = (shots[0] && shots[0].naturalHeight) || 960;
+  // Use fixed slot dimensions so layouts stay consistent no matter what
+  // aspect ratios the user uploads. Each photo gets contain-fit into the
+  // same standard slot, so mixed-aspect uploads still line up.
+  const W = 1280;
+  const H = 960;
   let sw, sh, positions;
 
   if (currentMode === '4cut') {
@@ -329,7 +330,7 @@ function buildStrip() {
   }
 
   const stripModes = ['4cut','3cut','2cut'];
-  const multi = ['6cut','3horiz','squaregrid'];
+  const multi = ['6cut','3horiz','squaregrid','grid4','1large3small'];
   if (stripModes.includes(currentMode)) {
     // Polaroid-style footer mirroring app.js buildStrip
     const BOT = 220;
@@ -350,6 +351,13 @@ function buildStrip() {
     sctx.font = 'italic 42px "DM Serif Display", serif';
     sctx.textAlign = 'center';
     sctx.fillText('snapbooth', sw/2, sh - 22);
+    sctx.textAlign = 'start';
+  } else if (currentMode !== 'photocard' && currentMode !== 'polaroid' && currentMode !== 'double-polaroid' && currentMode !== 'tilt3') {
+    // Single-shot / fallback: small bottom-right watermark
+    sctx.fillStyle = 'rgba(0,0,0,0.5)';
+    sctx.font = 'italic 22px "DM Serif Display", serif';
+    sctx.textAlign = 'right';
+    sctx.fillText('snapbooth', sw - 16, sh - 14);
     sctx.textAlign = 'start';
   }
 
