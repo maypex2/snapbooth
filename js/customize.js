@@ -10,6 +10,10 @@ let customText   = '';
 // centered. Negative values shift the visible window towards the top/left
 // (so the bottom/right of the photo shows more), positive does the inverse.
 let photoOffsets = [];
+// Multiplier applied to canvas dimensions. Drops to 0.5 during interactive
+// adjustments so weak phones can keep up; restored to 1 when interaction
+// ends so downloads stay full quality.
+let renderScale = 1;
 
 // Draggable text overlays — like stickers but with text. Each item:
 //   { id, text, x, y, size, font, color, weight }
@@ -175,10 +179,11 @@ function buildStrip() {
   if (currentTemplate) { return buildTemplateStrip(); }
   if (currentMode === 'tilt3') { buildTilt3Strip(); return; }
   // Use fixed slot dimensions so layouts stay consistent no matter what
-  // aspect ratios the user uploads. Each photo gets contain-fit into the
-  // same standard slot, so mixed-aspect uploads still line up.
-  const W = 1280;
-  const H = 960;
+  // aspect ratios the user uploads. Each photo gets cover-fit into the
+  // same standard slot, so mixed-aspect uploads still line up. renderScale
+  // drops to 0.5 during interactive drags so the canvas redraws ~4× faster.
+  const W = Math.round(1280 * renderScale);
+  const H = Math.round(960 * renderScale);
   let sw, sh, positions;
 
   if (currentMode === '4cut') {
@@ -1161,6 +1166,65 @@ async function downloadStrip() {
   showToast('Downloaded!');
 }
 
+// Compose the current strip onto a colored backdrop at a target aspect
+// ratio (used for IG Story 9:16 and IG Square 1:1 exports).
+async function exportComposed(canvasW, canvasH, filename, padding = 0.06) {
+  await Promise.resolve(buildStrip());
+  const out = document.createElement('canvas');
+  out.width = canvasW;
+  out.height = canvasH;
+  const octx = out.getContext('2d');
+
+  // Cream backdrop matching the site palette
+  octx.fillStyle = '#FAF6EE';
+  octx.fillRect(0, 0, canvasW, canvasH);
+
+  // Subtle texture so it doesn't look flat
+  octx.fillStyle = 'rgba(60, 40, 20, 0.02)';
+  octx.fillRect(0, 0, canvasW, canvasH);
+
+  // Fit the strip with padding, preserving aspect ratio
+  const padX = canvasW * padding;
+  const padY = canvasH * padding;
+  const maxW = canvasW - padX * 2;
+  const maxH = canvasH - padY * 2;
+  const sw = stripCanvas.width;
+  const sh = stripCanvas.height;
+  const scale = Math.min(maxW / sw, maxH / sh);
+  const dw = sw * scale;
+  const dh = sh * scale;
+  const dx = (canvasW - dw) / 2;
+  const dy = (canvasH - dh) / 2;
+
+  // Soft drop shadow for the strip
+  octx.shadowColor = 'rgba(60, 40, 20, 0.18)';
+  octx.shadowBlur = 32;
+  octx.shadowOffsetY = 8;
+  octx.drawImage(stripCanvas, dx, dy, dw, dh);
+  octx.shadowColor = 'transparent';
+  octx.shadowBlur = 0;
+  octx.shadowOffsetY = 0;
+
+  // SnapBooth wordmark in the bottom margin so the export carries the brand
+  octx.fillStyle = 'rgba(60, 40, 20, 0.5)';
+  octx.font = 'italic ' + Math.round(canvasW * 0.028) + 'px "DM Serif Display", serif';
+  octx.textAlign = 'center';
+  octx.fillText('snapbooth.app', canvasW / 2, canvasH - padY * 0.45);
+
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href = out.toDataURL('image/png');
+  a.click();
+  showToast('Downloaded!');
+}
+
+function downloadStory() {
+  exportComposed(1080, 1920, 'snapbooth-story-' + Date.now() + '.png', 0.07);
+}
+function downloadSquare() {
+  exportComposed(1080, 1080, 'snapbooth-square-' + Date.now() + '.png', 0.07);
+}
+
 async function shareStrip() {
   await Promise.resolve(buildStrip());
   try {
@@ -1254,6 +1318,8 @@ async function replacePhotos(fileList) {
 // ── Init ──
 document.getElementById('download-btn').addEventListener('click', downloadStrip);
 document.getElementById('share-btn').addEventListener('click', shareStrip);
+document.getElementById('download-story-btn')?.addEventListener('click', downloadStory);
+document.getElementById('download-square-btn')?.addEventListener('click', downloadSquare);
 document.getElementById('replace-btn').addEventListener('click', () => {
   document.getElementById('replace-input').click();
 });
@@ -1315,15 +1381,31 @@ function renderAdjustPanel() {
     `;
     list.appendChild(row);
   });
-  const debounced = debounce(buildStrip, 60);
+  // Coalesce slider input via rAF instead of a timer — gives 1 redraw per
+  // frame (max), so slider feels instant on capable devices and gracefully
+  // drops frames on slow phones without queuing up stale rebuilds.
+  let rafQueued = false;
+  function flushAdjust() {
+    rafQueued = false;
+    buildStrip();
+  }
+  function onSliderInput(e) {
+    const idx = parseInt(e.target.dataset.idx, 10);
+    const axis = e.target.dataset.axis;
+    if (!photoOffsets[idx]) photoOffsets[idx] = { ox: 0, oy: 0 };
+    photoOffsets[idx][axis] = parseFloat(e.target.value);
+    renderScale = 0.5;
+    if (!rafQueued) { rafQueued = true; requestAnimationFrame(flushAdjust); }
+  }
+  function onSliderRelease() {
+    renderScale = 1;
+    buildStrip();
+  }
   list.querySelectorAll('input[type="range"]').forEach(input => {
-    input.addEventListener('input', e => {
-      const idx = parseInt(e.target.dataset.idx, 10);
-      const axis = e.target.dataset.axis;
-      if (!photoOffsets[idx]) photoOffsets[idx] = { ox: 0, oy: 0 };
-      photoOffsets[idx][axis] = parseFloat(e.target.value);
-      debounced();
-    });
+    input.addEventListener('input', onSliderInput);
+    input.addEventListener('change', onSliderRelease);
+    input.addEventListener('pointerup', onSliderRelease);
+    input.addEventListener('touchend', onSliderRelease);
   });
 }
 const resetAdjustBtn = document.getElementById('reset-adjust');
