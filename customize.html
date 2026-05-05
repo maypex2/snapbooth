@@ -254,7 +254,7 @@
 <script src="js/templates.js"></script>
 <script src="js/stickers.js"></script>
 <script src="js/db.js"></script>
-<script src="js/customize.js?v=5"></script>
+<script src="js/customize.js?v=6"></script>
 
 <script>
 /**
@@ -339,20 +339,15 @@
 
     TEXT_ASSETS.forEach(file => {
       const fullPath = 'assets/text-stickers/' + file;
-      
-      // Preload image
-      if (typeof stickerImgCache !== 'undefined' && !stickerImgCache[fullPath]) {
-        const img = new Image();
-        img.src = fullPath;
-        stickerImgCache[fullPath] = img;
-      }
 
       const card = document.createElement('button');
       card.className = 'ts-card';
-      
+
       const imgEl = document.createElement('img');
       imgEl.src = fullPath;
       imgEl.alt = "Text Sticker";
+      imgEl.loading = 'lazy';
+      imgEl.decoding = 'async';
       imgEl.style.width = '100%';
       imgEl.style.maxHeight = '48px';
       imgEl.style.objectFit = 'contain';

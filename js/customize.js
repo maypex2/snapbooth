@@ -865,12 +865,8 @@ async function fetchSharpSVG(url) {
 }
 
 function initStickerGrid() {
-  STICKERS.forEach(async s => {
-    const sharpUrl = await fetchSharpSVG(s.file);
-    const img = new Image();
-    img.src = sharpUrl;
-    stickerImgCache[s.file] = img;
-  });
+  // Pre-fetching + rewrapping every SVG on init was thrashing low-end phones.
+  // Defer that work until a sticker is actually used.
 
   const grid = document.getElementById('stickers-grid');
   if (grid) {
@@ -880,15 +876,22 @@ function initStickerGrid() {
       btn.title = s.name;
       const img = document.createElement('img');
       img.src = s.file; img.alt = s.name; img.draggable = false;
+      img.loading = 'lazy';
+      img.decoding = 'async';
       btn.appendChild(img);
       btn.addEventListener('click', () => {
         // Center the sticker and place it slightly lower to avoid overlapping Slot 1 immediately
         stickers.push({ file: s.file, x: 0.5, y: 0.6, size: 0.16 });
-        const cached = stickerImgCache[s.file];
+        let cached = stickerImgCache[s.file];
+        if (!cached) {
+          cached = new Image();
+          cached.src = s.file;
+          stickerImgCache[s.file] = cached;
+        }
         selectedStickerIdx = stickers.length - 1;
         updateStickerSelectionUI();
-        if (cached && cached.complete) buildStrip();
-        else if (cached) cached.onload = () => buildStrip();
+        if (cached.complete) buildStrip();
+        else cached.onload = () => buildStrip();
         showToast(s.name + ' drag to move, scroll/pinch to resize');
       });
       grid.appendChild(btn);
@@ -1228,13 +1231,20 @@ document.getElementById('replace-input').addEventListener('change', e => replace
 const clearBtn = document.getElementById('clear-photos-btn');
 if (clearBtn) clearBtn.addEventListener('click', clearAllPhotos);
 
-// Custom text input
+// Custom text input — rebuilds the strip on every keystroke, which is the
+// heaviest single op on the page. Debounce so we only rebuild once the user
+// pauses typing; cheap on phones / weak CPUs.
+function debounce(fn, ms) {
+  let t;
+  return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), ms); };
+}
 const customTextInput = document.getElementById('custom-text-input');
 const customTextClear = document.getElementById('custom-text-clear');
 if (customTextInput) {
+  const debouncedRebuild = debounce(buildStrip, 180);
   customTextInput.addEventListener('input', e => {
     customText = e.target.value;
-    buildStrip();
+    debouncedRebuild();
   });
 }
 if (customTextClear) {
