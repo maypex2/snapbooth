@@ -14,6 +14,9 @@ let photoOffsets = [];
 // adjustments so weak phones can keep up; restored to 1 when interaction
 // ends so downloads stay full quality.
 let renderScale = 1;
+// Footer visibility toggles (Text tab → Footer section)
+let showWordmark = true;
+let showDate     = true;
 
 // Draggable text overlays — like stickers but with text. Each item:
 //   { id, text, x, y, size, font, color, weight }
@@ -356,20 +359,30 @@ function buildStrip() {
 
   if (currentMode === 'polaroid' || currentMode === 'double-polaroid') {
     const BB=90, BT=20;
-    sctx.fillStyle = 'rgba(0,0,0,0.35)';
-    sctx.font = '500 26px DM Sans, sans-serif'; sctx.textAlign = 'center';
-    sctx.fillText('SnapBooth', sw/2, sh - BB*0.6);
-    sctx.font = '18px DM Sans, sans-serif'; sctx.fillStyle = 'rgba(0,0,0,0.2)';
-    sctx.fillText(new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), sw/2, sh - BB*0.3);
+    sctx.textAlign = 'center';
+    if (showWordmark) {
+      sctx.fillStyle = 'rgba(0,0,0,0.35)';
+      sctx.font = '500 26px DM Sans, sans-serif';
+      sctx.fillText('SnapBooth', sw/2, sh - BB*0.6);
+    }
+    if (showDate) {
+      sctx.font = '18px DM Sans, sans-serif'; sctx.fillStyle = 'rgba(0,0,0,0.2)';
+      sctx.fillText(new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), sw/2, sh - BB*0.3);
+    }
     sctx.textAlign = 'start';
   }
   if (currentMode === 'photocard') {
     const BT=30, BB=100;
-    sctx.fillStyle = 'rgba(0,0,0,0.4)';
-    sctx.font = '500 30px DM Sans, sans-serif'; sctx.textAlign = 'center';
-    sctx.fillText('SnapBooth', sw/2, H+BT+BB*0.36);
-    sctx.font = '20px DM Sans, sans-serif'; sctx.fillStyle = 'rgba(0,0,0,0.25)';
-    sctx.fillText(new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}), sw/2, H+BT+BB*0.62);
+    sctx.textAlign = 'center';
+    if (showWordmark) {
+      sctx.fillStyle = 'rgba(0,0,0,0.4)';
+      sctx.font = '500 30px DM Sans, sans-serif';
+      sctx.fillText('SnapBooth', sw/2, H+BT+BB*0.36);
+    }
+    if (showDate) {
+      sctx.font = '20px DM Sans, sans-serif'; sctx.fillStyle = 'rgba(0,0,0,0.25)';
+      sctx.fillText(new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}), sw/2, H+BT+BB*0.62);
+    }
     sctx.textAlign = 'start';
   }
 
@@ -380,29 +393,37 @@ function buildStrip() {
     const BOT = 220;
     const footerTop = sh - BOT;
     sctx.textAlign = 'center';
-    sctx.fillStyle = 'rgba(0,0,0,0.5)';
-    sctx.font = '500 36px "DM Serif Display", serif';
-    sctx.fillText('SnapBooth', sw/2, footerTop + BOT * 0.55);
-    sctx.font = '400 22px "DM Sans", sans-serif';
-    sctx.fillStyle = 'rgba(0,0,0,0.3)';
-    sctx.fillText(
-      new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
-      sw/2, footerTop + BOT * 0.78
-    );
+    if (showWordmark) {
+      sctx.fillStyle = 'rgba(0,0,0,0.5)';
+      sctx.font = '500 36px "DM Serif Display", serif';
+      sctx.fillText('SnapBooth', sw/2, footerTop + BOT * 0.55);
+    }
+    if (showDate) {
+      sctx.font = '400 22px "DM Sans", sans-serif';
+      sctx.fillStyle = 'rgba(0,0,0,0.3)';
+      sctx.fillText(
+        new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+        sw/2, footerTop + BOT * 0.78
+      );
+    }
     sctx.textAlign = 'start';
   } else if (multi.includes(currentMode)) {
-    sctx.fillStyle = 'rgba(0,0,0,0.78)';
-    sctx.font = 'italic 42px "DM Serif Display", serif';
-    sctx.textAlign = 'center';
-    sctx.fillText('snapbooth', sw/2, sh - 22);
-    sctx.textAlign = 'start';
+    if (showWordmark) {
+      sctx.fillStyle = 'rgba(0,0,0,0.78)';
+      sctx.font = 'italic 42px "DM Serif Display", serif';
+      sctx.textAlign = 'center';
+      sctx.fillText('snapbooth', sw/2, sh - 22);
+      sctx.textAlign = 'start';
+    }
   } else if (currentMode !== 'photocard' && currentMode !== 'polaroid' && currentMode !== 'double-polaroid' && currentMode !== 'tilt3') {
-    // Single-shot / fallback: small bottom-right watermark
-    sctx.fillStyle = 'rgba(0,0,0,0.5)';
-    sctx.font = 'italic 22px "DM Serif Display", serif';
-    sctx.textAlign = 'right';
-    sctx.fillText('snapbooth', sw - 16, sh - 14);
-    sctx.textAlign = 'start';
+    if (showWordmark) {
+      // Single-shot / fallback: small bottom-right watermark
+      sctx.fillStyle = 'rgba(0,0,0,0.5)';
+      sctx.font = 'italic 22px "DM Serif Display", serif';
+      sctx.textAlign = 'right';
+      sctx.fillText('snapbooth', sw - 16, sh - 14);
+      sctx.textAlign = 'start';
+    }
   }
 
   // Snapshot the base (everything except stickers) so sticker drags can
@@ -1374,6 +1395,22 @@ if (customTextClear) {
   customTextClear.addEventListener('click', () => {
     customText = '';
     if (customTextInput) customTextInput.value = '';
+    buildStrip();
+  });
+}
+
+// Footer visibility toggles
+const wordmarkToggle = document.getElementById('toggle-wordmark');
+const dateToggle = document.getElementById('toggle-date');
+if (wordmarkToggle) {
+  wordmarkToggle.addEventListener('change', e => {
+    showWordmark = e.target.checked;
+    buildStrip();
+  });
+}
+if (dateToggle) {
+  dateToggle.addEventListener('change', e => {
+    showDate = e.target.checked;
     buildStrip();
   });
 }

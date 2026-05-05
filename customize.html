@@ -192,6 +192,19 @@
           <button id="custom-text-clear" class="flex-1 py-2.5 rounded-xl bg-white border border-sand/60 text-ink2 text-sm hover:bg-cream2 hover:text-ink transition">Clear</button>
         </div>
         <p class="text-[11px] text-muted mt-3">Tip: works best on strip layouts (4-cut, 2-cut, 6-cut).</p>
+
+        <div class="mt-6 pt-5 border-t border-sand/50">
+          <h3 class="font-serif text-base mb-1">Footer</h3>
+          <p class="text-xs text-muted mb-4">Pick what shows in the bottom strip area.</p>
+          <label class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-cream2/40 cursor-pointer hover:bg-cream2 transition">
+            <span class="text-sm text-ink2">Show SnapBooth wordmark</span>
+            <input type="checkbox" id="toggle-wordmark" class="w-5 h-5 accent-ink cursor-pointer" checked>
+          </label>
+          <label class="mt-2 flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-cream2/40 cursor-pointer hover:bg-cream2 transition">
+            <span class="text-sm text-ink2">Show date</span>
+            <input type="checkbox" id="toggle-date" class="w-5 h-5 accent-ink cursor-pointer" checked>
+          </label>
+        </div>
       </div>
 
       <!-- Stickers -->
@@ -277,7 +290,7 @@
 <script src="js/templates.js"></script>
 <script src="js/stickers.js"></script>
 <script src="js/db.js"></script>
-<script src="js/customize.js?v=14"></script>
+<script src="js/customize.js?v=15"></script>
 
 <script>
 /**
