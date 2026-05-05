@@ -811,71 +811,81 @@ function pMarble() {
   return `<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><defs><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='3' seed='3'/><feColorMatrix values='0 0 0 0 .9  0 0 0 0 .87  0 0 0 0 .82  0 0 0 1 0'/></filter></defs><rect width='160' height='160' fill='#F4EFE6'/><rect width='160' height='160' filter='url(#t)' opacity='.8'/></svg>`;
 }
 
+// Ordered groups: clear → neutrals → pinks → reds/wines → warms →
+// yellows → greens → blues → purples → themed sets → patterns. Sorting
+// by hue makes the swatch grid feel like a real color picker.
 const PATTERNS = [
-  { id:'default', label:'frame', swatch:'#ffffff', clear:true },
-  { id:'rainbow', svg: pRainbow() },
-  { id:'pink',    type:'solid', color:'#F2C6CC' },
-  { id:'sky',     type:'solid', color:'#BEE3F0' },
-  { id:'butter',  type:'solid', color:'#FFF3A0' },
-  { id:'sage',    type:'solid', color:'#B5C994' },
-  { id:'lilac',   type:'solid', color:'#C9B6E4' },
-  { id:'tan',     type:'solid', color:'#D4A574' },
-  { id:'maroon',  type:'solid', color:'#7A1F2E' },
-  { id:'white',   type:'solid', color:'#FFFFFF' },
-  { id:'smoke',   type:'solid', color:'#FAF8F2' },
-  { id:'black',   type:'solid', color:'#1A1A1A' },
+  // Clear / reset to frame default
+  { id:'default', label:'No fill (use frame)', swatch:'#ffffff', clear:true },
+
+  // Neutrals
+  { id:'white',   label:'White',  type:'solid', color:'#FFFFFF' },
+  { id:'smoke',   label:'Smoke',  type:'solid', color:'#FAF8F2' },
+  { id:'aes-2',   label:'Beige',  type:'solid', color:'#E5D7C0' },
+  { id:'aes-6',   label:'Cream',  type:'solid', color:'#F2EAD3' },
+  { id:'kor-2',   label:'Korean Cream', type:'solid', color:'#FDF1E0' },
+  { id:'tan',     label:'Tan',    type:'solid', color:'#D4A574' },
+  { id:'aes-3',   label:'Mocha',  type:'solid', color:'#A98467' },
+  { id:'black',   label:'Black',  type:'solid', color:'#1A1A1A' },
+
+  // Pinks / blush
+  { id:'kor-1',   label:'Korean Blush', type:'solid', color:'#FBD9DD' },
+  { id:'pink',    label:'Pink',         type:'solid', color:'#F2C6CC' },
+  { id:'bday-1',  label:'Birthday Pink',type:'solid', color:'#FFB7CE' },
+  { id:'rose',    label:'Rose',         type:'solid', color:'#D89BA3' },
+  { id:'kor-3',   label:'Korean Rose',  type:'solid', color:'#E8A6B0' },
+  { id:'aes-5',   label:'Mauve',        type:'solid', color:'#B59B9C' },
+  { id:'zenz-2',  label:'Magenta',      type:'solid', color:'#E0339B' },
+
+  // Reds / wines
+  { id:'maroon',      label:'Maroon',     type:'solid', color:'#7A1F2E' },
+  { id:'maroon-solid',label:'Wine',       type:'solid', color:'#5A1825' },
+  { id:'grad-3',      label:'Burgundy',   type:'solid', color:'#5C1A2B' },
+
+  // Warms (orange, gold)
+  { id:'grad-2',  label:'Gold',         type:'solid', color:'#D4AF37' },
+  { id:'butter',  label:'Butter',       type:'solid', color:'#FFF3A0' },
+  { id:'bday-3',  label:'Birthday Lemon',type:'solid', color:'#FFE680' },
+
+  // Greens
+  { id:'sage',    label:'Sage',         type:'solid', color:'#B5C994' },
+  { id:'aes-1',   label:'Aesthetic Sage',type:'solid', color:'#A8B89A' },
+  { id:'aes-4',   label:'Olive',        type:'solid', color:'#7A8450' },
+  { id:'forest',  label:'Forest',       type:'solid', color:'#2F4F37' },
+  { id:'bday-2',  label:'Birthday Mint',type:'solid', color:'#A8E6CF' },
+
+  // Blues
+  { id:'sky',       label:'Sky',         type:'solid', color:'#BEE3F0' },
+  { id:'sky-solid', label:'Sky Solid',   type:'solid', color:'#A0C4FF' },
+  { id:'navy',      label:'Navy',        type:'solid', color:'#1F2D4A' },
+  { id:'grad-1',    label:'Grad Navy',   type:'solid', color:'#1A2E4A' },
+  { id:'zenz-3',    label:'Zenz Cyber',  type:'solid', color:'#1B1A40' },
+
+  // Purples / lilac
+  { id:'lilac',   label:'Lilac',        type:'solid', color:'#C9B6E4' },
+  { id:'zenz-1',  label:'Zenz Violet',  type:'solid', color:'#7B5BC5' },
+
+  // Patterns & decorative
+  { id:'rainbow',     svg: pRainbow() },
+  { id:'marble',      svg: pMarble() },
+  { id:'cream-stripe',svg: pStripe('#E8DCC4','#FFFFFF') },
+  { id:'pink-stripe', svg: pStripe('#F2B8C6','#FFFFFF') },
   { id:'pink-polka',  svg: pPolka('#E89BA8','#FCE4E8') },
+  { id:'cream-bw',    svg: pPolka('#1A1A1A','#F4EFE6') },
+  { id:'pink-check',  svg: pCheck('#F2B8C6','#FFFFFF') },
+  { id:'red-check',   svg: pCheck('#C9302C','#FFFFFF') },
+  { id:'maroon-check',svg: pCheck('#7A1F2E','#E8C5BD') },
+  { id:'bw-check',    svg: pCheck('#1A1A1A','#FFFFFF') },
+  { id:'yel-blue',    svg: pCheck('#F4D35E','#5A8FB8') },
   { id:'red-gingham', svg: pGingham('#C9302C','#FCD9D9') },
   { id:'blue-gingham',svg: pGingham('#5A8FB8','#E0EAF4') },
-  { id:'diamond',     svg: pDiamond('#1A1A1A','#FFFFFF') },
-  { id:'pink-stripe', svg: pStripe('#F2B8C6','#FFFFFF') },
-  { id:'red-check',   svg: pCheck('#C9302C','#FFFFFF') },
-  { id:'pink-check',  svg: pCheck('#F2B8C6','#FFFFFF') },
-  { id:'bw-check',    svg: pCheck('#1A1A1A','#FFFFFF') },
-  { id:'maroon-check',svg: pCheck('#7A1F2E','#E8C5BD') },
   { id:'green-gingham',svg: pGingham('#7BA968','#E0EFD8') },
-  { id:'cream-stripe',svg: pStripe('#E8DCC4','#FFFFFF') },
-  { id:'yel-blue',    svg: pCheck('#F4D35E','#5A8FB8') },
-  { id:'leopard',     svg: pLeopard() },
-  { id:'cow',         svg: pCow() },
-  { id:'maroon-solid',type:'solid', color:'#5A1825' },
-  { id:'cherry',      svg: pCherry() },
+  { id:'diamond',     svg: pDiamond('#1A1A1A','#FFFFFF') },
   { id:'hearts',      svg: pHearts('#E85A6E','#FCE4E8') },
   { id:'stars',       svg: pStars('#3D5A80','#E8EEF7') },
-  { id:'marble',      svg: pMarble() },
-  { id:'navy',        type:'solid', color:'#1F2D4A' },
-  { id:'forest',      type:'solid', color:'#2F4F37' },
-  { id:'cream-bw',    svg: pPolka('#1A1A1A','#F4EFE6') },
-  { id:'sky-solid',   type:'solid', color:'#A0C4FF' },
-  { id:'rose',        type:'solid', color:'#D89BA3' },
-
-  // Aesthetic palette (6 muted earthy tones)
-  { id:'aes-1', label:'Aesthetic Sage',   type:'solid', color:'#A8B89A' },
-  { id:'aes-2', label:'Aesthetic Beige',  type:'solid', color:'#E5D7C0' },
-  { id:'aes-3', label:'Aesthetic Mocha',  type:'solid', color:'#A98467' },
-  { id:'aes-4', label:'Aesthetic Olive',  type:'solid', color:'#7A8450' },
-  { id:'aes-5', label:'Aesthetic Mauve',  type:'solid', color:'#B59B9C' },
-  { id:'aes-6', label:'Aesthetic Cream',  type:'solid', color:'#F2EAD3' },
-
-  // Korean trend (soft pinks/creams)
-  { id:'kor-1', label:'Korean Blush',     type:'solid', color:'#FBD9DD' },
-  { id:'kor-2', label:'Korean Cream',     type:'solid', color:'#FDF1E0' },
-  { id:'kor-3', label:'Korean Rose',      type:'solid', color:'#E8A6B0' },
-
-  // Zenz trend (Y2K bold tones)
-  { id:'zenz-1', label:'Zenz Violet',     type:'solid', color:'#7B5BC5' },
-  { id:'zenz-2', label:'Zenz Magenta',    type:'solid', color:'#E0339B' },
-  { id:'zenz-3', label:'Zenz Cyber',      type:'solid', color:'#1B1A40' },
-
-  // Graduation (navy + gold tones)
-  { id:'grad-1', label:'Grad Navy',       type:'solid', color:'#1A2E4A' },
-  { id:'grad-2', label:'Grad Gold',       type:'solid', color:'#D4AF37' },
-  { id:'grad-3', label:'Grad Burgundy',   type:'solid', color:'#5C1A2B' },
-
-  // Happy Birthday (party brights)
-  { id:'bday-1', label:'Birthday Pink',   type:'solid', color:'#FFB7CE' },
-  { id:'bday-2', label:'Birthday Mint',   type:'solid', color:'#A8E6CF' },
-  { id:'bday-3', label:'Birthday Lemon',  type:'solid', color:'#FFE680' },
+  { id:'cherry',      svg: pCherry() },
+  { id:'leopard',     svg: pLeopard() },
+  { id:'cow',         svg: pCow() },
 ];
 
 // ── Color swatches ──
@@ -920,6 +930,17 @@ function initColorSwatches() {
     grid.appendChild(btn);
   });
 
+  // Live-update the preview swatch overlay as the user picks a color
+  const customColorInput = document.getElementById('custom-color');
+  const customColorWrap = document.querySelector('.custom-color-wrap');
+  const customColorPreview = document.getElementById('custom-color-preview');
+  if (customColorInput) {
+    customColorInput.addEventListener('input', e => {
+      if (customColorPreview) customColorPreview.style.background = e.target.value;
+      if (customColorWrap) customColorWrap.classList.add('custom-active');
+    });
+  }
+
   document.getElementById('apply-custom').addEventListener('click', () => {
     bgOverride = { type:'solid', color: document.getElementById('custom-color').value };
     document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
@@ -929,6 +950,7 @@ function initColorSwatches() {
     bgOverride = null;
     document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
     document.querySelector('.color-swatch[data-i="default"]')?.classList.add('active');
+    if (customColorWrap) customColorWrap.classList.remove('custom-active');
     buildStrip();
   });
 }

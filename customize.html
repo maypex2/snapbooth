@@ -93,14 +93,14 @@
       flex-direction: column;
       gap: 14px;
       padding: 14px;
-      background: #FAF6EE;
+      background: #ffffff;
       border-radius: 14px;
-      box-shadow: 0 1px 2px rgba(60, 40, 20, .08), 0 16px 32px -10px rgba(60, 40, 20, .18);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 16px 32px -10px rgba(0, 0, 0, .12);
     }
     .skeleton-shot {
       aspect-ratio: 4 / 3;
       border-radius: 8px;
-      background: linear-gradient(90deg, #ECE3D0 0%, #F6EFDF 50%, #ECE3D0 100%);
+      background: linear-gradient(90deg, #E4E4E7 0%, #F4F4F5 50%, #E4E4E7 100%);
       background-size: 200% 100%;
       animation: shimmer 1.4s ease-in-out infinite;
     }
@@ -109,11 +109,18 @@
       width: 60%;
       margin: 4px auto 0;
       border-radius: 4px;
-      background: linear-gradient(90deg, #ECE3D0 0%, #F6EFDF 50%, #ECE3D0 100%);
+      background: linear-gradient(90deg, #E4E4E7 0%, #F4F4F5 50%, #E4E4E7 100%);
       background-size: 200% 100%;
       animation: shimmer 1.4s ease-in-out infinite;
     }
     .skeleton-text.thin { height: 9px; width: 40%; }
+
+    /* Custom color picker — show a rainbow gradient as the default visual
+       so users instantly recognize it as a color swatch picker. */
+    .custom-color-wrap { background: conic-gradient(from 0deg, #ff6b6b, #ffd166, #06d6a0, #118ab2, #ef476f, #ff6b6b); transition: transform .15s ease; }
+    .custom-color-wrap:hover { transform: scale(1.05); }
+    .custom-color-wrap.custom-active #custom-color-preview { display: block; }
+    .custom-color-wrap:not(.custom-active) #custom-color-preview { display: none; }
     @keyframes shimmer {
       0% { background-position: 100% 0; }
       100% { background-position: -100% 0; }
@@ -213,10 +220,17 @@
 
         <label class="block text-xs font-medium uppercase tracking-[0.18em] text-ink2 mb-2">Custom color</label>
         <div class="flex items-center gap-3">
-          <input type="color" id="custom-color" value="#ffffff" class="w-12 h-12 rounded-xl border border-sand/60 cursor-pointer">
+          <label for="custom-color" class="custom-color-wrap relative w-12 h-12 rounded-xl border-2 border-sand/60 cursor-pointer shrink-0 overflow-hidden" title="Pick any color">
+            <input type="color" id="custom-color" value="#ffffff" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            <span id="custom-color-preview" class="absolute inset-0 pointer-events-none" style="background:#ffffff"></span>
+            <span class="absolute bottom-0 right-0 w-4 h-4 rounded-tl-md bg-white border-l border-t border-sand/60 flex items-center justify-center pointer-events-none">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#2A2520" stroke-width="3"><polyline points="6,9 12,15 18,9"/></svg>
+            </span>
+          </label>
           <button id="apply-custom" class="flex-1 py-3 rounded-xl bg-ink text-cream text-sm hover:bg-ink2 transition">Apply</button>
           <button id="reset-color" class="px-4 py-3 rounded-xl bg-cream2 text-ink2 text-sm hover:bg-sand hover:text-ink transition">Reset</button>
         </div>
+        <p class="text-[10px] text-muted mt-1.5 italic">Tap the color box to pick any shade</p>
       </div>
 
       <!-- Adjust (per-photo crop position) -->
@@ -303,6 +317,11 @@
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Download PNG
       </button>
+      <div class="flex items-center gap-2 mt-1">
+        <div class="flex-1 h-px bg-sand/60"></div>
+        <span class="text-[10px] font-medium uppercase tracking-[0.18em] text-muted">Export for Instagram</span>
+        <div class="flex-1 h-px bg-sand/60"></div>
+      </div>
       <div class="flex gap-2">
         <button id="download-story-btn" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-white border border-sand/60 text-ink2 text-xs hover:bg-cream2 hover:text-ink transition" title="Vertical 9:16 for Instagram Story / Reels">
           <svg width="12" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/></svg>
@@ -313,6 +332,7 @@
           Post 1:1
         </button>
       </div>
+      <p class="text-[10px] text-muted text-center -mt-1">Story for Reels &amp; Stories · Post for the feed grid</p>
       <button id="share-btn" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white border border-sand/60 text-ink2 hover:bg-cream2 hover:text-ink transition">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Share
@@ -334,7 +354,7 @@
 <script src="js/templates.js"></script>
 <script src="js/stickers.js"></script>
 <script src="js/db.js"></script>
-<script src="js/customize.js?v=16"></script>
+<script src="js/customize.js?v=17"></script>
 
 <script>
 /**
