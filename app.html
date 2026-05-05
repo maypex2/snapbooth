@@ -352,6 +352,10 @@
       transition: box-shadow .2s ease, transform .2s ease;
     }
 
+    /* Real preview cards — single rendered image, no inner padding */
+    .sc-frame--real { padding: 0; overflow: hidden; }
+    .sc-preview { width: 100%; display: block; }
+
     /* Per-mode footer padding to mirror canvas BOT proportions */
     .sc-frame:has(.sc-4cut),
     .sc-frame:has(.sc-3cut),
@@ -864,14 +868,9 @@
 
               <!-- 4-Cut Strip -->
               <div class="sc-card active snap-start" id="mode-4cut" onclick="setMode('4cut')">
-                <div class="sc-frame">
+                <div class="sc-frame sc-frame--real">
                   <span class="sc-badge try">TRY IT NOW</span>
-                  <div class="sc-grid sc-4cut">
-                    <img src="assets/layouts/4cut-1.webp" alt="" decoding="async">
-                    <img src="assets/layouts/4cut-2.webp" alt="" decoding="async">
-                    <img src="assets/layouts/4cut-3.webp" alt="" decoding="async">
-                    <img src="assets/layouts/4cut-4.webp" alt="" decoding="async">
-                  </div>
+                  <img class="sc-preview" src="assets/layouts-real/4cut-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">4-Cut Strip</div>
                 <div class="sc-meta">Size 6 × 2 Strip<br>(4 Pose)</div>
@@ -879,12 +878,8 @@
 
               <!-- 3-Cut Strip -->
               <div class="sc-card snap-start" id="mode-3cut" onclick="setMode('3cut')">
-                <div class="sc-frame">
-                  <div class="sc-grid sc-3cut">
-                    <img src="assets/layouts/3cut-1.webp" alt="" decoding="async">
-                    <img src="assets/layouts/3cut-2.webp" alt="" decoding="async">
-                    <img src="assets/layouts/3cut-3.webp" alt="" decoding="async">
-                  </div>
+                <div class="sc-frame sc-frame--real">
+                  <img class="sc-preview" src="assets/layouts-real/3cut-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">3-Cut Strip</div>
                 <div class="sc-meta">Size 6 × 2 Strip<br>(3 Pose)</div>
@@ -892,11 +887,8 @@
 
               <!-- 2-Cut Strip -->
               <div class="sc-card snap-start" id="mode-2cut" onclick="setMode('2cut')">
-                <div class="sc-frame">
-                  <div class="sc-grid sc-2cut">
-                    <img src="assets/layouts/2cut-1.webp" alt="" decoding="async">
-                    <img src="assets/layouts/2cut-2.webp" alt="" decoding="async">
-                  </div>
+                <div class="sc-frame sc-frame--real">
+                  <img class="sc-preview" src="assets/layouts-real/2cut-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">2-Cut Strip</div>
                 <div class="sc-meta">Couples format<br>(2 Pose)</div>
@@ -904,16 +896,9 @@
 
               <!-- 6-Cut Grid -->
               <div class="sc-card snap-start" id="mode-6cut" onclick="setMode('6cut')">
-                <div class="sc-frame">
+                <div class="sc-frame sc-frame--real">
                   <span class="sc-badge">POPULAR</span>
-                  <div class="sc-grid sc-6cut">
-                    <img src="assets/layouts/grid-1.webp" alt="" decoding="async">
-                    <img src="assets/layouts/grid-2.webp" alt="" decoding="async">
-                    <img src="assets/layouts/grid-3.webp" alt="" decoding="async">
-                    <img src="assets/layouts/grid-4.webp" alt="" decoding="async">
-                    <img src="assets/layouts/grid-5.webp" alt="" decoding="async">
-                    <img src="assets/layouts/grid-6.webp" alt="" decoding="async">
-                  </div>
+                  <img class="sc-preview" src="assets/layouts-real/6cut-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">6-Cut Grid</div>
                 <div class="sc-meta">Contact sheet<br>(6 Pose)</div>
@@ -921,12 +906,8 @@
 
               <!-- 3-Cut Horizontal -->
               <div class="sc-card snap-start" id="mode-3horiz" onclick="setMode('3horiz')">
-                <div class="sc-frame">
-                  <div class="sc-grid sc-3horiz">
-                    <img src="assets/layouts/horizontal3-1.webp" alt="" decoding="async">
-                    <img src="assets/layouts/horizontal3-2.webp" alt="" decoding="async">
-                    <img src="assets/layouts/horizontal3-3.webp" alt="" decoding="async">
-                  </div>
+                <div class="sc-frame sc-frame--real">
+                  <img class="sc-preview" src="assets/layouts-real/3horiz-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">3-Cut Horizontal</div>
                 <div class="sc-meta">Panorama / story<br>(3 Pose)</div>
@@ -934,13 +915,8 @@
 
               <!-- Square Collage -->
               <div class="sc-card snap-start" id="mode-squaregrid" onclick="setMode('squaregrid')">
-                <div class="sc-frame">
-                  <div class="sc-grid sc-squaregrid">
-                    <img src="assets/layouts/square-1.webp" alt="" decoding="async">
-                    <img src="assets/layouts/square-2.webp" alt="" decoding="async">
-                    <img src="assets/layouts/square-3.webp" alt="" decoding="async">
-                    <img src="assets/layouts/square-1.webp" alt="" decoding="async">
-                  </div>
+                <div class="sc-frame sc-frame--real">
+                  <img class="sc-preview" src="assets/layouts-real/squaregrid-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">Square Collage</div>
                 <div class="sc-meta">IG-post ready<br>(4 Pose)</div>
@@ -948,13 +924,8 @@
 
               <!-- 1 Large + 3 Small -->
               <div class="sc-card snap-start" id="mode-1large3small" onclick="setMode('1large3small')">
-                <div class="sc-frame">
-                  <div class="sc-grid sc-1large3small">
-                    <img src="assets/layouts/1large3small-1.webp" alt="" decoding="async">
-                    <img src="assets/layouts/1large3small-2.webp" alt="" decoding="async">
-                    <img src="assets/layouts/1large3small-3.webp" alt="" decoding="async">
-                    <img src="assets/layouts/1large3small-4.webp" alt="" decoding="async">
-                  </div>
+                <div class="sc-frame sc-frame--real">
+                  <img class="sc-preview" src="assets/layouts-real/1large3small-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">1 Large + 3 Small</div>
                 <div class="sc-meta">Featured layout<br>(4 Pose)</div>
@@ -962,13 +933,8 @@
 
               <!-- 2x2 Grid -->
               <div class="sc-card snap-start" id="mode-grid4" onclick="setMode('grid4')">
-                <div class="sc-frame">
-                  <div class="sc-grid sc-grid4">
-                    <img src="assets/layouts/2x2grid-1.webp" alt="" decoding="async">
-                    <img src="assets/layouts/2x2grid-2.webp" alt="" decoding="async">
-                    <img src="assets/layouts/2x2grid-3.webp" alt="" decoding="async">
-                    <img src="assets/layouts/2x2grid-4.webp" alt="" decoding="async">
-                  </div>
+                <div class="sc-frame sc-frame--real">
+                  <img class="sc-preview" src="assets/layouts-real/grid4-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">2x2 Grid</div>
                 <div class="sc-meta">Classic grid<br>(4 Pose)</div>
@@ -976,15 +942,9 @@
 
               <!-- 4 + 1 Group -->
               <div class="sc-card snap-start" id="mode-4plus1" onclick="setMode('4plus1')">
-                <div class="sc-frame">
+                <div class="sc-frame sc-frame--real">
                   <span class="sc-badge">NEW</span>
-                  <div class="sc-grid sc-4plus1">
-                    <img src="assets/layouts/2x2grid-1.webp" alt="" decoding="async">
-                    <img src="assets/layouts/2x2grid-2.webp" alt="" decoding="async">
-                    <img src="assets/layouts/2x2grid-3.webp" alt="" decoding="async">
-                    <img src="assets/layouts/2x2grid-4.webp" alt="" decoding="async">
-                    <img src="assets/layouts/horizontal3-1.webp" alt="" decoding="async">
-                  </div>
+                  <img class="sc-preview" src="assets/layouts-real/4plus1-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">4 + 1 Group</div>
                 <div class="sc-meta">Group format<br>(5 Pose)</div>
@@ -992,11 +952,8 @@
 
               <!-- Double Polaroid -->
               <div class="sc-card snap-start" id="mode-double-polaroid" onclick="setMode('double-polaroid')">
-                <div class="sc-frame">
-                  <div class="sc-grid sc-double-polaroid">
-                    <img src="assets/layouts/polaroid-1.webp" alt="" decoding="async">
-                    <img src="assets/layouts/photocard-1.webp" alt="" decoding="async">
-                  </div>
+                <div class="sc-frame sc-frame--real">
+                  <img class="sc-preview" src="assets/layouts-real/double-polaroid-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">Double Polaroid</div>
                 <div class="sc-meta">Stacked print<br>(2 Pose)</div>
@@ -1004,13 +961,9 @@
 
               <!-- Tilted 3-Cut -->
               <div class="sc-card snap-start" id="mode-tilt3" onclick="setMode('tilt3')">
-                <div class="sc-frame is-tilt3">
+                <div class="sc-frame sc-frame--real">
                   <span class="sc-badge">NEW LAYOUT</span>
-                  <div class="sc-tilt3">
-                    <img src="assets/layouts/tilt3-1.webp" alt="" decoding="async">
-                    <img src="assets/layouts/tilt3-2.webp" alt="" decoding="async">
-                    <img src="assets/layouts/tilt3-3.webp" alt="" decoding="async">
-                  </div>
+                  <img class="sc-preview" src="assets/layouts-real/tilt3-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">Tilted 3-Cut</div>
                 <div class="sc-meta">Solace style<br>(3 Pose)</div>
@@ -1018,10 +971,8 @@
 
               <!-- Polaroid -->
               <div class="sc-card snap-start" id="mode-polaroid" onclick="setMode('polaroid')">
-                <div class="sc-frame">
-                  <div class="sc-grid sc-polaroid">
-                    <img src="assets/layouts/polaroid-1.webp" alt="" decoding="async">
-                  </div>
+                <div class="sc-frame sc-frame--real">
+                  <img class="sc-preview" src="assets/layouts-real/polaroid-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">Polaroid</div>
                 <div class="sc-meta">Classic instant<br>(1 Pose)</div>
@@ -1029,10 +980,8 @@
 
               <!-- Photo Card -->
               <div class="sc-card snap-start" id="mode-photocard" onclick="setMode('photocard')">
-                <div class="sc-frame">
-                  <div class="sc-grid sc-photocard">
-                    <img src="assets/layouts/photocard-1.webp" alt="" decoding="async">
-                  </div>
+                <div class="sc-frame sc-frame--real">
+                  <img class="sc-preview" src="assets/layouts-real/photocard-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">Photo Card</div>
                 <div class="sc-meta">Instax mini<br>(1 Pose)</div>
@@ -1040,10 +989,8 @@
 
               <!-- Single Shot -->
               <div class="sc-card snap-start" id="mode-single" onclick="setMode('single')">
-                <div class="sc-frame">
-                  <div class="sc-grid sc-single">
-                    <img src="assets/layouts/single-1.webp" alt="" decoding="async">
-                  </div>
+                <div class="sc-frame sc-frame--real">
+                  <img class="sc-preview" src="assets/layouts-real/single-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">Single Shot</div>
                 <div class="sc-meta">One framed photo<br>(1 Pose)</div>
