@@ -26,6 +26,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -35,6 +36,7 @@ body {
   font-weight: 300;
   min-height: 100vh;
   overflow-x: hidden;
+  position: relative;
 }
 
 /* Noise texture */
@@ -586,8 +588,7 @@ body::before {
   }
 
   .sc-arrow {
-    width: 40px;
-    height: 40px;
+    display: none;
   }
 }
 
