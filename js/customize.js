@@ -53,22 +53,22 @@ async function loadShots() {
   updateUploadCounter();
 }
 
+// Fit the full image inside the slot without cropping (contain). Empty
+// margins show the strip background.
 function drawCoverImage(ctx, img, x, y, w, h) {
   const imgAspect = img.naturalWidth / img.naturalHeight;
   const boxAspect = w / h;
-  let sx, sy, sw, sh;
+  let dw, dh;
   if (imgAspect > boxAspect) {
-    sh = img.naturalHeight;
-    sw = sh * boxAspect;
-    sx = (img.naturalWidth - sw) / 2;
-    sy = 0;
+    dw = w;
+    dh = w / imgAspect;
   } else {
-    sw = img.naturalWidth;
-    sh = sw / boxAspect;
-    sx = 0;
-    sy = (img.naturalHeight - sh) / 2;
+    dh = h;
+    dw = h * imgAspect;
   }
-  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+  const dx = x + (w - dw) / 2;
+  const dy = y + (h - dh) / 2;
+  ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, dw, dh);
 }
 
 function showEmptyState() { /* no-op empty slots are drawn by buildStrip */ }
@@ -409,7 +409,10 @@ function buildTilt3Strip() {
 
     const img = shots[i];
     if (img) {
-      sctx.drawImage(img, -W / 2, -H / 2, W, H);
+      // White backing so the contain-fit margins match the rest of the strip
+      sctx.fillStyle = '#ffffff';
+      sctx.fillRect(-W / 2, -H / 2, W, H);
+      drawCoverImage(sctx, img, -W / 2, -H / 2, W, H);
     } else {
       sctx.fillStyle = 'rgba(255,255,255,0.06)';
       sctx.fillRect(-W / 2, -H / 2, W, H);
@@ -1168,18 +1171,20 @@ function showToast(msg) {
 }
 
 // ── Replace photos ──
+// Downscale large uploads to a sane max dimension while preserving the
+// original aspect ratio — the strip renderer will fit them with `contain`
+// so nothing gets cropped.
 function normalizeUploaded(srcImg) {
-  const W = 1280, H = 960;
+  const MAX = 1600;
+  let w = srcImg.width, h = srcImg.height;
+  if (w > MAX || h > MAX) {
+    if (w >= h) { h = Math.round(h * (MAX / w)); w = MAX; }
+    else        { w = Math.round(w * (MAX / h)); h = MAX; }
+  }
   const c = document.createElement('canvas');
-  c.width = W; c.height = H;
+  c.width = w; c.height = h;
   const cx = c.getContext('2d');
-  const sr = srcImg.width / srcImg.height;
-  const tr = W / H;
-  let sx, sy, sw, sh;
-  if (sr > tr) { sh = srcImg.height; sw = sh * tr; sx = (srcImg.width - sw) / 2; sy = 0; }
-  else         { sw = srcImg.width;  sh = sw / tr; sx = 0; sy = (srcImg.height - sh) / 2; }
-  cx.fillStyle = '#000'; cx.fillRect(0, 0, W, H);
-  cx.drawImage(srcImg, sx, sy, sw, sh, 0, 0, W, H);
+  cx.drawImage(srcImg, 0, 0, w, h);
   return new Promise(res => {
     const out = new Image();
     out.onload = () => res(out);

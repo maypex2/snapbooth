@@ -391,22 +391,16 @@ async function startSession() {
   else startPhotoSession();
 }
 
+// Fit the full photo inside the slot without cropping (contain).
 function drawCoverImage(ctx, img, x, y, w, h) {
   const imgAspect = img.naturalWidth / img.naturalHeight;
   const boxAspect = w / h;
-  let sx, sy, sw, sh;
-  if (imgAspect > boxAspect) {
-    sh = img.naturalHeight;
-    sw = sh * boxAspect;
-    sx = (img.naturalWidth - sw) / 2;
-    sy = 0;
-  } else {
-    sw = img.naturalWidth;
-    sh = sw / boxAspect;
-    sx = 0;
-    sy = (img.naturalHeight - sh) / 2;
-  }
-  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+  let dw, dh;
+  if (imgAspect > boxAspect) { dw = w; dh = w / imgAspect; }
+  else                       { dh = h; dw = h * imgAspect; }
+  const dx = x + (w - dw) / 2;
+  const dy = y + (h - dh) / 2;
+  ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, dw, dh);
 }
 
 // ── Build strip ──
@@ -433,7 +427,11 @@ function buildStrip() {
       sctx.rotate(TILTS[i] * Math.PI / 180);
       sctx.fillStyle = '#0a0a0a';
       sctx.fillRect(-W / 2 - BORDER, -H / 2 - BORDER, W + BORDER * 2, H + BORDER * 2);
-      if (shots[i]) sctx.drawImage(shots[i], -W / 2, -H / 2, W, H);
+      if (shots[i]) {
+        sctx.fillStyle = '#ffffff';
+        sctx.fillRect(-W / 2, -H / 2, W, H);
+        drawCoverImage(sctx, shots[i], -W / 2, -H / 2, W, H);
+      }
       sctx.restore();
     }
     sctx.fillStyle = '#FAF6EE';
