@@ -64,6 +64,13 @@ const FRAMES = [
       { file: 'assets/stickers/star-sparkle.svg',   x: 0.50, y: 0.97, size: 0.16 },
     ],
   },
+  // Korean Life4Cuts (인생네컷) — thick black border, white wordmark/date footer.
+  // Decorations are drawn in drawFrameDecorations below.
+  { id: 'life4cuts', label: 'Life4Cuts', bg: '#000000', preview: '인생' },
+  // Photoism / Photomatic style — clean white border with bottom wordmark.
+  { id: 'photoism',  label: 'Photoism',  bg: '#ffffff', preview: 'Pi' },
+  // Mirrored frame — flips each photo horizontally for the symmetry trend.
+  { id: 'mirrored',  label: 'Mirrored',  bg: '#f5f5f0', preview: '◐◑' },
 ];
 
 function getFrameBg(id) {
@@ -100,5 +107,44 @@ function drawFrameDecorations(sctx, frameId, sw, sh) {
     sctx.strokeStyle = 'rgba(0,0,0,0.06)';
     sctx.lineWidth = 1;
     sctx.strokeRect(0, 0, sw, sh);
+  } else if (frameId === 'life4cuts') {
+    // Thick black border + white DATE / LOCATION footer wordmark.
+    const borderW = Math.max(18, Math.round(sw * 0.025));
+    sctx.strokeStyle = '#000';
+    sctx.lineWidth = borderW;
+    sctx.strokeRect(borderW / 2, borderW / 2, sw - borderW, sh - borderW);
+    sctx.fillStyle = '#ffffff';
+    sctx.textAlign = 'center';
+    sctx.font = '600 ' + Math.round(sw * 0.035) + 'px "DM Sans", sans-serif';
+    sctx.fillText('LIFE4CUTS', sw / 2, sh - borderW * 1.4);
+    sctx.font = '500 ' + Math.round(sw * 0.022) + 'px "DM Sans", sans-serif';
+    sctx.fillStyle = 'rgba(255,255,255,0.7)';
+    const d = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.');
+    sctx.fillText(d + '  ·  SEOUL', sw / 2, sh - borderW * 0.55);
+    sctx.textAlign = 'start';
+  } else if (frameId === 'photoism') {
+    // Clean grey hairline + Photoism wordmark inside the bottom border.
+    sctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    sctx.lineWidth = 1;
+    sctx.strokeRect(0.5, 0.5, sw - 1, sh - 1);
+    sctx.fillStyle = '#1a1a1a';
+    sctx.textAlign = 'center';
+    sctx.font = '600 ' + Math.round(sw * 0.038) + 'px "DM Serif Display", serif';
+    sctx.fillText('Photoism', sw / 2, sh - sw * 0.025);
+    sctx.fillStyle = 'rgba(0,0,0,0.45)';
+    sctx.font = '400 ' + Math.round(sw * 0.018) + 'px "DM Sans", sans-serif';
+    const d = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    sctx.fillText(d, sw / 2, sh - sw * 0.005 + 4);
+    sctx.textAlign = 'start';
+  } else if (frameId === 'mirrored') {
+    sctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    sctx.lineWidth = 2;
+    sctx.strokeRect(4, 4, sw - 8, sh - 8);
   }
+}
+
+// Frames that should flip the photos horizontally before drawing them
+// (mirror trend). Returns true if active.
+function frameMirrorsPhotos(frameId) {
+  return frameId === 'mirrored';
 }

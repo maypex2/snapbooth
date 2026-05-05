@@ -37,7 +37,7 @@ const sctx        = stripCanvas.getContext('2d');
 const MODE_SHOTS = {
   '4cut': 4, '3cut': 3, '2cut': 2, '6cut': 6, '3horiz': 3,
   'squaregrid': 4, '1large3small': 4, 'grid4': 4, 'single': 1, 'polaroid': 1,
-  'double-polaroid': 2, 'photocard': 1, 'gif': 1, 'tilt3': 3,
+  'double-polaroid': 2, 'photocard': 1, 'gif': 1, 'tilt3': 3, '4plus1': 5,
 };
 function maxShots() { return MODE_SHOTS[currentMode] || 1; }
 
@@ -98,6 +98,8 @@ const LAYOUTS = [
   { id: '1large3small', name: '1 Large + 3 Small', count: 4, shape: { cols: 3, rows: 2 },
     customCells: '<span style="grid-column:1/-1"></span><span></span><span></span><span></span>' },
   { id: 'grid4',      name: '2x2 Grid',          count: 4, shape: { cols: 2, rows: 2 } },
+  { id: '4plus1',     name: '4 + 1 Group',       count: 5, shape: { cols: 2, rows: 3 },
+    customCells: '<span></span><span></span><span></span><span></span><span style="grid-column:1/-1"></span>' },
   { id: 'double-polaroid', name: 'Double Polaroid', count: 2, shape: { cols: 1, rows: 2 } },
   { id: 'tilt3',      name: 'Tilted 3-Cut',      count: 3, shape: { cols: 1, rows: 3 } },
   { id: 'polaroid',   name: 'Polaroid',          count: 1, shape: { cols: 1, rows: 1 } },
@@ -237,6 +239,22 @@ function buildStrip() {
       { x: PAD, y: TOP + H + GAP, w: W, h: H },
       { x: PAD + W + GAP, y: TOP + H + GAP, w: W, h: H },
     ];
+  } else if (currentMode === '4plus1') {
+    // 4 small photos in a 2×2 grid on top, 1 wide group photo below.
+    const PAD = 40, GAP = 16, TOP = 80, BOT = 100;
+    const smallW = W;
+    const smallH = Math.round(H * 0.7);
+    const wideW = smallW * 2 + GAP;
+    const wideH = Math.round(H * 0.95);
+    sw = wideW + PAD * 2;
+    sh = smallH * 2 + GAP + wideH + GAP + TOP + BOT;
+    positions = [
+      { x: PAD,                   y: TOP,                          w: smallW, h: smallH },
+      { x: PAD + smallW + GAP,    y: TOP,                          w: smallW, h: smallH },
+      { x: PAD,                   y: TOP + smallH + GAP,           w: smallW, h: smallH },
+      { x: PAD + smallW + GAP,    y: TOP + smallH + GAP,           w: smallW, h: smallH },
+      { x: PAD,                   y: TOP + smallH * 2 + GAP * 2,   w: wideW,  h: wideH  },
+    ];
   } else if (currentMode === 'photocard') {
     const BX=40, BT=30, BB=100;
     sw = W + BX*2; sh = H + BT + BB;
@@ -299,12 +317,21 @@ function buildStrip() {
     drawFrameTitle(sctx, currentFrame, sw, sh, topReserve);
   }
 
+  const mirror = typeof frameMirrorsPhotos === 'function' && frameMirrorsPhotos(currentFrame);
   positions.forEach((pos, i) => {
     const {x,y,w,h} = pos;
     const img = shots[i];
     if (img) {
       const off = photoOffsets[i] || { ox: 0, oy: 0 };
-      drawCoverImage(sctx, img, x, y, w, h, off.ox, off.oy);
+      if (mirror) {
+        sctx.save();
+        sctx.translate(x + w, y);
+        sctx.scale(-1, 1);
+        drawCoverImage(sctx, img, 0, 0, w, h, off.ox, off.oy);
+        sctx.restore();
+      } else {
+        drawCoverImage(sctx, img, x, y, w, h, off.ox, off.oy);
+      }
       sctx.strokeStyle = 'rgba(0,0,0,0.08)';
       sctx.lineWidth = 1;
       sctx.strokeRect(x, y, w, h);
@@ -347,7 +374,7 @@ function buildStrip() {
   }
 
   const stripModes = ['4cut','3cut','2cut'];
-  const multi = ['6cut','3horiz','squaregrid','grid4','1large3small'];
+  const multi = ['6cut','3horiz','squaregrid','grid4','1large3small','4plus1'];
   if (stripModes.includes(currentMode)) {
     // Polaroid-style footer mirroring app.js buildStrip
     const BOT = 220;
