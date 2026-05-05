@@ -112,11 +112,12 @@
   <!-- Tools -->
   <aside class="bg-white rounded-3xl border border-sand/50 shadow-soft overflow-hidden flex flex-col">
     <!-- Tabs -->
-    <div class="grid grid-cols-6 p-2 gap-1 border-b border-sand/40 bg-cream2/30">
+    <div class="grid grid-cols-7 p-2 gap-1 border-b border-sand/40 bg-cream2/30">
       <button data-tab="layout" class="tab-btn active py-2.5 rounded-xl text-[11px] font-medium transition">Layout</button>
       <button data-tab="templates" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Templates</button>
       <button data-tab="frame" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Frame</button>
       <button data-tab="color" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Color</button>
+      <button data-tab="adjust" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Adjust</button>
       <button data-tab="text" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Text</button>
       <button data-tab="stickers" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Stickers</button>
     </div>
@@ -168,6 +169,14 @@
           <button id="apply-custom" class="flex-1 py-3 rounded-xl bg-ink text-cream text-sm hover:bg-ink2 transition">Apply</button>
           <button id="reset-color" class="px-4 py-3 rounded-xl bg-cream2 text-ink2 text-sm hover:bg-sand hover:text-ink transition">Reset</button>
         </div>
+      </div>
+
+      <!-- Adjust (per-photo crop position) -->
+      <div data-panel="adjust" class="p-5 hidden">
+        <h3 class="font-serif text-lg mb-1">Reposition Photos</h3>
+        <p class="text-xs text-muted mb-4">Drag the sliders to move the visible crop area for each photo.</p>
+        <div id="adjust-list" class="flex flex-col gap-4"></div>
+        <button id="reset-adjust" class="mt-4 w-full py-2.5 rounded-xl bg-cream2 text-ink2 text-sm hover:bg-sand hover:text-ink transition">Reset all to center</button>
       </div>
 
       <!-- Text -->
@@ -254,7 +263,7 @@
 <script src="js/templates.js"></script>
 <script src="js/stickers.js"></script>
 <script src="js/db.js"></script>
-<script src="js/customize.js?v=10"></script>
+<script src="js/customize.js?v=11"></script>
 
 <script>
 /**

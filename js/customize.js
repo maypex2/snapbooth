@@ -6,6 +6,10 @@ let currentTemplate = null;  // null | template id from TEMPLATES
 let stickers     = [];
 let shots        = [];
 let customText   = '';
+// Per-photo crop offsets keyed by shot index. ox/oy in [-1, 1] where 0 is
+// centered. Negative values shift the visible window towards the top/left
+// (so the bottom/right of the photo shows more), positive does the inverse.
+let photoOffsets = [];
 
 // Draggable text overlays — like stickers but with text. Each item:
 //   { id, text, x, y, size, font, color, weight }
@@ -54,21 +58,24 @@ async function loadShots() {
 }
 
 // Fill the slot completely (cover) — image is center-cropped to the slot's
-// aspect ratio so there are no empty margins.
-function drawCoverImage(ctx, img, x, y, w, h) {
+// aspect ratio so there are no empty margins. ox/oy in [-1, 1] shift the
+// visible crop window: -1 shows top/left edge, +1 shows bottom/right edge.
+function drawCoverImage(ctx, img, x, y, w, h, ox = 0, oy = 0) {
   const imgAspect = img.naturalWidth / img.naturalHeight;
   const boxAspect = w / h;
   let sx, sy, sw, sh;
   if (imgAspect > boxAspect) {
     sh = img.naturalHeight;
     sw = sh * boxAspect;
-    sx = (img.naturalWidth - sw) / 2;
+    const slack = img.naturalWidth - sw;
+    sx = slack * (0.5 + ox * 0.5);
     sy = 0;
   } else {
     sw = img.naturalWidth;
     sh = sw / boxAspect;
+    const slack = img.naturalHeight - sh;
     sx = 0;
-    sy = (img.naturalHeight - sh) / 2;
+    sy = slack * (0.5 + oy * 0.5);
   }
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
 }
@@ -148,8 +155,10 @@ function updateUploadCounter() {
 
 function clearAllPhotos() {
   shots = [];
+  photoOffsets = [];
   buildStrip();
   updateUploadCounter();
+  if (typeof renderAdjustPanel === 'function') renderAdjustPanel();
   showToast('Photos cleared');
 }
 
@@ -289,7 +298,8 @@ function buildStrip() {
     const {x,y,w,h} = pos;
     const img = shots[i];
     if (img) {
-      drawCoverImage(sctx, img, x, y, w, h);
+      const off = photoOffsets[i] || { ox: 0, oy: 0 };
+      drawCoverImage(sctx, img, x, y, w, h, off.ox, off.oy);
       sctx.strokeStyle = 'rgba(0,0,0,0.08)';
       sctx.lineWidth = 1;
       sctx.strokeRect(x, y, w, h);
@@ -422,7 +432,8 @@ function buildTilt3Strip() {
       // White backing so the contain-fit margins match the rest of the strip
       sctx.fillStyle = '#ffffff';
       sctx.fillRect(-W / 2, -H / 2, W, H);
-      drawCoverImage(sctx, img, -W / 2, -H / 2, W, H);
+      const off = photoOffsets[i] || { ox: 0, oy: 0 };
+      drawCoverImage(sctx, img, -W / 2, -H / 2, W, H, off.ox, off.oy);
     } else {
       sctx.fillStyle = 'rgba(255,255,255,0.06)';
       sctx.fillRect(-W / 2, -H / 2, W, H);
@@ -518,7 +529,8 @@ function buildTemplateStrip() {
 
       const img = shots[i];
       if (img) {
-        drawCoverImage(sctx, img, x, y, w, h);
+        const off = photoOffsets[i] || { ox: 0, oy: 0 };
+        drawCoverImage(sctx, img, x, y, w, h, off.ox, off.oy);
       } else {
         sctx.fillStyle = 'rgba(0,0,0,0.06)';
         sctx.fillRect(x, y, w, h);
@@ -1228,8 +1240,11 @@ async function replacePhotos(fileList) {
   }
 
   shots = working;
+  // Reset offsets for replaced photos so old positioning doesn't carry over
+  photoOffsets = shots.map(() => ({ ox: 0, oy: 0 }));
   buildStrip();
   updateUploadCounter();
+  if (typeof renderAdjustPanel === 'function') renderAdjustPanel();
   const filled = Math.min(shots.length, max);
   if (filled >= max) showToast('All slots filled!');
   else               showToast(`${filled}/${max} uploaded keep going`);
@@ -1270,6 +1285,58 @@ if (customTextClear) {
   });
 }
 
+// ── Adjust panel: per-photo crop sliders ──
+function renderAdjustPanel() {
+  const list = document.getElementById('adjust-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!shots.length) {
+    list.innerHTML = '<p class="text-xs text-muted italic">Upload photos first to reposition them.</p>';
+    return;
+  }
+  shots.forEach((img, i) => {
+    if (!photoOffsets[i]) photoOffsets[i] = { ox: 0, oy: 0 };
+    const off = photoOffsets[i];
+    const row = document.createElement('div');
+    row.className = 'p-3 rounded-xl bg-cream2/40 border border-sand/40 flex gap-3 items-center';
+    row.innerHTML = `
+      <img src="${img.src}" alt="" class="w-14 h-14 rounded-lg object-cover border border-sand/60 shrink-0">
+      <div class="flex-1 flex flex-col gap-2">
+        <div class="text-[11px] font-medium uppercase tracking-[0.18em] text-ink2">Photo ${i + 1}</div>
+        <label class="flex items-center gap-2 text-[11px] text-muted">
+          <span class="w-5">↔</span>
+          <input type="range" min="-1" max="1" step="0.02" value="${off.ox}" data-axis="ox" data-idx="${i}" class="flex-1 accent-ink">
+        </label>
+        <label class="flex items-center gap-2 text-[11px] text-muted">
+          <span class="w-5">↕</span>
+          <input type="range" min="-1" max="1" step="0.02" value="${off.oy}" data-axis="oy" data-idx="${i}" class="flex-1 accent-ink">
+        </label>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+  const debounced = debounce(buildStrip, 60);
+  list.querySelectorAll('input[type="range"]').forEach(input => {
+    input.addEventListener('input', e => {
+      const idx = parseInt(e.target.dataset.idx, 10);
+      const axis = e.target.dataset.axis;
+      if (!photoOffsets[idx]) photoOffsets[idx] = { ox: 0, oy: 0 };
+      photoOffsets[idx][axis] = parseFloat(e.target.value);
+      debounced();
+    });
+  });
+}
+const resetAdjustBtn = document.getElementById('reset-adjust');
+if (resetAdjustBtn) {
+  resetAdjustBtn.addEventListener('click', () => {
+    photoOffsets = shots.map(() => ({ ox: 0, oy: 0 }));
+    renderAdjustPanel();
+    buildStrip();
+  });
+}
+// Re-render the panel whenever the user opens it (in case shots changed).
+document.querySelector('button[data-tab="adjust"]')?.addEventListener('click', renderAdjustPanel);
+
 initTabs();
 initLayoutGrid();
 initTemplateGrid();
@@ -1277,5 +1344,5 @@ initFrameGrid();
 initColorSwatches();
 initStickerGrid();
 setupCanvasDrag();
-loadShots();
+loadShots().then(renderAdjustPanel);
 updateUploadCounter();
