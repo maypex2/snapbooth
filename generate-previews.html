@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Layout Preview Generator · SnapBooth</title>
+  <style>
+    body { font-family: 'DM Sans', system-ui, sans-serif; padding: 32px; max-width: 1100px; margin: 0 auto; background: #FAF6EE; color: #2A2520; }
+    h1 { font-family: 'DM Serif Display', serif; margin-bottom: 8px; }
+    p.intro { color: #6E6E73; margin-bottom: 24px; line-height: 1.6; }
+    .controls { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+    button { padding: 12px 22px; background: #2A2520; color: #FAF6EE; border: none; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 500; transition: opacity .15s ease; }
+    button:hover { opacity: .85; }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    button.secondary { background: #fff; color: #2A2520; border: 1px solid rgba(0,0,0,.1); }
+    label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #2A2520; }
+    label input { transform: scale(1.1); }
+    #log { font-family: ui-monospace, monospace; font-size: 12px; padding: 12px 16px; background: #fff; border-radius: 8px; margin: 16px 0 24px; max-height: 220px; overflow-y: auto; border: 1px solid rgba(0,0,0,.08); }
+    #log p { margin: 2px 0; }
+    .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .result { padding: 14px; background: #fff; border-radius: 14px; border: 1px solid rgba(0,0,0,.08); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+    .result img { max-width: 100%; max-height: 280px; display: block; margin: 0 auto 10px; }
+    .result a { display: inline-block; padding: 6px 12px; background: #2A2520; color: #fff; border-radius: 999px; font-size: 12px; text-decoration: none; }
+    .result strong { display: block; font-size: 13px; margin-bottom: 4px; }
+    .stubs { position: absolute; left: -9999px; top: -9999px; visibility: hidden; }
+  </style>
+</head>
+<body>
+
+<h1>Layout Preview Generator</h1>
+<p class="intro">
+  Click <strong>Generate All</strong> to render a real strip preview for every layout using sample photos.
+  Each preview is rendered through the actual <code>buildStrip()</code> code so it's pixel-accurate to the user's output.
+  Files download automatically as <code>{layout}-preview.webp</code>.
+</p>
+
+<div class="controls">
+  <button id="run">Generate All Previews</button>
+  <label><input type="checkbox" id="autodownload" checked> Auto-download files</label>
+  <label><input type="checkbox" id="show-wordmark" checked> Include SnapBooth wordmark</label>
+  <label><input type="checkbox" id="show-date" checked> Include date</label>
+</div>
+
+<div id="log"></div>
+<div class="results" id="results"></div>
+
+<!-- Hidden DOM stubs that customize.js expects on load.
+     Without these the init code throws and we can't reach buildStrip(). -->
+<div class="stubs">
+  <canvas id="strip-canvas"></canvas>
+  <div id="strip-skeleton"></div>
+  <div id="frames-grid"></div>
+  <div id="templates-grid"></div>
+  <div id="template-banner"></div>
+  <div id="layout-grid"></div>
+  <div id="color-swatches"></div>
+  <div id="stickers-grid"></div>
+  <div id="adjust-list"></div>
+  <div id="ts-grid"></div>
+  <input id="custom-color" type="color" value="#ffffff">
+  <button id="apply-custom"></button>
+  <button id="reset-color"></button>
+  <button id="reset-adjust"></button>
+  <button id="clear-template"></button>
+  <input id="custom-text-input" type="text">
+  <button id="custom-text-clear"></button>
+  <button id="download-btn"></button>
+  <button id="download-story-btn"></button>
+  <button id="download-square-btn"></button>
+  <button id="share-btn"></button>
+  <button id="replace-btn"></button>
+  <button id="delete-selected-sticker"></button>
+  <button id="clear-stickers"></button>
+  <button id="toggle-stickers-img"></button>
+  <button id="toggle-stickers-text"></button>
+  <div id="stickers-img-view"></div>
+  <div id="stickers-text-view"></div>
+  <div id="sticker-selection-controls"></div>
+  <input id="replace-input" type="file">
+  <button id="clear-photos-btn"></button>
+  <input id="toggle-wordmark" type="checkbox" checked>
+  <input id="toggle-date" type="checkbox" checked>
+  <div id="upload-counter"></div>
+  <span id="upload-label"></span>
+  <button data-tab="adjust"></button>
+  <div data-panel="adjust"></div>
+  <div id="toast"></div>
+</div>
+
+<script src="js/frames.js"></script>
+<script src="js/templates.js"></script>
+<script src="js/stickers.js"></script>
+<script src="js/db.js"></script>
+<script src="js/customize.js"></script>
+
+<script>
+// Per-layout photo sets. Drop your custom photos into
+// assets/preview-models/<layout>/ (or anywhere — just update the paths).
+// Each array should have multiple poses of ONE person/group; the layout
+// will cycle through them slot-by-slot.
+//
+// To add real photos:
+//   1. Upload e.g. 4 photos of the same person to assets/preview-models/4cut/
+//   2. Name them 1.webp, 2.webp, 3.webp, 4.webp (or anything — match below)
+//   3. Update the array entry below to point at your filenames
+//
+// Falls back to existing hero photos if a layout's folder is empty.
+const LAYOUT_PHOTOS = {
+  '4cut': [
+    'assets/preview-models/4cut/1.webp',
+    'assets/preview-models/4cut/2.webp',
+    'assets/preview-models/4cut/3.webp',
+    'assets/preview-models/4cut/4.webp',
+  ],
+  '3cut': [
+    'assets/preview-models/3cut/1.webp',
+    'assets/preview-models/3cut/2.webp',
+    'assets/preview-models/3cut/3.webp',
+  ],
+  '2cut': [
+    'assets/preview-models/2cut/1.webp',
+    'assets/preview-models/2cut/2.webp',
+  ],
+  '6cut': [
+    'assets/preview-models/6cut/1.webp',
+    'assets/preview-models/6cut/2.webp',
+    'assets/preview-models/6cut/3.webp',
+    'assets/preview-models/6cut/4.webp',
+    'assets/preview-models/6cut/5.webp',
+    'assets/preview-models/6cut/6.webp',
+  ],
+  '3horiz': [
+    'assets/preview-models/3horiz/1.webp',
+    'assets/preview-models/3horiz/2.webp',
+    'assets/preview-models/3horiz/3.webp',
+  ],
+  'squaregrid': [
+    'assets/preview-models/squaregrid/1.webp',
+    'assets/preview-models/squaregrid/2.webp',
+    'assets/preview-models/squaregrid/3.webp',
+    'assets/preview-models/squaregrid/4.webp',
+  ],
+  '1large3small': [
+    'assets/preview-models/1large3small/1.webp',
+    'assets/preview-models/1large3small/2.webp',
+    'assets/preview-models/1large3small/3.webp',
+    'assets/preview-models/1large3small/4.webp',
+  ],
+  'grid4': [
+    'assets/preview-models/grid4/1.webp',
+    'assets/preview-models/grid4/2.webp',
+    'assets/preview-models/grid4/3.webp',
+    'assets/preview-models/grid4/4.webp',
+  ],
+  '4plus1': [
+    'assets/preview-models/4plus1/1.webp',
+    'assets/preview-models/4plus1/2.webp',
+    'assets/preview-models/4plus1/3.webp',
+    'assets/preview-models/4plus1/4.webp',
+    'assets/preview-models/4plus1/5.webp',
+  ],
+  'double-polaroid': [
+    'assets/preview-models/double-polaroid/1.webp',
+    'assets/preview-models/double-polaroid/2.webp',
+  ],
+  'tilt3': [
+    'assets/preview-models/tilt3/1.webp',
+    'assets/preview-models/tilt3/2.webp',
+    'assets/preview-models/tilt3/3.webp',
+  ],
+  'polaroid': [
+    'assets/preview-models/polaroid/1.webp',
+  ],
+  'photocard': [
+    'assets/preview-models/photocard/1.webp',
+  ],
+  'single': [
+    'assets/preview-models/single/1.webp',
+  ],
+};
+
+// Fallback used when a layout's photos haven't been uploaded yet
+const FALLBACK_PHOTOS = [
+  'assets/hero/strip-front-1.webp',
+  'assets/hero/strip-front-2.webp',
+  'assets/hero/strip-front-3.webp',
+  'assets/hero/strip-front-4.webp',
+  'assets/hero/strip-back-1.webp',
+  'assets/hero/strip-back-2.webp',
+];
+
+const ALL_PHOTOS = Array.from(new Set([
+  ...Object.values(LAYOUT_PHOTOS).flat(),
+  ...FALLBACK_PHOTOS,
+]));
+
+const LAYOUT_IDS = Object.keys(LAYOUT_PHOTOS);
+
+const log = document.getElementById('log');
+const results = document.getElementById('results');
+
+function logLine(msg) {
+  const p = document.createElement('p');
+  p.textContent = msg;
+  log.appendChild(p);
+  log.scrollTop = log.scrollHeight;
+}
+
+function loadImg(url) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);  // null = file missing, caller falls back
+    img.src = url;
+  });
+}
+
+async function generateOne(layoutId, imgMap, opts) {
+  const count = (typeof MODE_SHOTS !== 'undefined' && MODE_SHOTS[layoutId]) || 1;
+  // Use this layout's own photo set, but fall back to hero photos for any
+  // slots whose file failed to load (so the generator still works before
+  // you've uploaded all the per-layout photos).
+  const own = (LAYOUT_PHOTOS[layoutId] || []).map(u => imgMap[u]).filter(Boolean);
+  const fallback = FALLBACK_PHOTOS.map(u => imgMap[u]).filter(Boolean);
+  const pool = own.length ? own : fallback;
+  if (!pool.length) throw new Error('no photos available');
+
+  // Fill exactly `count` slots, looping the photo set if it's shorter
+  const slotImgs = [];
+  for (let i = 0; i < count; i++) slotImgs.push(pool[i % pool.length]);
+
+  // Reset all customize.js state to a clean baseline
+  shots = slotImgs;
+  currentMode = layoutId;
+  currentFrame = 'strip';
+  bgOverride = null;
+  currentTemplate = null;
+  stickers = [];
+  customText = '';
+  photoOffsets = shots.map(() => ({ ox: 0, oy: 0 }));
+  renderScale = 1;
+  showWordmark = opts.showWordmark;
+  showDate = opts.showDate;
+
+  // buildStrip may be sync (regular layouts) or async (templates)
+  await Promise.resolve(buildStrip());
+  // wait one frame so the canvas paint is committed
+  await new Promise(r => requestAnimationFrame(r));
+
+  const canvas = document.getElementById('strip-canvas');
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/webp', 0.85));
+  return blob;
+}
+
+async function generateAll() {
+  const btn = document.getElementById('run');
+  btn.disabled = true;
+  log.innerHTML = '';
+  results.innerHTML = '';
+
+  const opts = {
+    showWordmark: document.getElementById('show-wordmark').checked,
+    showDate: document.getElementById('show-date').checked,
+  };
+  const autoDl = document.getElementById('autodownload').checked;
+
+  try {
+    logLine('Loading photo sets (' + ALL_PHOTOS.length + ' urls)…');
+    const imgMap = {};
+    let missing = 0;
+    await Promise.all(ALL_PHOTOS.map(async url => {
+      const img = await loadImg(url);
+      if (img) imgMap[url] = img;
+      else { missing++; }
+    }));
+    if (missing) logLine('  (' + missing + ' file(s) not found yet — those layouts will use hero fallbacks)');
+    logLine('Photo sets ready.');
+
+    for (const layoutId of LAYOUT_IDS) {
+      const own = (LAYOUT_PHOTOS[layoutId] || []).filter(u => imgMap[u]);
+      const tag = own.length ? own.length + ' custom' : 'fallback';
+      logLine('Rendering ' + layoutId + ' [' + tag + ']…');
+      try {
+        const blob = await generateOne(layoutId, imgMap, opts);
+        const url = URL.createObjectURL(blob);
+        const filename = layoutId + '-preview.webp';
+
+        const div = document.createElement('div');
+        div.className = 'result';
+        div.innerHTML =
+          '<img src="' + url + '" alt="' + layoutId + '">' +
+          '<strong>' + layoutId + '</strong>' +
+          '<a href="' + url + '" download="' + filename + '">Download</a>';
+        results.appendChild(div);
+
+        if (autoDl) {
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          a.click();
+          // small gap so the browser doesn't bunch up downloads
+          await new Promise(r => setTimeout(r, 350));
+        }
+
+        logLine('  ✓ ' + filename + '  (' + Math.round(blob.size / 1024) + ' KB)');
+      } catch (err) {
+        logLine('  ✗ ' + layoutId + ' failed: ' + err.message);
+        console.error(err);
+      }
+    }
+    logLine('Done.');
+  } catch (err) {
+    logLine('Fatal: ' + err.message);
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('run').addEventListener('click', generateAll);
+</script>
+</body>
+</html>
