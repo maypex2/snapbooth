@@ -179,6 +179,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Reveal the canvas + hide the loading skeleton once the first buildStrip
+// finishes painting. Safe to call multiple times — only fires once.
+let _skeletonHidden = false;
+function hideStripSkeleton() {
+  if (_skeletonHidden) return;
+  _skeletonHidden = true;
+  const sk = document.getElementById('strip-skeleton');
+  if (sk) sk.classList.add('hidden-skeleton');
+  if (stripCanvas) stripCanvas.style.display = '';
+}
+
 // ── Build strip (cloned from app.js) ──
 function buildStrip() {
   if (currentTemplate) { return buildTemplateStrip(); }
@@ -1040,6 +1051,7 @@ function redrawStickersOnly() {
 }
 
 function drawAllStickers() {
+  hideStripSkeleton();
   const sw = stripCanvas.width, sh = stripCanvas.height;
   stickers.forEach((st, i) => {
     const img = stickerImgCache[st.file];
