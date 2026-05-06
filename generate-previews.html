@@ -228,7 +228,10 @@ async function generateOne(layoutId, imgMap, opts) {
   const slotImgs = [];
   for (let i = 0; i < count; i++) slotImgs.push(pool[i % pool.length]);
 
-  // Reset all customize.js state to a clean baseline
+  // Reset all customize.js state to a clean baseline. renderScale 0.5
+  // means the output canvas is half-size — at ~640px wide it's still
+  // crisp at the 180-200px the carousel renders at, but each file lands
+  // around 25–40 KB instead of 100 KB+.
   shots = slotImgs;
   currentMode = layoutId;
   currentFrame = 'strip';
@@ -237,7 +240,7 @@ async function generateOne(layoutId, imgMap, opts) {
   stickers = [];
   customText = '';
   photoOffsets = shots.map(() => ({ ox: 0, oy: 0 }));
-  renderScale = 1;
+  renderScale = 0.5;
   showWordmark = opts.showWordmark;
   showDate = opts.showDate;
 
@@ -247,7 +250,7 @@ async function generateOne(layoutId, imgMap, opts) {
   await new Promise(r => requestAnimationFrame(r));
 
   const canvas = document.getElementById('strip-canvas');
-  const blob = await new Promise(r => canvas.toBlob(r, 'image/webp', 0.85));
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/webp', 0.72));
   return blob;
 }
 

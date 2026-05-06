@@ -126,7 +126,13 @@ function initLayoutGrid() {
       ? L.customCells
       : Array.from({length: L.shape.cols * L.shape.rows}, () => '<span></span>').join('');
     btn.innerHTML = `
-      <div class="lm-shape" style="grid-template-columns:repeat(${L.shape.cols},1fr);grid-template-rows:repeat(${L.shape.rows},1fr);">${cells}</div>
+      <div class="lm-shape">
+        <div class="lm-strip lm-${L.id}">
+          <div class="lm-header"></div>
+          <div class="lm-cells">${cells}</div>
+          <div class="lm-footer"></div>
+        </div>
+      </div>
       <div class="lm-name">${L.name}</div>
       <div class="lm-count">${L.count} ${L.count === 1 ? 'shot' : 'shots'}</div>`;
     btn.addEventListener('click', () => setMode(L.id));

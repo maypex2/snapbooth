@@ -64,17 +64,90 @@
 
     .tab-btn.active { background: #2A2520; color: #FAFAFA; }
 
-    /* Mini layout cards in customize sidebar */
+    /* Mini layout cards in customize sidebar (WYSIWYG previews) */
     .layout-mini { display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 6px; border-radius:14px; border:1px solid #E4E4E7; background:#fff; cursor:pointer; transition:all .15s ease; }
     .layout-mini:hover { background:#F4F4F5; }
     .layout-mini.active { background:#2A2520; color:#FAFAFA; border-color:#2A2520; }
-    .layout-mini .lm-shape { width:34px; height:46px; display:grid; gap:2px; background:transparent; }
-    .layout-mini .lm-shape > span { background:#C9A07A; border-radius:1px; }
-    .layout-mini.active .lm-shape > span { background:#C9A07A; }
     .layout-mini.active .lm-name { color:#FAFAFA; }
-    .layout-mini .lm-name { font-size:10px; font-weight:500; line-height:1; }
+    .layout-mini .lm-name { font-size:10px; font-weight:500; line-height:1; text-align:center; }
     .layout-mini .lm-count { font-size:9px; color:#9A8E7E; }
     .layout-mini.active .lm-count { color:#C9A07A; }
+
+    /* Each mini renders the strip's real aspect ratio + header/footer
+       proportions + slot grid, derived from buildStrip() dimensions
+       (W=1280, H=960). The .lm-shape is a fixed 60×60 viewport that
+       contains the actual paper-shaped .lm-strip element. */
+    .layout-mini .lm-shape {
+      width: 60px; height: 60px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .lm-strip {
+      max-width: 100%; max-height: 100%;
+      display: grid;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.18);
+      border-radius: 2px;
+      overflow: hidden;
+      box-shadow: 0 1px 1px rgba(0,0,0,.06);
+    }
+    .layout-mini.active .lm-strip { border-color: rgba(255,255,255,.35); }
+    .lm-strip .lm-cells {
+      display: grid;
+      gap: 1px;
+      height: 100%; width: 100%;
+      min-height: 0; min-width: 0;
+    }
+    .lm-strip .lm-cells > span { background:#C9A07A; display:block; border-radius:.5px; min-width:0; min-height:0; }
+    .lm-strip .lm-header, .lm-strip .lm-footer { min-height:0; }
+
+    /* Strip layouts (vertical) — header + footer for SnapBooth wordmark */
+    .lm-4cut         { aspect-ratio: 1336/4282; grid-template-rows: 4.2% 1fr 5.1%; }
+    .lm-4cut .lm-cells         { grid-template-rows: repeat(4, 1fr); }
+    .lm-3cut         { aspect-ratio: 1336/3308; grid-template-rows: 5.4% 1fr 6.6%; }
+    .lm-3cut .lm-cells         { grid-template-rows: repeat(3, 1fr); }
+    .lm-2cut         { aspect-ratio: 1336/2314; grid-template-rows: 6.9% 1fr 9.5%; }
+    .lm-2cut .lm-cells         { grid-template-rows: repeat(2, 1fr); }
+
+    /* Grid layouts */
+    .lm-6cut         { aspect-ratio: 2624/3036; grid-template-rows: 2.6% 1fr 1.7%; }
+    .lm-6cut .lm-cells         { grid-template: repeat(3, 1fr) / repeat(2, 1fr); }
+    .lm-3horiz       { aspect-ratio: 2924/1412; grid-template-rows: 5.7% 1fr 3.7%; }
+    .lm-3horiz .lm-cells       { grid-template-columns: repeat(3, 1fr); }
+    .lm-squaregrid   { aspect-ratio: 2668/2028; grid-template-rows: 0 1fr 0; padding: 4%; }
+    .lm-squaregrid .lm-cells   { grid-template: 1fr 1fr / 1fr 1fr; }
+    .lm-1large3small { aspect-ratio: 1340/1376; grid-template-rows: 2.2% 1fr 4.4%; }
+    .lm-1large3small .lm-cells { grid-template-rows: 3fr 1fr; grid-template-columns: repeat(3, 1fr); }
+    .lm-grid4        { aspect-ratio: 2660/2020; grid-template-rows: 0 1fr 0; padding: 3%; }
+    .lm-grid4 .lm-cells        { grid-template: 1fr 1fr / 1fr 1fr; gap: 2px; }
+    .lm-4plus1       { aspect-ratio: 2656/2468; grid-template-rows: 3.2% 1fr 4%; }
+    .lm-4plus1 .lm-cells       { grid-template-rows: 1fr 1fr 1.4fr; grid-template-columns: 1fr 1fr; }
+
+    /* Trend pack additions */
+    .lm-9cut         { aspect-ratio: 3908/3040; grid-template-rows: 2.6% 1fr 2%; }
+    .lm-9cut .lm-cells         { grid-template: repeat(3, 1fr) / repeat(3, 1fr); }
+    .lm-vertical4    { aspect-ratio: 760/4208; grid-template-rows: 2.4% 1fr 5.2%; }
+    .lm-vertical4 .lm-cells    { grid-template-rows: repeat(4, 1fr); }
+    .lm-diptych      { aspect-ratio: 2630/1140; grid-template-rows: 7% 1fr 8.8%; }
+    .lm-diptych .lm-cells      { grid-template-columns: 1fr 1fr; }
+
+    /* Single-photo / polaroid family */
+    .lm-polaroid     { aspect-ratio: 1340/1070; grid-template-rows: 1.9% 1fr 8.4%; padding: 0 2%; }
+    .lm-polaroid .lm-cells     { grid-template-columns: 1fr; }
+    .lm-double-polaroid { aspect-ratio: 1340/2080; grid-template-rows: 1% 1fr 4.3%; padding: 0 2%; }
+    .lm-double-polaroid .lm-cells { grid-template-rows: 1fr 1fr; gap: 5%; }
+    .lm-photocard    { aspect-ratio: 1360/1090; grid-template-rows: 2.8% 1fr 9.2%; padding: 0 3%; }
+    .lm-photocard .lm-cells    { grid-template-columns: 1fr; }
+    .lm-single       { aspect-ratio: 1312/992; grid-template-rows: 0 1fr 0; }
+    .lm-single .lm-cells       { grid-template-columns: 1fr; }
+
+    /* Tilted 3-Cut — dark red strip with rotated white photo cards */
+    .lm-tilt3        { aspect-ratio: 1420/3270; background:#5C0000; border:none; grid-template-rows: 2.1% 1fr 7.3%; padding: 0 4%; }
+    .lm-tilt3 .lm-cells        { grid-template-rows: repeat(3, 1fr); gap: 8%; padding: 4% 0; }
+    .lm-tilt3 .lm-cells > span { background:#fff; border:1px solid #0a0a0a; border-radius:0; }
+    .lm-tilt3 .lm-cells > span:nth-child(1) { transform: rotate(-2deg); }
+    .lm-tilt3 .lm-cells > span:nth-child(2) { transform: rotate(2deg); }
+    .lm-tilt3 .lm-cells > span:nth-child(3) { transform: rotate(-2deg); }
 
     /* Text sticker UI */
     .ts-cats { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
