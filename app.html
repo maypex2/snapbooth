@@ -23,8 +23,13 @@
   <meta property="og:title" content="SnapBooth Free Online Photo Booth">
   <meta property="og:description"
     content="Take fun photo strips with filters, frames, stickers and GIF mode free, no sign-up!">
-  <meta property="og:url" content="https://snapbooth.app/">
+  <meta property="og:url" content="https://snapbooth.app/app.html">
   <meta property="og:image" content="https://snapbooth.app/assets/og-image.jpg">
+  <meta property="og:site_name" content="SnapBooth">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SnapBooth Free Online Photo Booth">
+  <meta name="twitter:description" content="Take fun photo strips with filters, frames, stickers and GIF mode — free, no sign-up!">
+  <meta name="twitter:image" content="https://snapbooth.app/assets/og-image.jpg">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -336,32 +341,29 @@
 
     .sc-card {
       flex-shrink: 0;
-      width: 168px;
+      width: 180px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
-      transition: transform .2s ease;
+      gap: 12px;
+      scroll-snap-align: start;
+      transition: transform .25s ease;
     }
 
     .sc-card:hover {
-      transform: translateY(-3px);
+      transform: translateY(-4px);
     }
 
-    /* Uniform-height "stage" so every layout card lines up regardless of
-       its preview aspect ratio. The preview scales down to fit. */
+    /* Natural-height card to match the landing-page look — each layout
+       takes its own intrinsic aspect ratio, not a forced uniform stage. */
     .sc-frame {
       position: relative;
       width: 100%;
-      height: 280px;
       background: #ffffff;
       border-radius: 6px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 16px 24px rgba(0, 0, 0, 0.12);
-      padding: 10px 10px 22px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      box-shadow: 0 1px 2px rgba(60, 40, 20, .08), 0 16px 32px -10px rgba(60, 40, 20, .22);
+      padding: 12px 12px 26px;
       transition: box-shadow .2s ease, transform .2s ease;
     }
 
@@ -378,9 +380,7 @@
       animation: none;
     }
     .sc-preview {
-      max-width: 100%;
-      max-height: 100%;
-      width: auto;
+      width: 100%;
       height: auto;
       display: block;
       opacity: 0;
@@ -422,30 +422,8 @@
     .sc-grid {
       display: grid;
       gap: 4px;
-      max-width: 100%;
-      max-height: 100%;
+      width: 100%;
     }
-
-    /* Tall layouts: height-driven so they fit the stage without overflowing */
-    .sc-grid.sc-vertical4,
-    .sc-grid.sc-9cut,
-    .sc-grid.sc-4plus1,
-    .sc-grid.sc-4cut,
-    .sc-grid.sc-3cut { height: 100%; width: auto; }
-
-    /* Wide / square layouts: width-driven */
-    .sc-grid.sc-diptych,
-    .sc-grid.sc-gif,
-    .sc-grid.sc-3horiz,
-    .sc-grid.sc-2cut,
-    .sc-grid.sc-6cut,
-    .sc-grid.sc-squaregrid,
-    .sc-grid.sc-grid4,
-    .sc-grid.sc-1large3small,
-    .sc-grid.sc-single,
-    .sc-grid.sc-polaroid,
-    .sc-grid.sc-photocard,
-    .sc-grid.sc-double-polaroid { width: 100%; height: auto; }
 
     .sc-grid img {
       width: 100%;
@@ -487,9 +465,6 @@
       flex-direction: column;
       gap: 6px;
       aspect-ratio: 0.42;
-      height: 100%;
-      width: auto;
-      max-width: 100%;
     }
 
     .sc-tilt3 img {
@@ -1219,7 +1194,7 @@
   <div class="toast" id="toast"></div>
 
   <!-- Footer -->
-  <footer class="border-t border-sand/60 bg-cream2/40 mt-auto">
+  <footer class="border-t border-sand/60 bg-cream2/40">
     <div class="max-w-[1100px] mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
       <a href="index.html" class="text-xl font-serif text-ink no-underline">Snap<span
           class="font-serif-i text-accentd">Booth</span></a>
