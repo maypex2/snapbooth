@@ -1,6 +1,6 @@
 // ── State ──
 let currentFilter  = 'none';
-let currentFrame   = 'strip';
+let currentFrame   = 'white';
 let currentMode    = '4cut';
 var currentTimer   = 3;
 let shots          = [];
@@ -690,9 +690,9 @@ function buildStrip() {
     if (!positions[i]) return;
     const { x, y, w, h } = positions[i];
     drawCoverImage(sctx, img, x, y, w, h);
-    sctx.strokeStyle = 'rgba(0,0,0,0.08)';
-    sctx.lineWidth = 1;
-    sctx.strokeRect(x, y, w, h);
+    sctx.strokeStyle = 'rgba(0,0,0,0.32)';
+    sctx.lineWidth = 2;
+    sctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
   });
 
   // Frame decorations render ABOVE photos so themed text (REC, date stamp,

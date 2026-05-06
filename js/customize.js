@@ -1,11 +1,27 @@
 // ── State ──
 let currentMode  = sessionStorage.getItem('sb_mode')   || '4cut';
-let currentFrame = 'strip';
+let currentFrame = 'white';
 let bgOverride   = null;  // null | { type:'solid', color } | { type:'pattern', img }
 let currentTemplate = null;  // null | template id from TEMPLATES
 let stickers     = [];
 let shots        = [];
 let customText   = '';
+let customFont   = 'serif-italic';
+
+const FONT_OPTIONS = [
+  { id: 'serif-italic', label: 'Classic',  css: 'italic 1px "DM Serif Display", serif',     weight: 'italic ', family: '"DM Serif Display", serif' },
+  { id: 'serif',        label: 'Editorial',css: '700 1px "Playfair Display", serif',         weight: '700 ',    family: '"Playfair Display", serif' },
+  { id: 'script',       label: 'Script',   css: '700 1px "Dancing Script", cursive',         weight: '700 ',    family: '"Dancing Script", cursive' },
+  { id: 'pacifico',     label: 'Retro',    css: '400 1px "Pacifico", cursive',               weight: '400 ',    family: '"Pacifico", cursive' },
+  { id: 'fredoka',      label: 'Bubbly',   css: '600 1px "Fredoka", sans-serif',             weight: '600 ',    family: '"Fredoka", sans-serif' },
+  { id: 'bebas',        label: 'Bold',     css: '400 1px "Bebas Neue", sans-serif',          weight: '400 ',    family: '"Bebas Neue", sans-serif' },
+  { id: 'sans',         label: 'Modern',   css: '500 1px "DM Sans", sans-serif',             weight: '500 ',    family: '"DM Sans", sans-serif' },
+];
+
+function getCustomFontSpec(px) {
+  const f = FONT_OPTIONS.find(x => x.id === customFont) || FONT_OPTIONS[0];
+  return f.weight + px + 'px ' + f.family;
+}
 // Per-photo crop offsets keyed by shot index. ox/oy in [-1, 1] where 0 is
 // centered. Negative values shift the visible window towards the top/left
 // (so the bottom/right of the photo shows more), positive does the inverse.
@@ -428,11 +444,11 @@ function buildStrip() {
     sctx.textBaseline = 'middle';
     if (topReserve >= 30) {
       const fs = Math.min(72, Math.max(36, Math.floor(topReserve * 0.42)));
-      sctx.font = 'italic ' + fs + 'px "DM Serif Display", serif';
+      sctx.font = getCustomFontSpec(fs);
       sctx.fillText(txt, sw/2, topReserve/2 + 6);
     } else if (bottomReserve >= 30) {
       const fs = Math.min(64, Math.max(28, Math.floor(bottomReserve * 0.38)));
-      sctx.font = 'italic ' + fs + 'px "DM Serif Display", serif';
+      sctx.font = getCustomFontSpec(fs);
       sctx.fillText(txt, sw/2, sh - bottomReserve/2);
     }
     sctx.textAlign = 'start';
@@ -456,9 +472,9 @@ function buildStrip() {
       } else {
         drawCoverImage(sctx, img, x, y, w, h, off.ox, off.oy);
       }
-      sctx.strokeStyle = 'rgba(0,0,0,0.08)';
-      sctx.lineWidth = 1;
-      sctx.strokeRect(x, y, w, h);
+      sctx.strokeStyle = 'rgba(0,0,0,0.32)';
+      sctx.lineWidth = 2;
+      sctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
     } else {
       // Empty placeholder slot
       sctx.fillStyle = 'rgba(0,0,0,0.06)';
@@ -573,7 +589,7 @@ function buildTilt3Strip() {
   sctx.font = Math.floor(BOT * 0.34) + 'px "DM Serif Display", serif';
   sctx.fillText('SNAPBOOTH', sw / 2, sh - BOT * 0.55);
 
-  sctx.font = 'italic ' + Math.floor(BOT * 0.22) + 'px "DM Serif Display", serif';
+  sctx.font = getCustomFontSpec(Math.floor(BOT * 0.22));
   sctx.fillStyle = 'rgba(250,246,238,0.92)';
   sctx.fillText(customText.trim() || 'your text', sw / 2, sh - BOT * 0.22);
   sctx.textAlign = 'start';
@@ -661,9 +677,9 @@ function buildTemplateStrip() {
         sctx.textAlign = 'start';
         sctx.textBaseline = 'alphabetic';
       }
-      sctx.strokeStyle = 'rgba(0,0,0,0.12)';
-      sctx.lineWidth = 1;
-      sctx.strokeRect(x, y, w, h);
+      sctx.strokeStyle = 'rgba(0,0,0,0.32)';
+      sctx.lineWidth = 2;
+      sctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
     });
 
     // Custom text overlay on templates: place in available top or bottom
@@ -1625,6 +1641,22 @@ if (customTextClear) {
   customTextClear.addEventListener('click', () => {
     customText = '';
     if (customTextInput) customTextInput.value = '';
+    buildStrip();
+  });
+}
+
+// Font picker — choose the typeface for the custom title
+const fontPicker = document.getElementById('font-picker');
+if (fontPicker) {
+  fontPicker.innerHTML = FONT_OPTIONS.map(f => {
+    const previewStyle = `font-family:${f.family};font-weight:${f.weight.trim() || 400};${f.id==='serif-italic'?'font-style:italic;':''}`;
+    return `<button type="button" class="font-pill${f.id===customFont?' active':''}" data-font="${f.id}" style="${previewStyle}">${f.label}</button>`;
+  }).join('');
+  fontPicker.addEventListener('click', e => {
+    const btn = e.target.closest('.font-pill');
+    if (!btn) return;
+    customFont = btn.dataset.font;
+    fontPicker.querySelectorAll('.font-pill').forEach(b => b.classList.toggle('active', b === btn));
     buildStrip();
   });
 }
