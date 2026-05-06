@@ -28,7 +28,7 @@
   <meta property="og:site_name" content="SnapBooth">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="SnapBooth Free Online Photo Booth">
-  <meta name="twitter:description" content="Take fun photo strips with filters, frames, stickers and GIF mode â€” free, no sign-up!">
+  <meta name="twitter:description" content="Take fun photo strips with filters, frames, stickers and GIF mode — free, no sign-up!">
   <meta name="twitter:image" content="https://maypex2.github.io/snapbooth/assets/og-image.jpg">
 
   <!-- Fonts -->
@@ -328,7 +328,7 @@
       transition: width .2s ease;
     }
 
-    /* â”€â”€ Showcase layout cards (below camera) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Showcase layout cards (below camera) ────────────────────── */
     section.mt-10 {
       background: transparent;
     }
@@ -357,7 +357,7 @@
       transform: translateY(-4px);
     }
 
-    /* Natural-height card to match the landing-page look â€” each layout
+    /* Natural-height card to match the landing-page look — each layout
        takes its own intrinsic aspect ratio, not a forced uniform stage. */
     .sc-frame {
       position: relative;
@@ -369,7 +369,7 @@
       transition: box-shadow .2s ease, transform .2s ease;
     }
 
-    /* Real preview cards â€” single rendered image, no inner padding */
+    /* Real preview cards — single rendered image, no inner padding */
     .sc-frame--real {
       padding: 0;
       overflow: hidden;
@@ -593,10 +593,10 @@
       scrollbar-width: none;
     }
 
-    /* â”€â”€ Preview overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    /* ── Preview overlay ──────────────────────────────────────────
        --header-h is set by JS to the actual sticky header height so
        the modal never slides underneath it on any layout height.
-    â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    ─────────────────────────────────────────────────────────────── */
     :root {
       --header-h: 64px;
       /* fallback; overridden by JS */
@@ -669,7 +669,7 @@
       justify-content: center;
       overflow: hidden;
       /* Limit so the canvas can never push the card taller than
-         the modal itself â€” important for 4-cut / 3-cut strips */
+         the modal itself — important for 4-cut / 3-cut strips */
       max-height: calc(100dvh - var(--header-h) - 220px);
       max-height: calc(100vh - var(--header-h) - 220px);
       max-height: calc(100dvh - var(--header-h) - 220px);
@@ -717,7 +717,7 @@
             <!-- Layout indicator -->
             <div class="px-3 py-1.5 rounded-full bg-white/60 border border-sand shadow-sm text-ink text-[11px] font-medium tracking-wide flex items-center gap-1.5 transition-all" id="mode-indicator-wrap">
               <span id="mode-indicator-name">4-Cut Strip</span>
-              <span class="text-muted">â€¢</span>
+              <span class="text-muted">•</span>
               <span id="mode-indicator-count" class="text-ink2">4 shots</span>
             </div>
 
@@ -747,7 +747,7 @@
             <div class="gif-progress-bar-wrap mb-3">
               <div class="gif-progress-bar" id="gif-progress-bar"></div>
             </div>
-            <div class="text-sm" id="gif-progress-label">Encoding GIFâ€¦</div>
+            <div class="text-sm" id="gif-progress-label">Encoding GIF…</div>
           </div>
 
           <!-- Aspect-ratio selector (top-left, dark pill over camera) -->
@@ -771,7 +771,7 @@
               <path d="M3 6h18M3 12h18M3 18h18" />
             </svg>
             <span class="font-medium">Filters</span>
-            <span id="filters-active-label" class="text-white/70">Â· None</span>
+            <span id="filters-active-label" class="text-white/70">· None</span>
           </button>
 
           <div id="filters-panel"
@@ -872,7 +872,7 @@
             </div>
           </div>
 
-          <!-- Inline capture button (always visible â€” overlays inside camera) -->
+          <!-- Inline capture button (always visible — overlays inside camera) -->
           <button id="snap-btn-inner" onclick="document.getElementById('snap-btn').click()" type="button"
             aria-label="Capture"
             class="absolute left-1/2 -translate-x-1/2 bottom-6 z-[20] w-16 h-16 rounded-full bg-ink hover:bg-black text-white shadow-card border-4 border-white/90 ring-2 ring-black/30 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
@@ -891,7 +891,7 @@
             </div>
             <div id="cam-loading" class="flex-col items-center" style="display:none">
               <div class="w-12 h-12 border-4 border-sand border-t-accent rounded-full animate-spin mb-3"></div>
-              <div class="text-sm text-white/80">Starting cameraâ€¦</div>
+              <div class="text-sm text-white/80">Starting camera…</div>
             </div>
             <div id="cam-error" class="flex-col items-center text-center px-6" style="display:none">
               <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)"
@@ -916,7 +916,7 @@
         <section class="mt-10 max-w-[1100px] mx-auto">
           <div class="text-center mb-6">
             <h2 class="font-serif text-xl md:text-2xl text-ink2">Choose your layout</h2>
-            <p class="text-sm text-muted mt-1">Tap a style â€” we'll set up the right number of shots for you</p>
+            <p class="text-sm text-muted mt-1">Tap a style — we'll set up the right number of shots for you</p>
           </div>
 
           <div class="relative">
@@ -944,7 +944,7 @@
                   <img class="sc-preview" src="assets/layouts-real/4cut-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">4-Cut Strip</div>
-                <div class="sc-meta">Size 6 Ã— 2 Strip<br>(4 Pose)</div>
+                <div class="sc-meta">Size 6 × 2 Strip<br>(4 Pose)</div>
               </div>
 
               <!-- 3-Cut Strip -->
@@ -953,7 +953,7 @@
                   <img class="sc-preview" src="assets/layouts-real/3cut-preview.webp" alt="" decoding="async">
                 </div>
                 <div class="sc-label">3-Cut Strip</div>
-                <div class="sc-meta">Size 6 Ã— 2 Strip<br>(3 Pose)</div>
+                <div class="sc-meta">Size 6 × 2 Strip<br>(3 Pose)</div>
               </div>
 
               <!-- 2-Cut Strip -->
@@ -1143,7 +1143,7 @@
     Layout: fixed overlay that starts BELOW the sticky header (via --header-h CSS var).
     .preview-card uses flex-col so its inner header stays pinned and only .preview-body scrolls.
     The canvas is constrained by .preview-img-wrap so tall strips (4-cut, 3-cut) can never
-    overflow â€” they simply scale down to fit the available height.
+    overflow — they simply scale down to fit the available height.
   -->
   <div id="preview-overlay"
     class="fixed inset-0 z-[70] bg-ink/70 backdrop-blur-md flex justify-center opacity-0 pointer-events-none transition-opacity duration-300">
@@ -1169,7 +1169,7 @@
       <div class="preview-body">
         <div class="grid md:grid-cols-[1fr_280px] gap-5 p-5">
 
-          <!-- Photo / canvas area â€” constrained so tall strips never overflow -->
+          <!-- Photo / canvas area — constrained so tall strips never overflow -->
           <div class="preview-img-wrap bg-[#161210] rounded-2xl p-3 border border-ink2/40 shadow-inner">
             <canvas id="strip-canvas"
               class="rounded-lg shadow-[0_12px_48px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.04)]"></canvas>
@@ -1246,7 +1246,7 @@
   <script src="js/app.js?v=3"></script>
 
   <script>
-      // â”€â”€ Header-height CSS variable â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Header-height CSS variable ──────────────────────────────────
       // Reads the actual rendered header height and keeps --header-h in
       // sync so the preview modal is always positioned below it.
       (function trackHeaderHeight() {
@@ -1338,7 +1338,7 @@
       const btn = e.target.closest('.filter-btn');
       if (!btn) return;
       const name = btn.getAttribute('data-name') || 'None';
-      document.getElementById('filters-active-label').textContent = 'Â· ' + name;
+      document.getElementById('filters-active-label').textContent = '· ' + name;
     });
   </script>
 
