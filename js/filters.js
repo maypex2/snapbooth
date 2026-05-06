@@ -13,6 +13,15 @@ const FILTER_CSS = {
   drama:   'contrast(1.4) saturate(1.2) brightness(0.95)',
   pastel:  'saturate(0.65) brightness(1.15) contrast(0.9)',
   punch:   'saturate(1.6) contrast(1.2)',
+  // Trend pack 2026
+  chrome:    'saturate(0.6) contrast(1.25) brightness(1.05) hue-rotate(190deg)',
+  cinematic: 'saturate(1.15) contrast(1.18) brightness(0.97) hue-rotate(-8deg)',
+  film:      'sepia(25%) saturate(1.15) contrast(1.05) brightness(1.04)',
+  vhs:       'saturate(1.4) contrast(1.15) brightness(1.05) hue-rotate(-6deg)',
+  kawaii:    'saturate(1.1) brightness(1.12) contrast(0.95) hue-rotate(-12deg)',
+  moody:     'saturate(0.6) contrast(1.35) brightness(0.85)',
+  honey:     'sepia(35%) saturate(1.5) brightness(1.08) hue-rotate(-15deg)',
+  bluehour:  'saturate(0.95) contrast(1.1) brightness(0.95) hue-rotate(15deg)',
 };
 
 function setFilter(f, btn) {
@@ -136,4 +145,111 @@ function applyFilterToCanvas(f) {
     ctx.restore();
     ctx.filter = 'none';
   }
+  if (f === 'chrome') {
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.fillStyle = 'rgba(180,210,235,0.35)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+  if (f === 'cinematic') {
+    // teal in shadows, orange in highlights — fake split-tone via gradient
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    g.addColorStop(0, 'rgba(255,160,90,0.30)');
+    g.addColorStop(1, 'rgba(40,110,130,0.35)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    drawVignette(0.30);
+  }
+  if (f === 'film') {
+    drawGrain(0.06);
+    drawVignette(0.22);
+  }
+  if (f === 'vhs') {
+    // scanlines
+    ctx.save();
+    ctx.globalAlpha = 0.10;
+    ctx.fillStyle = '#000';
+    for (let y = 0; y < canvas.height; y += 3) {
+      ctx.fillRect(0, y, canvas.width, 1);
+    }
+    ctx.restore();
+    // magenta cast
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.fillStyle = 'rgba(200,80,180,0.22)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    drawGrain(0.04);
+  }
+  if (f === 'kawaii') {
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.fillStyle = 'rgba(255,180,210,0.40)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    // soft glow
+    ctx.save();
+    ctx.globalAlpha = 0.08;
+    ctx.filter = 'blur(6px) brightness(1.3)';
+    ctx.drawImage(canvas, 0, 0);
+    ctx.restore();
+    ctx.filter = 'none';
+  }
+  if (f === 'moody') {
+    drawVignette(0.45);
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = 'rgba(60,70,90,0.20)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+  if (f === 'honey') {
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.fillStyle = 'rgba(255,190,110,0.35)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    drawVignette(0.18);
+  }
+  if (f === 'bluehour') {
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    g.addColorStop(0, 'rgba(70,90,160,0.40)');
+    g.addColorStop(1, 'rgba(180,140,200,0.25)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+}
+
+function drawVignette(strength) {
+  const g = ctx.createRadialGradient(
+    canvas.width / 2, canvas.height / 2, canvas.height * 0.35,
+    canvas.width / 2, canvas.height / 2, canvas.height * 0.85
+  );
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, `rgba(0,0,0,${strength})`);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawGrain(amount) {
+  // Direct pixel noise — works on every iOS Safari version.
+  let img;
+  try { img = ctx.getImageData(0, 0, canvas.width, canvas.height); }
+  catch (e) { return; }
+  const d = img.data;
+  const a = amount * 255;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - 0.5) * a;
+    d[i]     = Math.max(0, Math.min(255, d[i]     + n));
+    d[i + 1] = Math.max(0, Math.min(255, d[i + 1] + n));
+    d[i + 2] = Math.max(0, Math.min(255, d[i + 2] + n));
+  }
+  ctx.putImageData(img, 0, 0);
 }

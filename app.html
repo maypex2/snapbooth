@@ -145,6 +145,38 @@
       filter: saturate(1.6) contrast(1.2);
     }
 
+    .filter-thumb[data-filter="chrome"] {
+      filter: saturate(.6) contrast(1.25) brightness(1.05) hue-rotate(190deg);
+    }
+
+    .filter-thumb[data-filter="cinematic"] {
+      filter: saturate(1.15) contrast(1.18) brightness(.97) hue-rotate(-8deg);
+    }
+
+    .filter-thumb[data-filter="film"] {
+      filter: sepia(25%) saturate(1.15) contrast(1.05) brightness(1.04);
+    }
+
+    .filter-thumb[data-filter="vhs"] {
+      filter: saturate(1.4) contrast(1.15) brightness(1.05) hue-rotate(-6deg);
+    }
+
+    .filter-thumb[data-filter="kawaii"] {
+      filter: saturate(1.1) brightness(1.12) contrast(.95) hue-rotate(-12deg);
+    }
+
+    .filter-thumb[data-filter="moody"] {
+      filter: saturate(.6) contrast(1.35) brightness(.85);
+    }
+
+    .filter-thumb[data-filter="honey"] {
+      filter: sepia(35%) saturate(1.5) brightness(1.08) hue-rotate(-15deg);
+    }
+
+    .filter-thumb[data-filter="bluehour"] {
+      filter: saturate(.95) contrast(1.1) brightness(.95) hue-rotate(15deg);
+    }
+
     .filter-btn .filter-thumb {
       transition: box-shadow .15s ease, transform .15s ease;
     }
@@ -868,6 +900,62 @@
                   class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
                 <div class="filter-thumb w-12 h-12 rounded-full" data-filter="punch"></div>
                 <span class="filter-label text-[10px] text-white/85">Punch</span>
+              </button>
+              <button data-f="chrome" data-name="Y2K Chrome"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">HOT</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="chrome"></div>
+                <span class="filter-label text-[10px] text-white/85">Chrome</span>
+              </button>
+              <button data-f="cinematic" data-name="Cinematic"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">HOT</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="cinematic"></div>
+                <span class="filter-label text-[10px] text-white/85">Cinematic</span>
+              </button>
+              <button data-f="film" data-name="Film 35mm"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">HOT</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="film"></div>
+                <span class="filter-label text-[10px] text-white/85">Film</span>
+              </button>
+              <button data-f="vhs" data-name="VHS"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">HOT</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="vhs"></div>
+                <span class="filter-label text-[10px] text-white/85">VHS</span>
+              </button>
+              <button data-f="kawaii" data-name="Kawaii"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">HOT</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="kawaii"></div>
+                <span class="filter-label text-[10px] text-white/85">Kawaii</span>
+              </button>
+              <button data-f="moody" data-name="Moody"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">HOT</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="moody"></div>
+                <span class="filter-label text-[10px] text-white/85">Moody</span>
+              </button>
+              <button data-f="honey" data-name="Honey"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">HOT</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="honey"></div>
+                <span class="filter-label text-[10px] text-white/85">Honey</span>
+              </button>
+              <button data-f="bluehour" data-name="Blue Hour"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">HOT</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="bluehour"></div>
+                <span class="filter-label text-[10px] text-white/85">Blue Hour</span>
               </button>
             </div>
           </div>
