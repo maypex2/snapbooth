@@ -427,20 +427,31 @@
       width: 100%;
     }
 
-    /* Puri 4-Cut: fixed-pixel sizing so the white frame wraps the slim
-       strip exactly, and the label/meta sit right below it. The card
-       itself stays at its normal 180px width so the carousel rhythm is
-       preserved; only the inner frame shrinks to hug the strip. */
+    /* Puri 4-Cut: rebuild as a flex column with explicit photo sizes so the
+       white frame wraps the strip cleanly. Bypasses the CSS-grid +
+       aspect-ratio conflicts that were leaving photos overflowing the card. */
     #mode-vertical4 .sc-frame {
-      width: auto;
+      width: 110px;
       padding: 10px 10px 18px;
     }
     #mode-vertical4 .sc-grid.sc-vertical4 {
+      display: flex !important;
+      flex-direction: column !important;
       width: 90px !important;
-      height: 280px !important;
+      height: auto !important;
       aspect-ratio: auto !important;
+      gap: 4px !important;
+      grid-template-rows: none !important;
       max-width: none;
       max-height: none;
+    }
+    #mode-vertical4 .sc-grid.sc-vertical4 img {
+      width: 90px !important;
+      height: 68px !important;
+      flex: 0 0 68px !important;
+      display: block;
+      object-fit: cover;
+      border-radius: 2px;
     }
 
     .sc-grid img {
