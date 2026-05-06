@@ -459,7 +459,11 @@ body::before {
    grid layouts have minimal footer. */
 .sc-frame:has(.sc-4cut),
 .sc-frame:has(.sc-3cut),
-.sc-frame:has(.sc-2cut) { padding-bottom: 38px; }
+.sc-frame:has(.sc-2cut),
+.sc-frame:has(.sc-vertical4) { padding-bottom: 38px; }
+
+.sc-frame:has(.sc-9cut),
+.sc-frame:has(.sc-diptych) { padding-bottom: 16px; }
 
 .sc-frame:has(.sc-polaroid),
 .sc-frame:has(.sc-double-polaroid),
@@ -510,6 +514,9 @@ body::before {
 .sc-polaroid      { grid-template-columns: 1fr; aspect-ratio: 1.33; }
 .sc-photocard     { grid-template-columns: 1fr; aspect-ratio: 1.33; }
 .sc-gif           { grid-template-columns: 1fr; aspect-ratio: 1.33; position: relative; }
+.sc-9cut          { grid-template: repeat(3, 1fr) / repeat(3, 1fr); aspect-ratio: 1; }
+.sc-vertical4     { grid-template-rows: repeat(4, 1fr); aspect-ratio: 0.34; }
+.sc-diptych       { grid-template-columns: 1fr 1fr; aspect-ratio: 1.78; }
 
 .sc-1large3small img:first-child { grid-column: 1 / -1; }
 

@@ -1611,6 +1611,11 @@ async function replacePhotos(fileList) {
 
 // ── Init ──
 document.getElementById('download-btn').addEventListener('click', downloadStrip);
+document.getElementById('print-btn')?.addEventListener('click', () => {
+  if (!shots.length) { showToast('Add photos before printing'); return; }
+  buildStrip();
+  setTimeout(() => window.print(), 80);
+});
 document.getElementById('share-btn').addEventListener('click', shareStrip);
 document.getElementById('download-story-btn')?.addEventListener('click', downloadStory);
 document.getElementById('download-square-btn')?.addEventListener('click', downloadSquare);
