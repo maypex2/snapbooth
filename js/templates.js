@@ -6,7 +6,7 @@
 const TEMPLATES = [
   // 4-cut decorative patterns (no built-in boxes → overlay 4 white slots)
   {
-    id: 'tpl-4cut-pink-swirl', name: 'Pink Swirl', file: 'assets/templates/4cut-strip.PNG',
+    id: 'tpl-4cut-pink-swirl', name: 'Pink Swirl', file: 'assets/templates/4cut-strip.webp',
     mode: '4cut', aspect: 0.36, whiteBox: true,
     slots: [
       { x: 0.10, y: 0.05, w: 0.80, h: 0.21 },
@@ -16,7 +16,7 @@ const TEMPLATES = [
     ],
   },
   {
-    id: 'tpl-4cut-confetti', name: 'Confetti', file: 'assets/templates/4cut-strip-1.PNG',
+    id: 'tpl-4cut-confetti', name: 'Confetti', file: 'assets/templates/4cut-strip-1.webp',
     mode: '4cut', aspect: 0.36, whiteBox: true,
     slots: [
       { x: 0.10, y: 0.05, w: 0.80, h: 0.21 },
@@ -26,7 +26,7 @@ const TEMPLATES = [
     ],
   },
   {
-    id: 'tpl-4cut-cats', name: 'Black Cats', file: 'assets/templates/4cut-strip2.PNG',
+    id: 'tpl-4cut-cats', name: 'Black Cats', file: 'assets/templates/4cut-strip2.webp',
     mode: '4cut', aspect: 0.36, whiteBox: true,
     slots: [
       { x: 0.13, y: 0.06, w: 0.74, h: 0.20 },
@@ -36,7 +36,7 @@ const TEMPLATES = [
     ],
   },
   {
-    id: 'tpl-4cut-pink-loops', name: 'Pink Loops', file: 'assets/templates/4cut-strip3.PNG',
+    id: 'tpl-4cut-pink-loops', name: 'Pink Loops', file: 'assets/templates/4cut-strip3.webp',
     mode: '4cut', aspect: 0.36, whiteBox: true,
     slots: [
       { x: 0.13, y: 0.06, w: 0.74, h: 0.20 },
@@ -46,7 +46,7 @@ const TEMPLATES = [
     ],
   },
   {
-    id: 'tpl-4cut-style4', name: 'Style 4', file: 'assets/templates/4cut-strip4.PNG',
+    id: 'tpl-4cut-style4', name: 'Style 4', file: 'assets/templates/4cut-strip4.webp',
     mode: '4cut', aspect: 0.36, whiteBox: true,
     slots: [
       { x: 0.10, y: 0.05, w: 0.80, h: 0.21 },
@@ -56,7 +56,7 @@ const TEMPLATES = [
     ],
   },
   {
-    id: 'tpl-3cut-snap', name: 'Snap!', file: 'assets/templates/4cut-strip5.png',
+    id: 'tpl-3cut-snap', name: 'Snap!', file: 'assets/templates/4cut-strip5.webp',
     mode: '3cut', aspect: 0.34, whiteBox: true,
     slots: [
       { x: 0.08, y: 0.11, w: 0.84, h: 0.23 },

@@ -98,7 +98,7 @@ Key JS functions added/changed:
 - ✅ Error state: "Camera access was denied" + "Try again" button + help text
 - ✅ Smooth fade-in of live preview once permission is granted
 
-### Layout Modes (9 total)
+### Layout Modes (12+ total)
 - ✅ **4-Cut Strip** — 4 photos stacked vertically
 - ✅ **2-Cut Strip** — 2 photos stacked (quick couples format)
 - ✅ **6-Cut Grid** — 2×3 contact sheet (6 photos)
@@ -108,13 +108,19 @@ Key JS functions added/changed:
 - ✅ **Polaroid** — white-border single shot with SnapBooth + date caption
 - ✅ **Photo Card** — instax mini style, wide white border + date caption
 - ✅ **GIF / Boomerang** — 2s recording at 12fps, encoded via gif.js, boomerang loop
+- ✅ **9-Cut Grid** — 3×3 photo-dump grid (9 photos)
+- ✅ **Puri 4-Cut** — slim Korean Photoism-style vertical strip (4 portrait slots)
+- ✅ **Diptych** — 2 side-by-side photos (duo / before-after format)
 
 ### Filters (7)
 - ✅ None, B&W, Vintage, Retro, Glow, Warm, Cool
 - ✅ Live preview thumbnails on sample.jpg (cache-busted on load)
 
-### Frames (9)
-- ✅ Strip, Classic, Minimal, Heart, Valentine, Holiday, Birthday, Graduation, New Year
+### Frames (12+)
+- ✅ Strip, Classic, Minimal, Heart, Valentine, Holiday, Birthday, Graduation, New Year, Life4Cuts, Photoism, Mirrored
+- ✅ **Y2K Chrome** — metallic chrome gradient border with sparkle corners
+- ✅ **Coquette** — soft pink dashed-lace border with bow corners
+- ✅ **Retro Digicam** — burned-in orange date stamp + REC indicator (Sony Mavica vibe)
 - ✅ Each has custom bg colour + drawFrameDecorations() (emoji corners, text branding)
 
 ### Stickers
@@ -264,7 +270,13 @@ icon/text:   #c06070 / #5a2535 / #a06070
 
 ---
 
-*Last updated: 2026-04-28*
+*Last updated: 2026-05-06*
+
+### Gen-Z trend pack (2026-05-06)
+- ✅ Layouts added: 9-Cut Grid, Puri 4-Cut (Korean), Diptych
+- ✅ Frames added: Y2K Chrome, Coquette, Retro Digicam
+- ✅ Trend colors added (with names): Butter Yellow `#F4E5B2`, Cherry Red `#C8313A`, Mocha Mousse `#A47864`, Tokyo Cool `#1A1A1A`
+- ✅ All swatches and patterns now have human-readable names (used as tooltips)
 
 ---
 
