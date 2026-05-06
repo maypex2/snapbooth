@@ -383,9 +383,11 @@ function encodeGif(rawFrames, w, h) {
 
   const boomerangFrames = [...rawFrames, ...[...rawFrames].reverse().slice(1, -1)];
 
+  // Worker MUST be same-origin — modern browsers block cross-origin Web
+  // Workers, which silently breaks gif.js and stalls the encode at 0%.
   const gif = new GIF({
     workers: 2, quality: 10, width: w, height: h,
-    workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js',
+    workerScript: 'js/gif.worker.js',
   });
 
   boomerangFrames.forEach(fc => gif.addFrame(fc, { delay: Math.round(1000 / 12) }));
