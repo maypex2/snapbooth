@@ -37,3 +37,19 @@ if (hamburger && mobileMenu) {
 document.querySelectorAll('.hero [data-animate]').forEach((el, i) => {
   setTimeout(() => el.classList.add('visible'), i * 120);
 });
+
+// ── Skeleton-loader hook ──
+// Adds .sb-loaded to any image inside .strip-photo or .sc-frame--real once
+// the image finishes loading. CSS fades the image in and stops the parent
+// container's shimmer animation.
+(function () {
+  const sel = '.strip-photo img, .sc-frame--real img.sc-preview';
+  document.querySelectorAll(sel).forEach(img => {
+    if (img.complete && img.naturalWidth > 0) {
+      img.classList.add('sb-loaded');
+    } else {
+      img.addEventListener('load',  () => img.classList.add('sb-loaded'), { once: true });
+      img.addEventListener('error', () => img.classList.add('sb-loaded'), { once: true });
+    }
+  });
+})();

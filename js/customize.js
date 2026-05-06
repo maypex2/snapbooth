@@ -15,7 +15,7 @@ let photoOffsets = [];
 // ends so downloads stay full quality.
 let renderScale = 1;
 // Footer visibility toggles (Text tab → Footer section)
-let showWordmark = true;
+const showWordmark = true; // always-on now
 let showDate     = true;
 
 // Draggable text overlays — like stickers but with text. Each item:
@@ -116,26 +116,51 @@ function footerReserveFor(mode) {
   }
 }
 
+// Returns true if the strip's background is dark enough that we should
+// flip the wordmark to white. Patterns are treated as light by default.
+function isDarkStripBg() {
+  if (bgOverride && bgOverride.type === 'solid') return isDarkHex(bgOverride.color);
+  if (bgOverride && bgOverride.type === 'pattern') return false;
+  // Photocard always has a forced white background regardless of frame.
+  if (currentMode === 'photocard') return false;
+  return isDarkHex(getFrameBg(currentFrame));
+}
+
+function isDarkHex(hex) {
+  if (!hex || typeof hex !== 'string') return false;
+  let h = hex.replace('#', '').trim();
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  if (h.length !== 6) return false;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  // Perceived luminance (Rec. 709)
+  const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return lum < 0.5;
+}
+
 function drawBrandFooter(sctx, sw, sh, reserveH) {
   if (!showWordmark && !showDate) return;
   const wmSize   = Math.max(20, Math.min(reserveH * 0.42, sw * 0.045));
   const dateSize = Math.max(12, wmSize * 0.5);
   const cx       = sw / 2;
   const footerTop = sh - reserveH;
-  // Two-line stack centered within the reserved bottom band.
   const wmY   = footerTop + reserveH * (showDate ? 0.55 : 0.7);
   const dateY = footerTop + reserveH * 0.82;
+  const dark = isDarkStripBg();
+  const wmColor   = dark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.55)';
+  const dateColor = dark ? 'rgba(255,255,255,0.6)'  : 'rgba(0,0,0,0.35)';
 
   sctx.save();
   sctx.textAlign = 'center';
   sctx.textBaseline = 'alphabetic';
   if (showWordmark) {
-    sctx.fillStyle = 'rgba(0,0,0,0.55)';
+    sctx.fillStyle = wmColor;
     sctx.font = `italic ${Math.round(wmSize)}px "DM Serif Display", serif`;
     sctx.fillText('snapbooth', cx, wmY);
   }
   if (showDate) {
-    sctx.fillStyle = 'rgba(0,0,0,0.35)';
+    sctx.fillStyle = dateColor;
     sctx.font = `400 ${Math.round(dateSize)}px "DM Sans", sans-serif`;
     sctx.fillText(
       new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -390,8 +415,6 @@ function buildStrip() {
   }
   sctx.fillRect(0, 0, sw, sh);
 
-  if (currentMode !== 'photocard' && !bgOverride) drawFrameDecorations(sctx, currentFrame, sw, sh);
-
   // Themed frame title in the top reserved zone replaced by user's
   // custom text when provided. Falls back to bottom space (e.g. polaroid,
   // photocard) when there's no usable top area.
@@ -454,6 +477,10 @@ function buildStrip() {
       sctx.textBaseline = 'alphabetic';
     }
   });
+
+  // Frame decorations render ABOVE photos so themed text (REC, date stamp,
+  // wordmarks, borders, sparkles) is never hidden by photo content.
+  if (currentMode !== 'photocard' && !bgOverride) drawFrameDecorations(sctx, currentFrame, sw, sh);
 
   // Unified brand footer — one consistent placement across every layout.
   // Italic lowercase "snapbooth" in DM Serif, centered above the bottom edge,
@@ -1460,15 +1487,8 @@ if (customTextClear) {
   });
 }
 
-// Footer visibility toggles
-const wordmarkToggle = document.getElementById('toggle-wordmark');
+// Footer visibility toggle (date only — wordmark always shown)
 const dateToggle = document.getElementById('toggle-date');
-if (wordmarkToggle) {
-  wordmarkToggle.addEventListener('change', e => {
-    showWordmark = e.target.checked;
-    buildStrip();
-  });
-}
 if (dateToggle) {
   dateToggle.addEventListener('change', e => {
     showDate = e.target.checked;

@@ -343,6 +343,62 @@ body::before {
   flex-wrap: wrap;
 }
 
+/* ── Trend chips row (under CTAs) ── */
+.hero-chips {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hero-chips-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 13px;
+  border-radius: 9999px;
+  border: 1px solid var(--border2);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.hero-chip:hover {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+  transform: translateY(-1px);
+}
+
+/* Per-chip accent dot — quick visual cue for each trend */
+.hero-chip::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 7px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.hero-chip[data-trend="y2k"]::before           { background: linear-gradient(135deg, #dde2ee, #8a90a8); }
+.hero-chip[data-trend="coquette"]::before      { background: #E89BA8; }
+.hero-chip[data-trend="diptych"]::before       { background: #2A2520; }
+.hero-chip[data-trend="cherry-red"]::before    { background: #C8313A; }
+.hero-chip[data-trend="butter-yellow"]::before { background: #F4E5B2; border: 1px solid #d4c585; }
+
 /* ── sc-row / sc-card ── */
 .sc-row {
   display: flex;
@@ -628,6 +684,16 @@ body::before {
   flex-shrink: 0;
 }
 
+/* Equal-weight secondary primary (Upload Photos) — same size, inverted color */
+.cta-primary--alt {
+  background: var(--text);
+  color: var(--bg);
+}
+.cta-primary--alt:hover {
+  background: #1a1612;
+  box-shadow: 0 4px 16px rgba(42, 37, 32, 0.3);
+}
+
 .cta-secondary {
   display: inline-flex;
   align-items: center;
@@ -648,6 +714,59 @@ body::before {
   transform: translateY(-2px);
 }
 
+/* Quiet text-only variant for "See how it works" — no border box,
+   so the two big primary CTAs read as the focal pair. */
+.cta-secondary--small {
+  border: none;
+  padding: 14px 6px;
+  font-size: 13px;
+}
+.cta-secondary--small:hover {
+  border: none;
+  color: var(--text);
+}
+
+/* ── Hero eyebrow ── */
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 18px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--border2);
+  border-radius: 9999px;
+  width: fit-content;
+}
+
+/* ── Trust strip ── */
+.hero-trust {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 20px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.hero-trust li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hero-trust svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
 /* ── Strip visual mockup ── */
 .hero-visual {
   display: flex;
@@ -659,49 +778,177 @@ body::before {
 
 .strips-scene {
   position: relative;
-  width: 190px;
-  height: 440px;
+  width: 380px;
+  height: 460px;
 }
 
 .strip-card {
   position: absolute;
-  width: 140px;
   background: #f8f6f2;
-  border-radius: 12px;
-  padding: 12px 12px 32px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, .55), 0 4px 16px rgba(0, 0, 0, .3);
+  gap: 6px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .35), 0 4px 12px rgba(0, 0, 0, .2);
+  /* Promote to GPU layer so transforms/floats don't repaint shadows. */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
-@keyframes float-back {
-  0% { transform: rotate(8deg) translateY(0px); }
-  50% { transform: rotate(8deg) translateY(-8px); }
-  100% { transform: rotate(8deg) translateY(0px); }
+@keyframes float-a {
+  0%, 100% { transform: var(--rest); }
+  50%      { transform: var(--rest-up); }
+}
+@keyframes float-b {
+  0%, 100% { transform: var(--rest); }
+  50%      { transform: var(--rest-up); }
+}
+@keyframes float-c {
+  0%, 100% { transform: var(--rest); }
+  50%      { transform: var(--rest-up); }
 }
 
-@keyframes float-front {
-  0% { transform: rotate(-3deg) translateY(0px); }
-  50% { transform: rotate(-3deg) translateY(-8px); }
-  100% { transform: rotate(-3deg) translateY(0px); }
+/* ── Staggered entrance animation ── */
+@keyframes strip-enter-a {
+  0%   { opacity: 0; transform: rotate(-4deg) translate(-30px, 30px); }
+  100% { opacity: .65; transform: rotate(12deg) translate(0, 0); }
+}
+@keyframes strip-enter-b {
+  0%   { opacity: 0; transform: rotate(4deg)  translate(40px, 30px); }
+  100% { opacity: 1; transform: rotate(-8deg) translate(0, 0); }
+}
+@keyframes strip-enter-c {
+  0%   { opacity: 0; transform: rotate(-12deg) translate(0, 60px); }
+  100% { opacity: 1; transform: rotate(3deg)   translate(0, 0); }
 }
 
-.strip-card--back {
-  left: 30px;
-  top: 20px;
-  transform: rotate(8deg);
-  opacity: .6;
-  background: #f5efe8;
-  animation: float-back 8s ease-in-out infinite;
+/* ── Card 1: 6-Cut Grid (back, dimmed) ───────────────────────── */
+.strip-card--6cut {
+  width: 160px;
+  right: 0;
+  top: 0;
+  padding: 8px 8px 16px;
+  --rest: rotate(12deg) translateY(0);
+  --rest-up: rotate(12deg) translateY(-7px);
+  transform: var(--rest);
+  opacity: .65;
+  z-index: 1;
+  animation:
+    strip-enter-a .9s cubic-bezier(0.16, 1, 0.3, 1) .15s both,
+    float-a 8s ease-in-out 1s infinite;
+}
+.strip-card--6cut .grid-photos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.strip-card--6cut .strip-photo {
+  aspect-ratio: 4/3;
+  border-radius: 4px;
 }
 
-.strip-card--front {
+/* ── Card 2: Polaroid (mid, instant-print) ───────────────────── */
+.strip-card--polaroid {
+  width: 170px;
   left: 0;
-  top: 40px;
-  transform: rotate(-3deg);
+  top: 30px;
+  padding: 12px 12px 56px;
+  background: #ffffff;
+  --rest: rotate(-8deg) translateY(0);
+  --rest-up: rotate(-8deg) translateY(-6px);
+  transform: var(--rest);
   z-index: 2;
-  animation: float-front 7s ease-in-out infinite reverse;
+  animation:
+    strip-enter-b .9s cubic-bezier(0.16, 1, 0.3, 1) .35s both,
+    float-b 9s ease-in-out 1.2s infinite;
+}
+.strip-card--polaroid .strip-photo {
+  aspect-ratio: 1/1;
+  border-radius: 3px;
+}
+.strip-card--polaroid .polaroid-caption {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 12px;
+  text-align: center;
+}
+.strip-card--polaroid .strip-brand {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 16px;
+  margin: 0;
+  color: rgba(0, 0, 0, 0.7);
+}
+.strip-card--polaroid .strip-date {
+  font-size: 9px;
+  color: rgba(0, 0, 0, 0.45);
+  margin-top: 2px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Card 3: 4-Cut Strip with Y2K Chrome (front, hero card) ── */
+.strip-card--y2k {
+  width: 140px;
+  left: 130px;
+  top: 50px;
+  padding: 10px;
+  background: #1a1a22;
+  border: 3px solid;
+  border-image: linear-gradient(135deg, #dde2ee 0%, #9aa0b4 25%, #f0f3fa 50%, #8a90a8 75%, #cfd5e2 100%) 1;
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+    0 14px 40px rgba(0, 0, 0, .4),
+    0 6px 14px rgba(0, 0, 0, .25);
+  --rest: rotate(3deg) translateY(0);
+  --rest-up: rotate(3deg) translateY(-8px);
+  transform: var(--rest);
+  z-index: 3;
+  animation:
+    strip-enter-c 1s cubic-bezier(0.16, 1, 0.3, 1) .55s both,
+    float-c 7s ease-in-out 1.5s infinite;
+}
+.strip-card--y2k .strip-photo {
+  aspect-ratio: 4/3;
+  border-radius: 2px;
+}
+.strip-card--y2k .strip-brand--y2k {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: #dde2ee;
+  text-align: center;
+  letter-spacing: 0.12em;
+  margin-top: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.y2k-spark {
+  position: absolute;
+  font-size: 18px;
+  color: #f0f3fa;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  animation: sparkle 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.y2k-spark--tl { top: -8px; left: -10px; }
+.y2k-spark--br { bottom: 14px; right: -10px; animation-delay: 1.2s; }
+@keyframes sparkle {
+  0%, 100% { opacity: .4; transform: scale(.8); }
+  50%      { opacity: 1;  transform: scale(1.15); }
+}
+
+/* Cycles the polaroid photo through 4 different SnapBooth filters
+   so visitors see the filter system without reading about it. */
+@keyframes filter-cycle {
+  0%, 22%   { filter: sepia(35%) saturate(1.4) brightness(1.05); }      /* Vintage */
+  25%, 47%  { filter: grayscale(100%) contrast(1.1); }                  /* B&W */
+  50%, 72%  { filter: brightness(1.18) saturate(1.15); }                /* Glow */
+  75%, 97%  { filter: saturate(1.6) contrast(1.2); }                    /* Punch */
+  100%      { filter: sepia(35%) saturate(1.4) brightness(1.05); }
+}
+.filter-cycle {
+  animation: filter-cycle 12s ease-in-out 1.5s infinite;
 }
 
 .strip-photo {
@@ -709,7 +956,11 @@ body::before {
   border-radius: 6px;
   aspect-ratio: 4/3;
   overflow: hidden;
-  background: #ddd;
+  background: linear-gradient(90deg, #d8d2c4 0%, #ece6d6 50%, #d8d2c4 100%);
+  background-size: 200% 100%;
+  /* Run shimmer for ~3s max; never animate forever — saves battery and
+     prevents the gradient repaint loop from pegging the CPU on slow phones. */
+  animation: sb-shimmer 1.5s ease-in-out 2;
 }
 
 .strip-photo img {
@@ -718,6 +969,44 @@ body::before {
   object-fit: cover;
   object-position: center top;
   display: block;
+  opacity: 0;
+  transition: opacity .35s ease;
+}
+
+.strip-photo img.sb-loaded {
+  opacity: 1;
+}
+
+/* Stop shimmering once the image has loaded */
+.strip-photo:has(img.sb-loaded) {
+  background: #ddd;
+  animation: none;
+}
+
+/* ── Skeleton shimmer for layout carousel previews ────────────── */
+.sc-frame--real {
+  background: linear-gradient(90deg, #ECE3D0 0%, #F7EFDB 50%, #ECE3D0 100%) !important;
+  background-size: 200% 100% !important;
+  animation: sb-shimmer 1.5s ease-in-out 2;
+}
+
+.sc-frame--real:has(img.sb-loaded) {
+  background: #FAF6EE !important;
+  animation: none;
+}
+
+.sc-preview {
+  opacity: 0;
+  transition: opacity .35s ease;
+}
+
+.sc-preview.sb-loaded {
+  opacity: 1;
+}
+
+@keyframes sb-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
 }
 
 .strip-brand {
@@ -1448,23 +1737,22 @@ body::before {
   }
 
   .strips-scene {
-    height: 480px;
-    width: 200px;
+    height: 440px;
+    width: 340px;
     margin: 0 auto;
   }
 
-  .strip-card {
-    width: 130px;
-  }
+  .strip-card--6cut    { width: 140px; right: 0; top: 0; }
+  .strip-card--polaroid { width: 150px; left: 0; top: 30px; }
+  .strip-card--y2k     { width: 130px; left: 110px; top: 50px; }
 
-  .strip-card--back {
-    left: 50px;
-    top: 10px;
+  .hero-chips,
+  .hero-trust {
+    justify-content: center;
   }
-
-  .strip-card--front {
-    left: 0;
-    top: 30px;
+  .hero-eyebrow {
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .features-grid {
@@ -1576,31 +1864,22 @@ body::before {
     font-size: 11px;
   }
 
-  /* Strip visual: smaller, less offset */
+  /* Strip visual: smaller, tighter offsets on phone */
   .strips-scene {
-    height: 420px;
-    width: 170px;
+    height: 380px;
+    width: 290px;
   }
 
-  .strip-card {
-    width: 110px;
-    padding: 8px 8px 24px;
-    gap: 5px;
-  }
-
-  .strip-card--back {
-    left: 44px;
-    top: 8px;
-  }
-
-  .strip-card--front {
-    left: 0;
-    top: 20px;
-  }
+  .strip-card--6cut    { width: 120px; right: 0; top: 0; padding: 6px 6px 12px; }
+  .strip-card--polaroid { width: 130px; left: 0; top: 24px; padding: 10px 10px 44px; }
+  .strip-card--y2k     { width: 110px; left: 90px; top: 44px; padding: 8px; gap: 5px; }
 
   .strip-brand {
     font-size: 8px;
   }
+  .strip-card--polaroid .strip-brand { font-size: 13px; }
+  .strip-card--y2k .strip-brand--y2k { font-size: 10px; }
+  .strip-card--polaroid .strip-date { font-size: 8px; }
 
   /* Footer full single-column */
   .footer-inner {
@@ -2037,7 +2316,7 @@ body::before {
     filter: none !important;
     opacity: 1 !important;
   }
-  .strip-card--back, .strip-card--front {
+  .strip-card, .y2k-spark, .filter-cycle {
     animation: none !important;
   }
   .sc-card, .cta-primary {

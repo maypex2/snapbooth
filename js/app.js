@@ -435,6 +435,18 @@ function footerReserveFor(mode) {
   }
 }
 
+function isDarkHex(hex) {
+  if (!hex || typeof hex !== 'string') return false;
+  let h = hex.replace('#', '').trim();
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  if (h.length !== 6) return false;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return lum < 0.5;
+}
+
 function drawBrandFooter(sctx, sw, sh, reserveH) {
   const wmSize   = Math.max(20, Math.min(reserveH * 0.42, sw * 0.045));
   const dateSize = Math.max(12, wmSize * 0.5);
@@ -442,14 +454,18 @@ function drawBrandFooter(sctx, sw, sh, reserveH) {
   const footerTop = sh - reserveH;
   const wmY   = footerTop + reserveH * 0.55;
   const dateY = footerTop + reserveH * 0.82;
+  // photocard forces a white card; everything else uses the frame bg.
+  const dark = currentMode === 'photocard' ? false : isDarkHex(getFrameBg(currentFrame));
+  const wmColor   = dark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.55)';
+  const dateColor = dark ? 'rgba(255,255,255,0.6)'  : 'rgba(0,0,0,0.35)';
 
   sctx.save();
   sctx.textAlign = 'center';
   sctx.textBaseline = 'alphabetic';
-  sctx.fillStyle = 'rgba(0,0,0,0.55)';
+  sctx.fillStyle = wmColor;
   sctx.font = `italic ${Math.round(wmSize)}px "DM Serif Display", serif`;
   sctx.fillText('snapbooth', cx, wmY);
-  sctx.fillStyle = 'rgba(0,0,0,0.35)';
+  sctx.fillStyle = dateColor;
   sctx.font = `400 ${Math.round(dateSize)}px "DM Sans", sans-serif`;
   sctx.fillText(
     new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -625,8 +641,6 @@ function buildStrip() {
   sctx.fillStyle = bg;
   sctx.fillRect(0, 0, sw, sh);
 
-  if (currentMode !== 'photocard') drawFrameDecorations(sctx, currentFrame, sw, sh);
-
   shots.slice(0, maxShots()).forEach((img, i) => {
     if (!positions[i]) return;
     const { x, y, w, h } = positions[i];
@@ -635,6 +649,10 @@ function buildStrip() {
     sctx.lineWidth = 1;
     sctx.strokeRect(x, y, w, h);
   });
+
+  // Frame decorations render ABOVE photos so themed text (REC, date stamp,
+  // wordmarks, borders) is never hidden by photo content.
+  if (currentMode !== 'photocard') drawFrameDecorations(sctx, currentFrame, sw, sh);
 
   // Unified brand footer — same italic centered "snapbooth" + date on every layout.
   if (currentMode !== 'tilt3') drawBrandFooter(sctx, sw, sh, footerReserveFor(currentMode));

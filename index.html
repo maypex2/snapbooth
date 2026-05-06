@@ -103,13 +103,14 @@
   <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <section class="hero" aria-label="Hero">
     <div class="hero-content">
+      <span class="hero-eyebrow" data-animate data-delay="1">Free · No signup · Browser-based</span>
       <h1 data-animate data-delay="1">
-        Free Online<br><em>Photo Booth</em>
+        Your photobooth,<br><em>in the browser.</em>
       </h1>
 
       <p class="hero-sub" data-animate data-delay="2">
-        Take photos directly in your browser, or upload existing ones to create custom 4-cut strips. Apply filters, add
-        stickers, and download instantly.
+        Strips, polaroids and GIF boomerangs — 14 layouts, vintage filters, Y2K and Coquette frames. Capture from your
+        camera or upload existing photos.
       </p>
 
       <div class="hero-ctas" data-animate data-delay="3">
@@ -121,67 +122,91 @@
           </svg>
           Open Photo Booth
         </a>
-        <a href="customize.html?fresh=1" class="cta-secondary">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <a href="customize.html?fresh=1" class="cta-primary cta-primary--alt">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17,8 12,3 7,8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-          Upload Existing Photos
+          Upload Photos
         </a>
-        <a href="#how" class="cta-secondary">
+        <a href="#how" class="cta-secondary cta-secondary--small">
           See how it works
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M12 5v14M5 12l7 7 7-7" />
           </svg>
         </a>
       </div>
+
+      <!-- Trust strip — quick credibility line under CTAs -->
+      <ul class="hero-trust" data-animate data-delay="3" aria-label="Why you'll like SnapBooth">
+        <li>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          No signup
+        </li>
+        <li>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          No watermark
+        </li>
+        <li>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          100% free, forever
+        </li>
+        <li>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Photos never leave your device
+        </li>
+      </ul>
+
+      <!-- Trend chips — quick links into popular layouts/frames/colors -->
+      <div class="hero-chips" data-animate data-delay="4">
+        <span class="hero-chips-label">Trending</span>
+        <a href="app.html?mode=4cut"     class="hero-chip" data-trend="y2k">Y2K Chrome</a>
+        <a href="app.html?mode=2cut"     class="hero-chip" data-trend="coquette">Coquette</a>
+        <a href="app.html?mode=diptych"  class="hero-chip" data-trend="diptych">Diptych</a>
+        <a href="app.html?mode=polaroid" class="hero-chip" data-trend="cherry-red">Cherry Red</a>
+        <a href="app.html?mode=6cut"     class="hero-chip" data-trend="butter-yellow">Butter Yellow</a>
+      </div>
     </div>
 
-    <!-- Photo strip preview -->
+    <!-- Hero collage: 3 distinct layouts/frames showcasing app variety -->
     <div class="hero-visual" data-animate data-delay="2">
       <div class="strips-scene" aria-hidden="true">
         <div class="strip-glow"></div>
 
-        <!-- Back strip different photos, different filters, depth effect -->
-        <div class="strip-card strip-card--back">
-          <div class="strip-photo">
-            <img src="assets/hero/strip-back-1.webp" alt="" style="filter:saturate(0.5) contrast(1.3) brightness(0.9)">
-          </div>
-          <div class="strip-photo">
-            <img src="assets/hero/strip-back-2.webp" alt=""
-              style="filter:hue-rotate(200deg) saturate(0.8) brightness(1.05)">
-          </div>
-          <div class="strip-photo">
-            <img src="assets/hero/strip-back-3.webp" alt="">
-          </div>
-          <div class="strip-photo">
-            <img src="assets/hero/strip-back-4.webp" alt=""
-              style="filter:sepia(60%) contrast(1.1) brightness(1.05) saturate(0.8)">
+        <!-- BACK: 6-Cut Grid (showcases multi-photo grid layout) -->
+        <div class="strip-card strip-card--6cut">
+          <div class="grid-photos">
+            <div class="strip-photo"><img src="assets/hero/strip-back-1.webp" alt="" style="filter:sepia(30%) saturate(1.2)"></div>
+            <div class="strip-photo"><img src="assets/hero/strip-back-2.webp" alt="" style="filter:saturate(0.6) contrast(1.1)"></div>
+            <div class="strip-photo"><img src="assets/hero/strip-back-3.webp" alt="" style="filter:brightness(1.05)"></div>
+            <div class="strip-photo"><img src="assets/hero/strip-back-4.webp" alt="" style="filter:grayscale(100%) contrast(1.05)"></div>
+            <div class="strip-photo"><img src="assets/hero/strip-front-1.webp" alt="" style="filter:sepia(40%) saturate(1.3)"></div>
+            <div class="strip-photo"><img src="assets/hero/strip-front-2.webp" alt="" style="filter:hue-rotate(-10deg) saturate(1.2)"></div>
           </div>
           <div class="strip-brand">snapbooth</div>
         </div>
 
-        <!-- Front strip real photos with showcase filters -->
-        <div class="strip-card strip-card--front">
+        <!-- MID: Polaroid (single shot, instant-print look) -->
+        <div class="strip-card strip-card--polaroid">
           <div class="strip-photo">
-            <img src="assets/hero/strip-front-1.webp" alt="Vintage filter"
-              style="filter:sepia(60%) contrast(1.1) brightness(1.05) saturate(0.8)">
+            <img src="assets/hero/strip-front-3.webp" alt="" class="filter-cycle">
           </div>
-          <div class="strip-photo">
-            <img src="assets/hero/strip-front-2.webp" alt="Black and white filter"
-              style="filter:grayscale(100%) contrast(1.1)">
+          <div class="polaroid-caption">
+            <div class="strip-brand">snapbooth</div>
+            <div class="strip-date">May 6, 2026</div>
           </div>
-          <div class="strip-photo">
-            <img src="assets/hero/strip-front-3.webp" alt="Soft glow filter"
-              style="filter:brightness(1.15) saturate(1.3)">
-          </div>
-          <div class="strip-photo">
-            <img src="assets/hero/strip-front-4.webp" alt="Warm film filter"
-              style="filter:sepia(30%) saturate(1.4) brightness(1.08)">
-          </div>
-          <div class="strip-brand">snapbooth</div>
+        </div>
 
+        <!-- FRONT: 4-Cut Strip with Y2K Chrome frame -->
+        <div class="strip-card strip-card--y2k">
+          <div class="strip-photo"><img src="assets/hero/strip-front-1.webp" alt="" style="filter:sepia(60%) contrast(1.1) brightness(1.05) saturate(0.8)"></div>
+          <div class="strip-photo"><img src="assets/hero/strip-front-2.webp" alt="" style="filter:grayscale(100%) contrast(1.1)"></div>
+          <div class="strip-photo"><img src="assets/hero/strip-front-3.webp" alt="" style="filter:brightness(1.15) saturate(1.3)"></div>
+          <div class="strip-photo"><img src="assets/hero/strip-front-4.webp" alt="" style="filter:sepia(30%) saturate(1.4) brightness(1.08)"></div>
+          <div class="strip-brand strip-brand--y2k">Y2K ✦</div>
+          <span class="y2k-spark y2k-spark--tl">✦</span>
+          <span class="y2k-spark y2k-spark--br">✧</span>
         </div>
       </div>
     </div>

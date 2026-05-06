@@ -353,8 +353,28 @@
     }
 
     /* Real preview cards — single rendered image, no inner padding */
-    .sc-frame--real { padding: 0; overflow: hidden; }
-    .sc-preview { width: 100%; display: block; }
+    .sc-frame--real {
+      padding: 0;
+      overflow: hidden;
+      background: linear-gradient(90deg, #ECE3D0 0%, #F7EFDB 50%, #ECE3D0 100%);
+      background-size: 200% 100%;
+      animation: sb-shimmer 1.5s ease-in-out infinite;
+    }
+    .sc-frame--real:has(img.sb-loaded) {
+      background: #FAF6EE;
+      animation: none;
+    }
+    .sc-preview {
+      width: 100%;
+      display: block;
+      opacity: 0;
+      transition: opacity .35s ease;
+    }
+    .sc-preview.sb-loaded { opacity: 1; }
+    @keyframes sb-shimmer {
+      0%   { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
 
     /* Per-mode footer padding to mirror canvas BOT proportions */
     .sc-frame:has(.sc-4cut),
@@ -1195,6 +1215,19 @@
         // Also observe if the header DOM changes (e.g. ad banner above it)
         new ResizeObserver(update).observe(header);
       })();
+
+    // Skeleton-loader hook: fade in layout-preview images once they load,
+    // and clear the shimmer background on their parent .sc-frame--real.
+    (function loadSkeletons() {
+      document.querySelectorAll('.sc-frame--real img.sc-preview').forEach(img => {
+        if (img.complete && img.naturalWidth > 0) {
+          img.classList.add('sb-loaded');
+        } else {
+          img.addEventListener('load',  () => img.classList.add('sb-loaded'), { once: true });
+          img.addEventListener('error', () => img.classList.add('sb-loaded'), { once: true });
+        }
+      });
+    })();
 
     // Mirror disabled state from outer capture button to the in-camera one
     (function syncSnapDisabled() {
