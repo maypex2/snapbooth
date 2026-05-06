@@ -9,6 +9,16 @@ let isRunning      = false;
 let stream         = null;
 let currentGifBlob = null;
 let cameraReady    = false;
+let mirrorCamera   = true;
+
+function toggleMirror(btn) {
+  mirrorCamera = !mirrorCamera;
+  document.body.classList.toggle('no-mirror', !mirrorCamera);
+  if (btn) {
+    btn.classList.toggle('active', mirrorCamera);
+    btn.setAttribute('aria-pressed', String(mirrorCamera));
+  }
+}
 
 // ── DOM refs ──
 const video         = document.getElementById('video');
@@ -256,8 +266,10 @@ function captureFrame() {
     canvas.width  = sw;
     canvas.height = sh;
     ctx.save();
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
+    if (mirrorCamera) {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
     if (ctxFilterSupported() && currentFilter && currentFilter !== 'none') {
       ctx.filter = FILTER_CSS[currentFilter] || 'none';
     }
@@ -352,8 +364,10 @@ async function startGifSession() {
 
   for (let i = 0; i < TOTAL_FRAMES; i++) {
     ctx.save();
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
+    if (mirrorCamera) {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
     if (ctxFilterSupported() && currentFilter && currentFilter !== 'none') {
       ctx.filter = FILTER_CSS[currentFilter] || 'none';
     }

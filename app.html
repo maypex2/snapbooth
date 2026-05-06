@@ -88,7 +88,7 @@
     }
 
     .filter-thumb {
-      background-image: url('assets/sample.jpg');
+      background-image: url('assets/sample.webp');
       background-size: cover;
       background-position: center;
     }
@@ -249,6 +249,13 @@
       transform: scaleX(-1);
       opacity: 0;
       transition: opacity .4s ease;
+    }
+
+    body.no-mirror #video { transform: none; }
+
+    .mirror-btn.active {
+      background: #fff;
+      color: #2A2520;
     }
 
     #video.cam-active {
@@ -793,6 +800,15 @@
               onclick="setAspect(this)">9:16</button>
             <button data-ratio="full" data-max="100%" class="ratio-btn px-2.5 py-1 rounded-full transition"
               onclick="setAspect(this)">Full</button>
+            <span class="w-px h-4 bg-white/25 mx-0.5"></span>
+            <button id="mirror-toggle" type="button" onclick="toggleMirror(this)"
+              class="mirror-btn active px-2 py-1 rounded-full transition flex items-center gap-1"
+              title="Mirror live preview" aria-pressed="true">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 3v18M3 8l4-4v4H3zm0 8l4 4v-4H3zm18-8l-4-4v4h4zm0 8l-4 4v-4h4z"/>
+              </svg>
+              <span class="text-[10px]">Mirror</span>
+            </button>
           </div>
 
           <!-- Filters: burger button (top-right) + slide-down panel -->
@@ -1123,15 +1139,15 @@
                 <div class="sc-frame">
                   <span class="sc-badge">NEW</span>
                   <div class="sc-grid sc-9cut">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
                   </div>
                 </div>
                 <div class="sc-label">9-Cut Grid</div>
@@ -1143,10 +1159,10 @@
                 <div class="sc-frame">
                   <span class="sc-badge">NEW</span>
                   <div class="sc-grid sc-vertical4">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
                   </div>
                 </div>
                 <div class="sc-label">Puri 4-Cut</div>
@@ -1158,8 +1174,8 @@
                 <div class="sc-frame">
                   <span class="sc-badge">NEW</span>
                   <div class="sc-grid sc-diptych">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
-                    <img src="assets/sample.jpg" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
+                    <img src="assets/sample.webp" alt="" decoding="async">
                   </div>
                 </div>
                 <div class="sc-label">Diptych</div>
