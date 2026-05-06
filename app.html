@@ -427,21 +427,18 @@
       width: 100%;
     }
 
-    /* Cap very tall layouts (Puri 4-Cut, Tilted 3-Cut) so they don't blow
-       up the carousel. Targeting IDs directly — :has() isn't reliable on
-       every browser. The inner grid renders at a fixed height with auto
-       width, so the slim portrait shape is preserved without overflowing. */
-    #mode-vertical4 .sc-frame,
-    #mode-tilt3 .sc-frame {
+    /* Cap Puri 4-Cut so it doesn't blow up the carousel. Tilted 3-Cut uses
+       a real preview image (sc-frame--real) and sizes itself correctly, so
+       it doesn't need a cap. Keep overflow visible so the corner badges
+       (POPULAR / TRY IT NOW / NEW) aren't clipped. */
+    #mode-vertical4 .sc-frame {
       height: 300px;
-      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 10px;
     }
-    #mode-vertical4 .sc-grid.sc-vertical4,
-    #mode-tilt3 .sc-tilt3 {
+    #mode-vertical4 .sc-grid.sc-vertical4 {
       width: auto;
       height: 100%;
     }
@@ -501,10 +498,12 @@
     .sc-tilt3 img:nth-child(2) { transform: rotate(2deg); }
     .sc-tilt3 img:nth-child(3) { transform: rotate(-2deg); }
 
+    /* Badges sit inside the frame (top-right corner) so they aren't clipped
+       by the frame's overflow: hidden (needed for rounded image corners). */
     .sc-badge {
       position: absolute;
-      top: -10px;
-      right: -10px;
+      top: 8px;
+      right: 8px;
       padding: 4px 10px;
       border-radius: 9999px;
       font-size: 9px;
