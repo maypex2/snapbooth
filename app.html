@@ -427,18 +427,23 @@
       width: 100%;
     }
 
-    /* Cap very tall layouts (Puri 4-Cut, Tilted 3-Cut) so they don't break
-       the carousel. The grid renders at a fixed height with auto width so
-       the inner photos stay correctly proportioned. */
-    .sc-frame:has(.sc-vertical4),
-    .sc-frame.is-tilt3 {
-      max-height: 320px;
+    /* Cap very tall layouts (Puri 4-Cut, Tilted 3-Cut) so they don't blow
+       up the carousel. Targeting IDs directly — :has() isn't reliable on
+       every browser. The inner grid renders at a fixed height with auto
+       width, so the slim portrait shape is preserved without overflowing. */
+    #mode-vertical4 .sc-frame,
+    #mode-tilt3 .sc-frame {
+      height: 300px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
     }
-    .sc-grid.sc-vertical4,
-    .sc-frame.is-tilt3 .sc-tilt3 {
+    #mode-vertical4 .sc-grid.sc-vertical4,
+    #mode-tilt3 .sc-tilt3 {
       width: auto;
-      height: 296px;
-      margin: 0 auto;
+      height: 100%;
     }
 
     .sc-grid img {
