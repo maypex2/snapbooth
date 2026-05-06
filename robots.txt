@@ -4,4 +4,4 @@ Allow: /
 # Don't crawl preview-generation tooling
 Disallow: /generate-previews.html
 
-Sitemap: https://snapbooth.app/sitemap.xml
+Sitemap: https://maypex2.github.io/snapbooth/sitemap.xml

@@ -1,57 +1,57 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://snapbooth.app/</loc>
+    <loc>https://maypex2.github.io/snapbooth/</loc>
     <lastmod>2026-05-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://snapbooth.app/app.html</loc>
+    <loc>https://maypex2.github.io/snapbooth/app.html</loc>
     <lastmod>2026-05-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://snapbooth.app/customize.html</loc>
+    <loc>https://maypex2.github.io/snapbooth/customize.html</loc>
     <lastmod>2026-05-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://snapbooth.app/about.html</loc>
+    <loc>https://maypex2.github.io/snapbooth/about.html</loc>
     <lastmod>2026-05-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://snapbooth.app/contact.html</loc>
+    <loc>https://maypex2.github.io/snapbooth/contact.html</loc>
     <lastmod>2026-05-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://snapbooth.app/privacy.html</loc>
+    <loc>https://maypex2.github.io/snapbooth/privacy.html</loc>
     <lastmod>2026-05-06</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://snapbooth.app/terms.html</loc>
+    <loc>https://maypex2.github.io/snapbooth/terms.html</loc>
     <lastmod>2026-05-06</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
-  <!-- Layout deep-links — each pre-selects a layout and is independently indexable -->
-  <url><loc>https://snapbooth.app/app.html?mode=4cut</loc><priority>0.8</priority></url>
-  <url><loc>https://snapbooth.app/app.html?mode=2cut</loc><priority>0.7</priority></url>
-  <url><loc>https://snapbooth.app/app.html?mode=3cut</loc><priority>0.7</priority></url>
-  <url><loc>https://snapbooth.app/app.html?mode=6cut</loc><priority>0.7</priority></url>
-  <url><loc>https://snapbooth.app/app.html?mode=9cut</loc><priority>0.7</priority></url>
-  <url><loc>https://snapbooth.app/app.html?mode=polaroid</loc><priority>0.7</priority></url>
-  <url><loc>https://snapbooth.app/app.html?mode=photocard</loc><priority>0.7</priority></url>
-  <url><loc>https://snapbooth.app/app.html?mode=vertical4</loc><priority>0.7</priority></url>
-  <url><loc>https://snapbooth.app/app.html?mode=diptych</loc><priority>0.7</priority></url>
-  <url><loc>https://snapbooth.app/app.html?mode=gif</loc><priority>0.7</priority></url>
+  <!-- Layout deep-links â€” each pre-selects a layout and is independently indexable -->
+  <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=4cut</loc><priority>0.8</priority></url>
+  <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=2cut</loc><priority>0.7</priority></url>
+  <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=3cut</loc><priority>0.7</priority></url>
+  <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=6cut</loc><priority>0.7</priority></url>
+  <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=9cut</loc><priority>0.7</priority></url>
+  <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=polaroid</loc><priority>0.7</priority></url>
+  <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=photocard</loc><priority>0.7</priority></url>
+  <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=vertical4</loc><priority>0.7</priority></url>
+  <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=diptych</loc><priority>0.7</priority></url>
+  <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=gif</loc><priority>0.7</priority></url>
 </urlset>

@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
 
-  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="shortcut icon" href="/favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
 <meta name="apple-mobile-web-app-title" content="SnapBooth" />
-<link rel="manifest" href="/site.webmanifest" />
+<link rel="manifest" href="site.webmanifest" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#FAFAFA">
 
@@ -18,13 +18,13 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Customize Photo | SnapBooth">
   <meta property="og:description" content="Customize your photo strip with frames, colors, stickers, and text.">
-  <meta property="og:url" content="https://snapbooth.app/customize.html">
-  <meta property="og:image" content="https://snapbooth.app/assets/og-image.jpg">
+  <meta property="og:url" content="https://maypex2.github.io/snapbooth/customize.html">
+  <meta property="og:image" content="https://maypex2.github.io/snapbooth/assets/og-image.jpg">
   <meta property="og:site_name" content="SnapBooth">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Customize Photo | SnapBooth">
   <meta name="twitter:description" content="Customize your photo strip with frames, colors, stickers, and text.">
-  <meta name="twitter:image" content="https://snapbooth.app/assets/og-image.jpg">
+  <meta name="twitter:image" content="https://maypex2.github.io/snapbooth/assets/og-image.jpg">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Dancing+Script:wght@700&family=Pacifico&family=Fredoka:wght@500;600&family=Playfair+Display:wght@700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -97,7 +97,7 @@
 
     /* Each mini renders the strip's real aspect ratio + header/footer
        proportions + slot grid, derived from buildStrip() dimensions
-       (W=1280, H=960). The .lm-shape is a fixed 60×60 viewport that
+       (W=1280, H=960). The .lm-shape is a fixed 60Ã—60 viewport that
        contains the actual paper-shaped .lm-strip element. */
     .layout-mini .lm-shape {
       width: 60px; height: 60px;
@@ -122,11 +122,11 @@
     .lm-strip .lm-cells > span { background:#C9A07A; display:block; border-radius:.5px; min-width:0; min-height:0; }
     .lm-strip .lm-header, .lm-strip .lm-footer { min-height:0; min-width:0; }
 
-    /* Each mode declares explicit width × height (px) sized to fit within
-       the 60×60 viewport while preserving the strip's true aspect ratio,
+    /* Each mode declares explicit width Ã— height (px) sized to fit within
+       the 60Ã—60 viewport while preserving the strip's true aspect ratio,
        computed from buildStrip() output dimensions. */
 
-    /* Strip layouts (vertical, tall) — height capped at 60, width derived */
+    /* Strip layouts (vertical, tall) â€” height capped at 60, width derived */
     .lm-4cut         { width: 19px;  height: 60px; grid-template-rows: 4.2% 1fr 5.1%; }
     .lm-4cut .lm-cells         { grid-template-rows: repeat(4, 1fr); }
     .lm-3cut         { width: 24px;  height: 60px; grid-template-rows: 5.4% 1fr 6.6%; }
@@ -166,7 +166,7 @@
     .lm-single       { width: 60px;  height: 45px; grid-template-rows: 0 1fr 0; }
     .lm-single .lm-cells       { grid-template-columns: 1fr; }
 
-    /* Tilted 3-Cut — dark red strip with rotated white photo cards */
+    /* Tilted 3-Cut â€” dark red strip with rotated white photo cards */
     .lm-tilt3        { width: 26px;  height: 60px; background:#5C0000; border:none; grid-template-rows: 2.1% 1fr 7.3%; padding: 0 12%; }
     .lm-tilt3 .lm-cells        { grid-template-rows: repeat(3, 1fr); gap: 8%; padding: 6% 0; }
     .lm-tilt3 .lm-cells > span { background:#fff; border:1px solid #0a0a0a; border-radius:0; }
@@ -183,7 +183,7 @@
     .ts-card:hover { background:#F4F4F5; transform:translateY(-2px); }
     .ts-card span { display:block; line-height:1.15; pointer-events:none; }
 
-    /* Loading skeleton — shown until the first buildStrip() finishes */
+    /* Loading skeleton â€” shown until the first buildStrip() finishes */
     .skeleton-strip {
       width: 280px;
       max-width: 100%;
@@ -213,7 +213,7 @@
     }
     .skeleton-text.thin { height: 9px; width: 40%; }
 
-    /* Custom color picker — show a rainbow gradient as the default visual
+    /* Custom color picker â€” show a rainbow gradient as the default visual
        so users instantly recognize it as a color swatch picker. */
     .custom-color-wrap { background: conic-gradient(from 0deg, #ff6b6b, #ffd166, #06d6a0, #118ab2, #ef476f, #ff6b6b); transition: transform .15s ease; }
     .custom-color-wrap:hover { transform: scale(1.05); }
@@ -288,7 +288,7 @@
       <!-- Templates -->
       <div data-panel="templates" class="p-5 hidden">
         <h3 class="font-serif text-lg mb-1">Templates</h3>
-        <p class="text-xs text-muted mb-4">Pick a designed template — your photos snap into the boxes. Templates are designed for the <strong>4-Cut Strip</strong> layout.</p>
+        <p class="text-xs text-muted mb-4">Pick a designed template â€” your photos snap into the boxes. Templates are designed for the <strong>4-Cut Strip</strong> layout.</p>
         <div id="template-banner" class="hidden mb-4 px-3 py-2.5 rounded-xl bg-blush/40 border border-rose/40 text-[11px] text-ink2">
           These templates are only available on <strong>4-Cut Strip</strong>. Switch your layout in the Layout tab to use them.
         </div>
@@ -373,7 +373,7 @@
           <p class="text-xs text-muted mb-4">Click a sticker below to add it to the strip.</p>
           <div class="mb-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-cream2/40">
             <svg width="14" height="14" fill="none" stroke="#9A8E7E" stroke-width="2" viewBox="0 0 24 24" class="mt-0.5 shrink-0"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
-            <p class="text-[11px] text-muted leading-snug">Tip: <strong>drag</strong> a sticker on the preview to move it · <strong>scroll wheel</strong> or pinch to resize · drag a corner handle to resize precisely.</p>
+            <p class="text-[11px] text-muted leading-snug">Tip: <strong>drag</strong> a sticker on the preview to move it Â· <strong>scroll wheel</strong> or pinch to resize Â· drag a corner handle to resize precisely.</p>
           </div>
           <div id="stickers-grid" class="grid grid-cols-4 gap-2"></div>
         </div>
@@ -426,7 +426,7 @@
           Post 1:1
         </button>
       </div>
-      <p class="text-[10px] text-muted text-center -mt-1">Story for Reels &amp; Stories · Post for the feed grid</p>
+      <p class="text-[10px] text-muted text-center -mt-1">Story for Reels &amp; Stories Â· Post for the feed grid</p>
 
       <!-- Background-color picker modal for IG exports -->
       <div id="bg-picker-overlay" class="fixed inset-0 z-[80] bg-ink/70 backdrop-blur-md hidden items-center justify-center p-4">
@@ -490,7 +490,7 @@
 
 <script>
 /**
- * ── Text Sticker Assets Logic ──
+ * â”€â”€ Text Sticker Assets Logic â”€â”€
  * Replaces the dynamic text generation with pre-made SVG assets from assets/text-stickers/
  */
 (function() {
