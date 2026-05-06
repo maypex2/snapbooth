@@ -8,18 +8,18 @@ let shots        = [];
 let customText   = '';
 let customFont   = 'serif-italic';
 
-const FONT_OPTIONS = [
-  { id: 'serif-italic', label: 'Classic',  css: 'italic 1px "DM Serif Display", serif',     weight: 'italic ', family: '"DM Serif Display", serif' },
-  { id: 'serif',        label: 'Editorial',css: '700 1px "Playfair Display", serif',         weight: '700 ',    family: '"Playfair Display", serif' },
-  { id: 'script',       label: 'Script',   css: '700 1px "Dancing Script", cursive',         weight: '700 ',    family: '"Dancing Script", cursive' },
-  { id: 'pacifico',     label: 'Retro',    css: '400 1px "Pacifico", cursive',               weight: '400 ',    family: '"Pacifico", cursive' },
-  { id: 'fredoka',      label: 'Bubbly',   css: '600 1px "Fredoka", sans-serif',             weight: '600 ',    family: '"Fredoka", sans-serif' },
-  { id: 'bebas',        label: 'Bold',     css: '400 1px "Bebas Neue", sans-serif',          weight: '400 ',    family: '"Bebas Neue", sans-serif' },
-  { id: 'sans',         label: 'Modern',   css: '500 1px "DM Sans", sans-serif',             weight: '500 ',    family: '"DM Sans", sans-serif' },
+const TITLE_FONT_OPTIONS = [
+  { id: 'serif-italic', label: 'Classic',   weight: 'italic ', family: '"DM Serif Display", serif' },
+  { id: 'serif',        label: 'Editorial', weight: '700 ',    family: '"Playfair Display", serif' },
+  { id: 'script',       label: 'Script',    weight: '700 ',    family: '"Dancing Script", cursive' },
+  { id: 'pacifico',     label: 'Retro',     weight: '400 ',    family: '"Pacifico", cursive' },
+  { id: 'fredoka',      label: 'Bubbly',    weight: '600 ',    family: '"Fredoka", sans-serif' },
+  { id: 'bebas',        label: 'Bold',      weight: '400 ',    family: '"Bebas Neue", sans-serif' },
+  { id: 'sans',         label: 'Modern',    weight: '500 ',    family: '"DM Sans", sans-serif' },
 ];
 
 function getCustomFontSpec(px) {
-  const f = FONT_OPTIONS.find(x => x.id === customFont) || FONT_OPTIONS[0];
+  const f = TITLE_FONT_OPTIONS.find(x => x.id === customFont) || TITLE_FONT_OPTIONS[0];
   return f.weight + px + 'px ' + f.family;
 }
 // Per-photo crop offsets keyed by shot index. ox/oy in [-1, 1] where 0 is
@@ -1648,7 +1648,7 @@ if (customTextClear) {
 // Font picker — choose the typeface for the custom title
 const fontPicker = document.getElementById('font-picker');
 if (fontPicker) {
-  fontPicker.innerHTML = FONT_OPTIONS.map(f => {
+  fontPicker.innerHTML = TITLE_FONT_OPTIONS.map(f => {
     const previewStyle = `font-family:${f.family};font-weight:${f.weight.trim() || 400};${f.id==='serif-italic'?'font-style:italic;':''}`;
     return `<button type="button" class="font-pill${f.id===customFont?' active':''}" data-font="${f.id}" style="${previewStyle}">${f.label}</button>`;
   }).join('');
