@@ -41,6 +41,7 @@ const MODE_SHOTS = {
   '4cut': 4, '3cut': 3, '2cut': 2, '6cut': 6, '3horiz': 3,
   'squaregrid': 4, '1large3small': 4, 'grid4': 4, 'single': 1, 'polaroid': 1,
   'double-polaroid': 2, 'photocard': 1, 'gif': 1, 'tilt3': 3, '4plus1': 5,
+  '9cut': 9, 'vertical4': 4, 'diptych': 2,
 };
 function maxShots() { return MODE_SHOTS[currentMode] || 1; }
 
@@ -103,6 +104,9 @@ const LAYOUTS = [
   { id: 'grid4',      name: '2x2 Grid',          count: 4, shape: { cols: 2, rows: 2 } },
   { id: '4plus1',     name: '4 + 1 Group',       count: 5, shape: { cols: 2, rows: 3 },
     customCells: '<span></span><span></span><span></span><span></span><span style="grid-column:1/-1"></span>' },
+  { id: '9cut',       name: '9-Cut Grid',        count: 9, shape: { cols: 3, rows: 3 } },
+  { id: 'vertical4',  name: 'Puri 4-Cut',        count: 4, shape: { cols: 1, rows: 4 } },
+  { id: 'diptych',    name: 'Diptych',           count: 2, shape: { cols: 2, rows: 1 } },
   { id: 'double-polaroid', name: 'Double Polaroid', count: 2, shape: { cols: 1, rows: 2 } },
   { id: 'tilt3',      name: 'Tilted 3-Cut',      count: 3, shape: { cols: 1, rows: 3 } },
   { id: 'polaroid',   name: 'Polaroid',          count: 1, shape: { cols: 1, rows: 1 } },
@@ -252,6 +256,29 @@ function buildStrip() {
       { x: PAD + W + GAP, y: TOP, w: W, h: H },
       { x: PAD, y: TOP + H + GAP, w: W, h: H },
       { x: PAD + W + GAP, y: TOP + H + GAP, w: W, h: H },
+    ];
+  } else if (currentMode === '9cut') {
+    const PAD = 24, GAP = 10, TOP = 80, BOT = 60;
+    sw = W * 3 + GAP * 2 + PAD * 2;
+    sh = H * 3 + GAP * 2 + TOP + BOT;
+    positions = [];
+    for (let r = 0; r < 3; r++)
+      for (let c = 0; c < 3; c++)
+        positions.push({ x: PAD + c * (W + GAP), y: TOP + r * (H + GAP), w: W, h: H });
+  } else if (currentMode === 'vertical4') {
+    const PAD = 28, GAP = 16, TOP = 100, BOT = 220;
+    const pW = Math.round(W * 0.55);
+    const pH = H;
+    sw = pW + PAD * 2;
+    sh = pH * 4 + GAP * 3 + TOP + BOT;
+    positions = Array.from({ length: 4 }, (_, i) => ({ x: PAD, y: TOP + i * (pH + GAP), w: pW, h: pH }));
+  } else if (currentMode === 'diptych') {
+    const PAD = 28, GAP = 14, TOP = 80, BOT = 100;
+    sw = W * 2 + GAP + PAD * 2;
+    sh = H + TOP + BOT;
+    positions = [
+      { x: PAD,           y: TOP, w: W, h: H },
+      { x: PAD + W + GAP, y: TOP, w: W, h: H },
     ];
   } else if (currentMode === '4plus1') {
     // 4 small photos in a 2×2 grid on top, 1 wide group photo below.
@@ -819,14 +846,16 @@ const PATTERNS = [
   { id:'default', label:'No fill (use frame)', swatch:'#ffffff', clear:true },
 
   // Neutrals
-  { id:'white',   label:'White',  type:'solid', color:'#FFFFFF' },
-  { id:'smoke',   label:'Smoke',  type:'solid', color:'#FAF8F2' },
-  { id:'aes-2',   label:'Beige',  type:'solid', color:'#E5D7C0' },
-  { id:'aes-6',   label:'Cream',  type:'solid', color:'#F2EAD3' },
-  { id:'kor-2',   label:'Korean Cream', type:'solid', color:'#FDF1E0' },
-  { id:'tan',     label:'Tan',    type:'solid', color:'#D4A574' },
-  { id:'aes-3',   label:'Mocha',  type:'solid', color:'#A98467' },
-  { id:'black',   label:'Black',  type:'solid', color:'#1A1A1A' },
+  { id:'white',         label:'White',         type:'solid', color:'#FFFFFF' },
+  { id:'smoke',         label:'Smoke',         type:'solid', color:'#FAF8F2' },
+  { id:'aes-2',         label:'Beige',         type:'solid', color:'#E5D7C0' },
+  { id:'aes-6',         label:'Cream',         type:'solid', color:'#F2EAD3' },
+  { id:'kor-2',         label:'Korean Cream',  type:'solid', color:'#FDF1E0' },
+  { id:'tan',           label:'Tan',           type:'solid', color:'#D4A574' },
+  { id:'mocha-mousse',  label:'Mocha Mousse',  type:'solid', color:'#A47864' },
+  { id:'aes-3',         label:'Mocha',         type:'solid', color:'#A98467' },
+  { id:'tokyo-cool',    label:'Tokyo Cool',    type:'solid', color:'#1A1A1A' },
+  { id:'black',         label:'Black',         type:'solid', color:'#0A0A0A' },
 
   // Pinks / blush
   { id:'kor-1',   label:'Korean Blush', type:'solid', color:'#FBD9DD' },
@@ -838,14 +867,16 @@ const PATTERNS = [
   { id:'zenz-2',  label:'Magenta',      type:'solid', color:'#E0339B' },
 
   // Reds / wines
+  { id:'cherry-red',  label:'Cherry Red', type:'solid', color:'#C8313A' },
   { id:'maroon',      label:'Maroon',     type:'solid', color:'#7A1F2E' },
   { id:'maroon-solid',label:'Wine',       type:'solid', color:'#5A1825' },
   { id:'grad-3',      label:'Burgundy',   type:'solid', color:'#5C1A2B' },
 
   // Warms (orange, gold)
-  { id:'grad-2',  label:'Gold',         type:'solid', color:'#D4AF37' },
-  { id:'butter',  label:'Butter',       type:'solid', color:'#FFF3A0' },
-  { id:'bday-3',  label:'Birthday Lemon',type:'solid', color:'#FFE680' },
+  { id:'grad-2',        label:'Gold',          type:'solid', color:'#D4AF37' },
+  { id:'butter-yellow', label:'Butter Yellow', type:'solid', color:'#F4E5B2' },
+  { id:'butter',        label:'Soft Butter',   type:'solid', color:'#FFF3A0' },
+  { id:'bday-3',        label:'Birthday Lemon',type:'solid', color:'#FFE680' },
 
   // Greens
   { id:'sage',    label:'Sage',         type:'solid', color:'#B5C994' },
@@ -866,26 +897,26 @@ const PATTERNS = [
   { id:'zenz-1',  label:'Zenz Violet',  type:'solid', color:'#7B5BC5' },
 
   // Patterns & decorative
-  { id:'rainbow',     svg: pRainbow() },
-  { id:'marble',      svg: pMarble() },
-  { id:'cream-stripe',svg: pStripe('#E8DCC4','#FFFFFF') },
-  { id:'pink-stripe', svg: pStripe('#F2B8C6','#FFFFFF') },
-  { id:'pink-polka',  svg: pPolka('#E89BA8','#FCE4E8') },
-  { id:'cream-bw',    svg: pPolka('#1A1A1A','#F4EFE6') },
-  { id:'pink-check',  svg: pCheck('#F2B8C6','#FFFFFF') },
-  { id:'red-check',   svg: pCheck('#C9302C','#FFFFFF') },
-  { id:'maroon-check',svg: pCheck('#7A1F2E','#E8C5BD') },
-  { id:'bw-check',    svg: pCheck('#1A1A1A','#FFFFFF') },
-  { id:'yel-blue',    svg: pCheck('#F4D35E','#5A8FB8') },
-  { id:'red-gingham', svg: pGingham('#C9302C','#FCD9D9') },
-  { id:'blue-gingham',svg: pGingham('#5A8FB8','#E0EAF4') },
-  { id:'green-gingham',svg: pGingham('#7BA968','#E0EFD8') },
-  { id:'diamond',     svg: pDiamond('#1A1A1A','#FFFFFF') },
-  { id:'hearts',      svg: pHearts('#E85A6E','#FCE4E8') },
-  { id:'stars',       svg: pStars('#3D5A80','#E8EEF7') },
-  { id:'cherry',      svg: pCherry() },
-  { id:'leopard',     svg: pLeopard() },
-  { id:'cow',         svg: pCow() },
+  { id:'rainbow',      label:'Rainbow',       svg: pRainbow() },
+  { id:'marble',       label:'Marble',        svg: pMarble() },
+  { id:'cream-stripe', label:'Cream Stripe',  svg: pStripe('#E8DCC4','#FFFFFF') },
+  { id:'pink-stripe',  label:'Pink Stripe',   svg: pStripe('#F2B8C6','#FFFFFF') },
+  { id:'pink-polka',   label:'Pink Polka',    svg: pPolka('#E89BA8','#FCE4E8') },
+  { id:'cream-bw',     label:'Cream Polka',   svg: pPolka('#1A1A1A','#F4EFE6') },
+  { id:'pink-check',   label:'Pink Check',    svg: pCheck('#F2B8C6','#FFFFFF') },
+  { id:'red-check',    label:'Red Check',     svg: pCheck('#C9302C','#FFFFFF') },
+  { id:'maroon-check', label:'Maroon Check',  svg: pCheck('#7A1F2E','#E8C5BD') },
+  { id:'bw-check',     label:'B&W Check',     svg: pCheck('#1A1A1A','#FFFFFF') },
+  { id:'yel-blue',     label:'Sun & Sea',     svg: pCheck('#F4D35E','#5A8FB8') },
+  { id:'red-gingham',  label:'Red Gingham',   svg: pGingham('#C9302C','#FCD9D9') },
+  { id:'blue-gingham', label:'Blue Gingham',  svg: pGingham('#5A8FB8','#E0EAF4') },
+  { id:'green-gingham',label:'Green Gingham', svg: pGingham('#7BA968','#E0EFD8') },
+  { id:'diamond',      label:'Diamond',       svg: pDiamond('#1A1A1A','#FFFFFF') },
+  { id:'hearts',       label:'Hearts',        svg: pHearts('#E85A6E','#FCE4E8') },
+  { id:'stars',        label:'Stars',         svg: pStars('#3D5A80','#E8EEF7') },
+  { id:'cherry',       label:'Cherry',        svg: pCherry() },
+  { id:'leopard',      label:'Leopard',       svg: pLeopard() },
+  { id:'cow',          label:'Cow Print',     svg: pCow() },
 ];
 
 // ── Color swatches ──

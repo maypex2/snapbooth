@@ -408,6 +408,9 @@
     .sc-grid4         { grid-template: 1fr 1fr / 1fr 1fr; aspect-ratio: 1.33; }
     .sc-4plus1        { grid-template: 1fr 1fr 1.4fr / 1fr 1fr; aspect-ratio: 0.85; }
     .sc-4plus1 img:nth-child(5) { grid-column: 1 / -1; }
+    .sc-9cut          { grid-template: repeat(3, 1fr) / repeat(3, 1fr); aspect-ratio: 1.0; }
+    .sc-vertical4     { grid-template-rows: repeat(4, 1fr); aspect-ratio: 0.32; }
+    .sc-diptych       { grid-template-columns: 1fr 1fr; aspect-ratio: 1.7; }
     .sc-double-polaroid { grid-template-rows: 1fr 1fr; aspect-ratio: 0.65; }
     .sc-single        { grid-template-columns: 1fr; aspect-ratio: 1.33; }
     .sc-polaroid      { grid-template-columns: 1fr; aspect-ratio: 1.33; }
@@ -957,6 +960,54 @@
                 </div>
                 <div class="sc-label">Double Polaroid</div>
                 <div class="sc-meta">Stacked print<br>(2 Pose)</div>
+              </div>
+
+              <!-- 9-Cut Grid -->
+              <div class="sc-card snap-start" id="mode-9cut" onclick="setMode('9cut')">
+                <div class="sc-frame">
+                  <span class="sc-badge">NEW</span>
+                  <div class="sc-grid sc-9cut">
+                    <img src="assets/layouts-real/6cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/6cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/6cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/6cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/6cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/6cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/6cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/6cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/6cut-preview.webp" alt="" decoding="async">
+                  </div>
+                </div>
+                <div class="sc-label">9-Cut Grid</div>
+                <div class="sc-meta">Photo dump<br>(9 Pose)</div>
+              </div>
+
+              <!-- Puri 4-Cut (vertical) -->
+              <div class="sc-card snap-start" id="mode-vertical4" onclick="setMode('vertical4')">
+                <div class="sc-frame">
+                  <span class="sc-badge">NEW</span>
+                  <div class="sc-grid sc-vertical4">
+                    <img src="assets/layouts-real/4cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/4cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/4cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/4cut-preview.webp" alt="" decoding="async">
+                  </div>
+                </div>
+                <div class="sc-label">Puri 4-Cut</div>
+                <div class="sc-meta">Korean slim strip<br>(4 Pose)</div>
+              </div>
+
+              <!-- Diptych -->
+              <div class="sc-card snap-start" id="mode-diptych" onclick="setMode('diptych')">
+                <div class="sc-frame">
+                  <span class="sc-badge">NEW</span>
+                  <div class="sc-grid sc-diptych">
+                    <img src="assets/layouts-real/2cut-preview.webp" alt="" decoding="async">
+                    <img src="assets/layouts-real/2cut-preview.webp" alt="" decoding="async">
+                  </div>
+                </div>
+                <div class="sc-label">Diptych</div>
+                <div class="sc-meta">Side-by-side duo<br>(2 Pose)</div>
               </div>
 
               <!-- Tilted 3-Cut -->

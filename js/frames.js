@@ -71,6 +71,31 @@ const FRAMES = [
   { id: 'photoism',  label: 'Photoism',  bg: '#ffffff', preview: 'Pi' },
   // Mirrored frame — flips each photo horizontally for the symmetry trend.
   { id: 'mirrored',  label: 'Mirrored',  bg: '#f5f5f0', preview: '◐◑' },
+
+  // Y2K Chrome — metallic silver gradient border, sparkle corners.
+  {
+    id: 'y2k', label: 'Y2K Chrome', bg: '#1a1a22', preview: '★',
+    title: { text: 'Y2K ✦', color: '#dde2ee' },
+    autoStickers: [
+      { file: 'assets/stickers/star-sparkle.svg', x: 0.10, y: 0.05, size: 0.18 },
+      { file: 'assets/stickers/star-sparkle.svg', x: 0.90, y: 0.05, size: 0.18 },
+      { file: 'assets/stickers/sparkle-doodle.svg', x: 0.50, y: 0.97, size: 0.16 },
+    ],
+  },
+
+  // Coquette — soft pink with bow corners and dashed lace border.
+  {
+    id: 'coquette', label: 'Coquette', bg: '#FFEEF2', preview: '🎀',
+    title: { text: 'coquette', color: '#d44b6e' },
+    autoStickers: [
+      { file: 'assets/stickers/bow-ribbon.svg', x: 0.12, y: 0.06, size: 0.20 },
+      { file: 'assets/stickers/bow-ribbon.svg', x: 0.88, y: 0.06, size: 0.20 },
+      { file: 'assets/stickers/heart-face.svg', x: 0.50, y: 0.97, size: 0.14 },
+    ],
+  },
+
+  // Retro Digicam — cream bg with burned-in orange date stamp.
+  { id: 'digicam',  label: 'Retro Digicam', bg: '#F4EFE6', preview: '📷' },
 ];
 
 function getFrameBg(id) {
@@ -140,6 +165,56 @@ function drawFrameDecorations(sctx, frameId, sw, sh) {
     sctx.strokeStyle = 'rgba(0,0,0,0.1)';
     sctx.lineWidth = 2;
     sctx.strokeRect(4, 4, sw - 8, sh - 8);
+  } else if (frameId === 'y2k') {
+    // Chrome metallic gradient border (Y2K vibe).
+    const borderW = Math.max(16, Math.round(sw * 0.025));
+    const g = sctx.createLinearGradient(0, 0, sw, sh);
+    g.addColorStop(0,    '#dde2ee');
+    g.addColorStop(0.25, '#9aa0b4');
+    g.addColorStop(0.5,  '#f0f3fa');
+    g.addColorStop(0.75, '#8a90a8');
+    g.addColorStop(1,    '#cfd5e2');
+    sctx.strokeStyle = g;
+    sctx.lineWidth = borderW;
+    sctx.strokeRect(borderW / 2, borderW / 2, sw - borderW, sh - borderW);
+    // Inner thin chrome line for that double-bevel sheen.
+    sctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    sctx.lineWidth = 1;
+    sctx.strokeRect(borderW + 2, borderW + 2, sw - (borderW + 2) * 2, sh - (borderW + 2) * 2);
+  } else if (frameId === 'coquette') {
+    // Soft pink dashed-lace border with subtle inner ribbon.
+    sctx.strokeStyle = '#E89BA8';
+    sctx.lineWidth = 4;
+    sctx.setLineDash([10, 7]);
+    sctx.strokeRect(10, 10, sw - 20, sh - 20);
+    sctx.setLineDash([]);
+    sctx.strokeStyle = 'rgba(232,155,168,0.4)';
+    sctx.lineWidth = 1;
+    sctx.strokeRect(20, 20, sw - 40, sh - 40);
+  } else if (frameId === 'digicam') {
+    // Burned-in orange date stamp + REC indicator (Sony Mavica vibe).
+    const pad = Math.max(20, Math.round(sw * 0.035));
+    const d = new Date();
+    const stamp =
+      "'" + String(d.getFullYear()).slice(-2) + ' ' +
+      String(d.getMonth() + 1).padStart(2, '0') + ' ' +
+      String(d.getDate()).padStart(2, '0');
+    const stampSize = Math.round(sw * 0.055);
+    sctx.font = '700 ' + stampSize + 'px "DM Sans", monospace';
+    sctx.textAlign = 'right';
+    sctx.fillStyle = 'rgba(0,0,0,0.35)';
+    sctx.fillText(stamp, sw - pad + 2, sh - pad + 2);
+    sctx.fillStyle = '#FF8C2E';
+    sctx.fillText(stamp, sw - pad, sh - pad);
+    // REC dot, top-left
+    sctx.textAlign = 'left';
+    sctx.font = '700 ' + Math.round(sw * 0.028) + 'px "DM Sans", monospace';
+    sctx.fillStyle = '#FF3B3B';
+    sctx.beginPath();
+    sctx.arc(pad + 6, pad + 8, Math.max(4, sw * 0.008), 0, Math.PI * 2);
+    sctx.fill();
+    sctx.fillText('REC', pad + 18, pad + 14);
+    sctx.textAlign = 'start';
   }
 }
 

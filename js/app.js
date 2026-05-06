@@ -110,6 +110,7 @@ const MODE_SHOTS = {
   '4cut': 4, '3cut': 3, '2cut': 2, '6cut': 6, '3horiz': 3,
   'squaregrid': 4, '1large3small': 4, 'grid4': 4, 'single': 1, 'polaroid': 1,
   'double-polaroid': 2, 'photocard': 1, 'gif': 1, 'tilt3': 3, '4plus1': 5,
+  '9cut': 9, 'vertical4': 4, 'diptych': 2,
 };
 
 function maxShots() { return MODE_SHOTS[currentMode] || 1; }
@@ -510,6 +511,30 @@ function buildStrip() {
       { x: PAD, y: TOP + H + GAP, w: W, h: H },
       { x: PAD + W + GAP, y: TOP + H + GAP, w: W, h: H },
     ];
+  } else if (currentMode === '9cut') {
+    const PAD = 24, GAP = 10, TOP = 80, BOT = 60;
+    sw = W * 3 + GAP * 2 + PAD * 2;
+    sh = H * 3 + GAP * 2 + TOP + BOT;
+    positions = [];
+    for (let row = 0; row < 3; row++)
+      for (let col = 0; col < 3; col++)
+        positions.push({ x: PAD + col * (W + GAP), y: TOP + row * (H + GAP), w: W, h: H });
+  } else if (currentMode === 'vertical4') {
+    // Korean Puri-style: slim strip with 4 portrait-cropped slots.
+    const PAD = 28, GAP = 16, TOP = 100, BOT = 220;
+    const pW = Math.round(W * 0.55);
+    const pH = H;
+    sw = pW + PAD * 2;
+    sh = pH * 4 + GAP * 3 + TOP + BOT;
+    positions = Array.from({ length: 4 }, (_, i) => ({ x: PAD, y: TOP + i * (pH + GAP), w: pW, h: pH }));
+  } else if (currentMode === 'diptych') {
+    const PAD = 28, GAP = 14, TOP = 80, BOT = 100;
+    sw = W * 2 + GAP + PAD * 2;
+    sh = H + TOP + BOT;
+    positions = [
+      { x: PAD,           y: TOP, w: W, h: H },
+      { x: PAD + W + GAP, y: TOP, w: W, h: H },
+    ];
   } else if (currentMode === '4plus1') {
     const PAD = 40, GAP = 16, TOP = 80, BOT = 100;
     const smallW = W;
@@ -776,6 +801,7 @@ function retake() {
 const DOWNLOAD_NAMES = {
   '4cut':'snapbooth-4cut-strip','2cut':'snapbooth-2cut-strip','6cut':'snapbooth-6cut-grid',
   '3horiz':'snapbooth-3cut-horizontal','squaregrid':'snapbooth-square-collage',
+  '9cut':'snapbooth-9cut-grid','vertical4':'snapbooth-puri-4cut','diptych':'snapbooth-diptych',
   'polaroid':'snapbooth-polaroid','photocard':'snapbooth-photo-card','single':'snapbooth',
 };
 
