@@ -221,13 +221,49 @@ function flashEffect() {
   setTimeout(() => f.classList.remove('pop'), 120);
 }
 
+// Match what the user actually sees in the live preview. The <video> element
+// uses object-fit: cover inside #cam-wrap, so the visible frame is a center
+// crop of the raw camera frame at the cam-wrap's aspect ratio. Capturing the
+// raw video frame instead would include hidden area above/below — which is
+// why "head + shoulders" previews end up showing only the head in the strip.
+function getCaptureCrop() {
+  const wrap = document.getElementById('cam-wrap');
+  const vw = video.videoWidth || canvas.width;
+  const vh = video.videoHeight || canvas.height;
+  const wrapW = wrap.clientWidth || vw;
+  const wrapH = wrap.clientHeight || vh;
+  const wrapAspect = wrapW / wrapH;
+  const vAspect = vw / vh;
+
+  let sx, sy, sw, sh;
+  if (vAspect > wrapAspect) {
+    sh = vh;
+    sw = Math.round(vh * wrapAspect);
+    sx = Math.round((vw - sw) / 2);
+    sy = 0;
+  } else {
+    sw = vw;
+    sh = Math.round(vw / wrapAspect);
+    sx = 0;
+    sy = Math.round((vh - sh) / 2);
+  }
+  return { sx, sy, sw, sh };
+}
+
 function captureFrame() {
   return new Promise(resolve => {
+    const { sx, sy, sw, sh } = getCaptureCrop();
+    canvas.width  = sw;
+    canvas.height = sh;
     ctx.save();
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (ctxFilterSupported() && currentFilter && currentFilter !== 'none') {
+      ctx.filter = FILTER_CSS[currentFilter] || 'none';
+    }
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
     ctx.restore();
+    ctx.filter = 'none';
     applyFilterToCanvas(currentFilter);
     const img = new Image();
     img.onload = () => resolve(img);
@@ -297,6 +333,9 @@ async function startGifSession() {
     await waitForSnap();
   }
 
+  const gifCrop      = getCaptureCrop();
+  canvas.width       = gifCrop.sw;
+  canvas.height      = gifCrop.sh;
   const GIF_W        = 480;
   const GIF_H        = Math.round(GIF_W * (canvas.height / canvas.width));
   const FPS          = 12;
@@ -315,8 +354,12 @@ async function startGifSession() {
     ctx.save();
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (ctxFilterSupported() && currentFilter && currentFilter !== 'none') {
+      ctx.filter = FILTER_CSS[currentFilter] || 'none';
+    }
+    ctx.drawImage(video, gifCrop.sx, gifCrop.sy, gifCrop.sw, gifCrop.sh, 0, 0, canvas.width, canvas.height);
     ctx.restore();
+    ctx.filter = 'none';
     applyFilterToCanvas(currentFilter);
     tmpCtx.drawImage(canvas, 0, 0, GIF_W, GIF_H);
     const fc = document.createElement('canvas');
@@ -822,22 +865,52 @@ const DOWNLOAD_NAMES = {
   'polaroid':'snapbooth-polaroid','photocard':'snapbooth-photo-card','single':'snapbooth',
 };
 
+// iOS Safari can't actually download via <a download> — clicks are silently
+// dropped on data:/blob: URLs. Detect iOS so we can fall back to the share
+// sheet, which lets the user pick "Save Image".
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// Save a Blob to disk via blob URL + anchor click. On iOS or any browser
+// where <a download> is unreliable, route through the Web Share API so the
+// user can save to Photos / Files.
+async function saveBlob(blob, filename, mime) {
+  if (IS_IOS && navigator.canShare) {
+    try {
+      const file = new File([blob], filename, { type: mime });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        showToast('Saved! Tap "Save Image" in the share sheet');
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  showToast('Downloaded!');
+}
+
 function downloadStrip() {
   if (currentMode === 'gif' && currentGifBlob) {
-    const a = document.createElement('a');
-    a.download = 'snapbooth-' + Date.now() + '.gif';
-    a.href = URL.createObjectURL(currentGifBlob);
-    a.click();
-    showToast('GIF downloaded!');
+    saveBlob(currentGifBlob, 'snapbooth-' + Date.now() + '.gif', 'image/gif');
     return;
   }
   if (!shots.length) return;
   buildStrip();
-  const a = document.createElement('a');
-  a.download = (DOWNLOAD_NAMES[currentMode] || 'snapbooth') + '-' + Date.now() + '.png';
-  a.href = stripCanvas.toDataURL('image/png');
-  a.click();
-  showToast('Downloaded!');
+  const filename = (DOWNLOAD_NAMES[currentMode] || 'snapbooth') + '-' + Date.now() + '.png';
+  stripCanvas.toBlob(blob => {
+    if (!blob) { showToast('Could not save image'); return; }
+    saveBlob(blob, filename, 'image/png');
+  }, 'image/png');
 }
 
 async function shareStrip() {

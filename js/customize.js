@@ -1086,6 +1086,37 @@ function initStickerGrid() {
   }
 }
 
+// Unified sticker-add. Overrides the legacy stickers.js global which used
+// pixel sizing (`size: 70`) — that broke the customize.js renderer (which
+// treats `size` as a fraction of canvas width) and made stickers either
+// invisible or laggy. Wider stickers (text banners) get a bigger default
+// fraction; square stickers stay compact.
+function addSticker(spec) {
+  if (!spec || !spec.file) return;
+  // Default size is 0.16 (matches the image-sticker click handler). Text-
+  // banner SVGs are wider than tall, so give them more room so they read.
+  const isTextBanner = /text-stickers\//.test(spec.file) || /\.text\b/.test(spec.name || '');
+  const size = spec.size || (isTextBanner ? 0.36 : 0.16);
+  stickers.push({
+    file: spec.file,
+    x:    typeof spec.x === 'number' ? spec.x : 0.5,
+    y:    typeof spec.y === 'number' ? spec.y : 0.6,
+    size,
+  });
+  let cached = stickerImgCache[spec.file];
+  if (!cached) {
+    cached = new Image();
+    cached.decoding = 'async';
+    cached.src = spec.file;
+    stickerImgCache[spec.file] = cached;
+  }
+  selectedStickerIdx = stickers.length - 1;
+  updateStickerSelectionUI();
+  if (cached.complete && cached.naturalWidth > 0) buildStrip();
+  else cached.addEventListener('load', () => buildStrip(), { once: true });
+  showToast((spec.name || 'Sticker') + ' added drag to move');
+}
+
 // rAF-coalesced redraw pointermove fires faster than we can repaint, so
 // we just flip a flag and let the next animation frame draw once.
 //
@@ -1131,12 +1162,16 @@ function drawAllStickers() {
   const sw = stripCanvas.width, sh = stripCanvas.height;
   stickers.forEach((st, i) => {
     const img = stickerImgCache[st.file];
-    if (!img || !img.complete) return;
+    if (!img || !img.complete || !img.naturalWidth) return;
     const sizePx = st.size * sw;
-    const half = sizePx / 2;
+    // Respect the sticker image's natural aspect so wide text banners
+    // don't get squashed into a square box.
+    const aspect = img.naturalHeight / img.naturalWidth;
+    const drawW = sizePx;
+    const drawH = sizePx * aspect;
     const cx = st.x * sw;
     const cy = st.y * sh;
-    sctx.drawImage(img, cx - half, cy - half, sizePx, sizePx);
+    sctx.drawImage(img, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
 
     // Draw subtle bounding box if selected
     if (i === selectedStickerIdx) {
@@ -1144,7 +1179,7 @@ function drawAllStickers() {
       sctx.strokeStyle = 'rgba(0, 153, 255, 0.8)';
       sctx.lineWidth = 2;
       sctx.setLineDash([6, 4]);
-      sctx.strokeRect(cx - half - 4, cy - half - 4, sizePx + 8, sizePx + 8);
+      sctx.strokeRect(cx - drawW / 2 - 4, cy - drawH / 2 - 4, drawW + 8, drawH + 8);
       sctx.restore();
     }
   });
@@ -1293,30 +1328,69 @@ function initTabs() {
 }
 
 // ── Download / share ──
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+async function saveBlob(blob, filename, mime) {
+  if (IS_IOS && navigator.canShare) {
+    try {
+      const file = new File([blob], filename, { type: mime });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        showToast('Saved! Tap "Save Image" in the share sheet');
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  showToast('Downloaded!');
+}
+
 async function downloadStrip() {
   await Promise.resolve(buildStrip());
-  const a = document.createElement('a');
-  a.download = 'snapbooth-' + currentMode + '-' + Date.now() + '.png';
-  a.href = stripCanvas.toDataURL('image/png');
-  a.click();
-  showToast('Downloaded!');
+  const filename = 'snapbooth-' + currentMode + '-' + Date.now() + '.png';
+  stripCanvas.toBlob(blob => {
+    if (!blob) { showToast('Could not save image'); return; }
+    saveBlob(blob, filename, 'image/png');
+  }, 'image/png');
+}
+
+// Brightness check (sRGB) so we can flip wordmark / shadow contrast
+// against dark export backgrounds without the user having to think about it.
+function isDarkColor(hex) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+  if (!m) return false;
+  const r = parseInt(m[1], 16), g = parseInt(m[2], 16), b = parseInt(m[3], 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) < 140;
 }
 
 // Compose the current strip onto a colored backdrop at a target aspect
 // ratio (used for IG Story 9:16 and IG Square 1:1 exports).
-async function exportComposed(canvasW, canvasH, filename, padding = 0.06) {
+async function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColor = '#FAF6EE') {
   await Promise.resolve(buildStrip());
   const out = document.createElement('canvas');
   out.width = canvasW;
   out.height = canvasH;
   const octx = out.getContext('2d');
 
-  // Cream backdrop matching the site palette
-  octx.fillStyle = '#FAF6EE';
+  // User-chosen backdrop
+  octx.fillStyle = bgColor;
   octx.fillRect(0, 0, canvasW, canvasH);
 
-  // Subtle texture so it doesn't look flat
-  octx.fillStyle = 'rgba(60, 40, 20, 0.02)';
+  const dark = isDarkColor(bgColor);
+
+  // Subtle texture so it doesn't look flat — light overlay on dark, dark on light
+  octx.fillStyle = dark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(60, 40, 20, 0.02)';
   octx.fillRect(0, 0, canvasW, canvasH);
 
   // Fit the strip with padding, preserving aspect ratio
@@ -1332,8 +1406,8 @@ async function exportComposed(canvasW, canvasH, filename, padding = 0.06) {
   const dx = (canvasW - dw) / 2;
   const dy = (canvasH - dh) / 2;
 
-  // Soft drop shadow for the strip
-  octx.shadowColor = 'rgba(60, 40, 20, 0.18)';
+  // Soft drop shadow for the strip — deeper on dark backgrounds
+  octx.shadowColor = dark ? 'rgba(0, 0, 0, 0.5)' : 'rgba(60, 40, 20, 0.18)';
   octx.shadowBlur = 32;
   octx.shadowOffsetY = 8;
   octx.drawImage(stripCanvas, dx, dy, dw, dh);
@@ -1341,24 +1415,81 @@ async function exportComposed(canvasW, canvasH, filename, padding = 0.06) {
   octx.shadowBlur = 0;
   octx.shadowOffsetY = 0;
 
-  // SnapBooth wordmark in the bottom margin so the export carries the brand
-  octx.fillStyle = 'rgba(60, 40, 20, 0.5)';
+  // SnapBooth wordmark — color follows backdrop
+  octx.fillStyle = dark ? 'rgba(255, 255, 255, 0.65)' : 'rgba(60, 40, 20, 0.5)';
   octx.font = 'italic ' + Math.round(canvasW * 0.028) + 'px "DM Serif Display", serif';
   octx.textAlign = 'center';
   octx.fillText('snapbooth.app', canvasW / 2, canvasH - padY * 0.45);
 
-  const a = document.createElement('a');
-  a.download = filename;
-  a.href = out.toDataURL('image/png');
-  a.click();
-  showToast('Downloaded!');
+  out.toBlob(blob => {
+    if (!blob) { showToast('Could not save image'); return; }
+    saveBlob(blob, filename, 'image/png');
+  }, 'image/png');
 }
 
-function downloadStory() {
-  exportComposed(1080, 1920, 'snapbooth-story-' + Date.now() + '.png', 0.07);
+// Open the bg-color picker modal and resolve with the user's choice
+// (or null if they cancel). Used for both Story and Post IG exports.
+let __bgPickerSelected = '#FAF6EE';
+function pickBackgroundColor(label) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('bg-picker-overlay');
+    const desc    = document.getElementById('bg-picker-desc');
+    const swatches = document.querySelectorAll('#bg-picker-swatches .bg-swatch');
+    const custom  = document.getElementById('bg-picker-custom');
+    const confirm = document.getElementById('bg-picker-confirm');
+    const close   = document.getElementById('bg-picker-close');
+    if (!overlay) { resolve('#FAF6EE'); return; }
+
+    desc.textContent = label || 'Choose the canvas color behind your strip.';
+
+    // Restore previous selection
+    let picked = __bgPickerSelected;
+    custom.value = /^#[0-9a-f]{6}$/i.test(picked) ? picked : '#FAF6EE';
+    swatches.forEach(s => s.classList.toggle('active', s.dataset.color.toLowerCase() === picked.toLowerCase()));
+
+    overlay.classList.add('open');
+
+    function setPicked(c) {
+      picked = c;
+      swatches.forEach(s => s.classList.toggle('active', s.dataset.color.toLowerCase() === c.toLowerCase()));
+    }
+    function onSwatch(e) {
+      const btn = e.target.closest('.bg-swatch');
+      if (!btn) return;
+      setPicked(btn.dataset.color);
+      custom.value = btn.dataset.color;
+    }
+    function onCustom() { setPicked(custom.value); }
+    function done(color) {
+      overlay.classList.remove('open');
+      document.getElementById('bg-picker-swatches').removeEventListener('click', onSwatch);
+      custom.removeEventListener('input', onCustom);
+      confirm.removeEventListener('click', onConfirm);
+      close.removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onBackdrop);
+      resolve(color);
+    }
+    function onConfirm() { __bgPickerSelected = picked; done(picked); }
+    function onCancel()  { done(null); }
+    function onBackdrop(e) { if (e.target === overlay) onCancel(); }
+
+    document.getElementById('bg-picker-swatches').addEventListener('click', onSwatch);
+    custom.addEventListener('input', onCustom);
+    confirm.addEventListener('click', onConfirm);
+    close.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onBackdrop);
+  });
 }
-function downloadSquare() {
-  exportComposed(1080, 1080, 'snapbooth-square-' + Date.now() + '.png', 0.07);
+
+async function downloadStory() {
+  const bg = await pickBackgroundColor('Pick the background color for your Story export.');
+  if (!bg) return;
+  exportComposed(1080, 1920, 'snapbooth-story-' + Date.now() + '.png', 0.07, bg);
+}
+async function downloadSquare() {
+  const bg = await pickBackgroundColor('Pick the background color for your Post export.');
+  if (!bg) return;
+  exportComposed(1080, 1080, 'snapbooth-square-' + Date.now() + '.png', 0.07, bg);
 }
 
 async function shareStrip() {
@@ -1449,6 +1580,17 @@ async function replacePhotos(fileList) {
   if (filled >= max) showToast('All slots filled!');
   else               showToast(`${filled}/${max} uploaded keep going`);
   document.getElementById('replace-input').value = '';
+
+  // On mobile (stacked layout) the preview is above the tools panel, so the
+  // user can't see the result of their upload. Scroll the strip into view.
+  if (window.matchMedia('(max-width: 1023px)').matches) {
+    requestAnimationFrame(() => {
+      const target = document.getElementById('strip-canvas');
+      if (target && target.scrollIntoView) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }
 }
 
 // ── Init ──

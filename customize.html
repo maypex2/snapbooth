@@ -2,6 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="SnapBooth" />
+<link rel="manifest" href="/site.webmanifest" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#FAFAFA">
 
@@ -45,6 +52,10 @@
         0 48px 96px -24px rgba(0,0,0,.22);
     }
     #strip-canvas:active { cursor: grabbing; }
+    .bg-swatch { transition: transform .12s ease, box-shadow .12s ease; }
+    .bg-swatch:hover { transform: scale(1.06); }
+    .bg-swatch.active { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2A2520; transform: scale(1.06); }
+    #bg-picker-overlay.open { display: flex !important; }
 
     .frame-chip { min-height: 110px; padding: 14px 8px; }
     .frame-chip.active { box-shadow: 0 0 0 2px #2A2520, 0 0 0 4px #FAFAFA; }
@@ -405,6 +416,44 @@
         </button>
       </div>
       <p class="text-[10px] text-muted text-center -mt-1">Story for Reels &amp; Stories · Post for the feed grid</p>
+
+      <!-- Background-color picker modal for IG exports -->
+      <div id="bg-picker-overlay" class="fixed inset-0 z-[80] bg-ink/70 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl border border-sand shadow-2xl w-full max-w-sm p-6">
+          <div class="flex items-start justify-between mb-1">
+            <h3 class="font-serif text-xl text-ink">Pick a background</h3>
+            <button id="bg-picker-close" class="w-8 h-8 rounded-full bg-cream2 text-ink flex items-center justify-center hover:bg-sand transition" aria-label="Close">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <p class="text-xs text-muted mb-4" id="bg-picker-desc">Choose the canvas color behind your strip.</p>
+
+          <div class="grid grid-cols-6 gap-2 mb-4" id="bg-picker-swatches">
+            <button data-color="#FAF6EE" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#FAF6EE" title="Cream"></button>
+            <button data-color="#FFFFFF" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#FFFFFF" title="White"></button>
+            <button data-color="#2A2520" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#2A2520" title="Ink"></button>
+            <button data-color="#F2C6CC" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#F2C6CC" title="Blush"></button>
+            <button data-color="#C9A07A" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#C9A07A" title="Tan"></button>
+            <button data-color="#7ECEC4" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#7ECEC4" title="Teal"></button>
+            <button data-color="#F4E5B2" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#F4E5B2" title="Butter"></button>
+            <button data-color="#C8313A" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#C8313A" title="Cherry"></button>
+            <button data-color="#A47864" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#A47864" title="Mocha"></button>
+            <button data-color="#1A1A1A" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#1A1A1A" title="Tokyo"></button>
+            <button data-color="#9CB8A4" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#9CB8A4" title="Sage"></button>
+            <button data-color="#6B7BA8" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#6B7BA8" title="Indigo"></button>
+          </div>
+
+          <label class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-cream2/60 border border-sand/60 cursor-pointer mb-4">
+            <span class="text-xs text-ink2">Custom color</span>
+            <input type="color" id="bg-picker-custom" value="#FAF6EE" class="w-10 h-7 rounded-md border-0 bg-transparent cursor-pointer">
+          </label>
+
+          <button id="bg-picker-confirm" class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-ink text-cream hover:bg-ink2 transition">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Download</span>
+          </button>
+        </div>
+      </div>
       <button id="share-btn" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white border border-sand/60 text-ink2 hover:bg-cream2 hover:text-ink transition">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Share
