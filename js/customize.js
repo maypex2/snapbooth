@@ -91,6 +91,60 @@ function drawCoverImage(ctx, img, x, y, w, h, ox = 0, oy = 0) {
 function showEmptyState() { /* no-op empty slots are drawn by buildStrip */ }
 function clearEmptyState() { /* no-op */ }
 
+// ── Unified brand footer ─────────────────────────────────────────
+// One shared "snapbooth" wordmark + date placement used by every
+// layout (except tilt3, which has its own designed footer). This
+// keeps brand presentation visually consistent across all formats.
+function footerReserveFor(mode) {
+  switch (mode) {
+    case '4cut':
+    case '3cut':
+    case '2cut':
+    case 'vertical4':       return 220;
+    case 'photocard':       return 100;
+    case 'polaroid':
+    case 'double-polaroid': return 90;
+    case '4plus1':
+    case 'diptych':         return 100;
+    case '1large3small':    return 60;
+    case '9cut':            return 60;
+    case '6cut':
+    case '3horiz':          return 52;
+    case 'squaregrid':      return 48;
+    case 'grid4':           return 40;
+    default:                return 60;
+  }
+}
+
+function drawBrandFooter(sctx, sw, sh, reserveH) {
+  if (!showWordmark && !showDate) return;
+  const wmSize   = Math.max(20, Math.min(reserveH * 0.42, sw * 0.045));
+  const dateSize = Math.max(12, wmSize * 0.5);
+  const cx       = sw / 2;
+  const footerTop = sh - reserveH;
+  // Two-line stack centered within the reserved bottom band.
+  const wmY   = footerTop + reserveH * (showDate ? 0.55 : 0.7);
+  const dateY = footerTop + reserveH * 0.82;
+
+  sctx.save();
+  sctx.textAlign = 'center';
+  sctx.textBaseline = 'alphabetic';
+  if (showWordmark) {
+    sctx.fillStyle = 'rgba(0,0,0,0.55)';
+    sctx.font = `italic ${Math.round(wmSize)}px "DM Serif Display", serif`;
+    sctx.fillText('snapbooth', cx, wmY);
+  }
+  if (showDate) {
+    sctx.fillStyle = 'rgba(0,0,0,0.35)';
+    sctx.font = `400 ${Math.round(dateSize)}px "DM Sans", sans-serif`;
+    sctx.fillText(
+      new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      cx, dateY
+    );
+  }
+  sctx.restore();
+}
+
 // ── Layout selector ──
 const LAYOUTS = [
   { id: '4cut',       name: '4-Cut Strip',       count: 4, shape: { cols: 1, rows: 4 } },
@@ -401,74 +455,10 @@ function buildStrip() {
     }
   });
 
-  if (currentMode === 'polaroid' || currentMode === 'double-polaroid') {
-    const BB=90, BT=20;
-    sctx.textAlign = 'center';
-    if (showWordmark) {
-      sctx.fillStyle = 'rgba(0,0,0,0.35)';
-      sctx.font = '500 26px DM Sans, sans-serif';
-      sctx.fillText('SnapBooth', sw/2, sh - BB*0.6);
-    }
-    if (showDate) {
-      sctx.font = '18px DM Sans, sans-serif'; sctx.fillStyle = 'rgba(0,0,0,0.2)';
-      sctx.fillText(new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), sw/2, sh - BB*0.3);
-    }
-    sctx.textAlign = 'start';
-  }
-  if (currentMode === 'photocard') {
-    const BT=30, BB=100;
-    sctx.textAlign = 'center';
-    if (showWordmark) {
-      sctx.fillStyle = 'rgba(0,0,0,0.4)';
-      sctx.font = '500 30px DM Sans, sans-serif';
-      sctx.fillText('SnapBooth', sw/2, H+BT+BB*0.36);
-    }
-    if (showDate) {
-      sctx.font = '20px DM Sans, sans-serif'; sctx.fillStyle = 'rgba(0,0,0,0.25)';
-      sctx.fillText(new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}), sw/2, H+BT+BB*0.62);
-    }
-    sctx.textAlign = 'start';
-  }
-
-  const stripModes = ['4cut','3cut','2cut'];
-  const multi = ['6cut','3horiz','squaregrid','grid4','1large3small','4plus1'];
-  if (stripModes.includes(currentMode)) {
-    // Polaroid-style footer mirroring app.js buildStrip
-    const BOT = 220;
-    const footerTop = sh - BOT;
-    sctx.textAlign = 'center';
-    if (showWordmark) {
-      sctx.fillStyle = 'rgba(0,0,0,0.5)';
-      sctx.font = '500 36px "DM Serif Display", serif';
-      sctx.fillText('SnapBooth', sw/2, footerTop + BOT * 0.55);
-    }
-    if (showDate) {
-      sctx.font = '400 22px "DM Sans", sans-serif';
-      sctx.fillStyle = 'rgba(0,0,0,0.3)';
-      sctx.fillText(
-        new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
-        sw/2, footerTop + BOT * 0.78
-      );
-    }
-    sctx.textAlign = 'start';
-  } else if (multi.includes(currentMode)) {
-    if (showWordmark) {
-      sctx.fillStyle = 'rgba(0,0,0,0.78)';
-      sctx.font = 'italic 42px "DM Serif Display", serif';
-      sctx.textAlign = 'center';
-      sctx.fillText('snapbooth', sw/2, sh - 22);
-      sctx.textAlign = 'start';
-    }
-  } else if (currentMode !== 'photocard' && currentMode !== 'polaroid' && currentMode !== 'double-polaroid' && currentMode !== 'tilt3') {
-    if (showWordmark) {
-      // Single-shot / fallback: small bottom-right watermark
-      sctx.fillStyle = 'rgba(0,0,0,0.5)';
-      sctx.font = 'italic 22px "DM Serif Display", serif';
-      sctx.textAlign = 'right';
-      sctx.fillText('snapbooth', sw - 16, sh - 14);
-      sctx.textAlign = 'start';
-    }
-  }
+  // Unified brand footer — one consistent placement across every layout.
+  // Italic lowercase "snapbooth" in DM Serif, centered above the bottom edge,
+  // with the date below in DM Sans. Size scales with canvas width.
+  if (currentMode !== 'tilt3') drawBrandFooter(sctx, sw, sh, footerReserveFor(currentMode));
 
   // Snapshot the base (everything except stickers) so sticker drags can
   // skip re-rasterizing photos & frame on every pointer event.
