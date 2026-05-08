@@ -1062,7 +1062,7 @@ function initStickerGrid() {
       btn.appendChild(img);
       btn.addEventListener('click', () => {
         // Center the sticker and place it slightly lower to avoid overlapping Slot 1 immediately
-        stickers.push({ file: s.file, x: 0.5, y: 0.6, size: 0.16 });
+        stickers.push({ file: s.file, x: 0.5, y: 0.6, size: 0.16, rot: 0 });
         let cached = stickerImgCache[s.file];
         if (!cached) {
           cached = new Image();
@@ -1118,6 +1118,7 @@ function addSticker(spec) {
     x:    typeof spec.x === 'number' ? spec.x : 0.5,
     y:    typeof spec.y === 'number' ? spec.y : 0.6,
     size,
+    rot:  typeof spec.rot === 'number' ? spec.rot : 0,
   });
   let cached = stickerImgCache[spec.file];
   if (!cached) {
@@ -1180,31 +1181,86 @@ function drawAllStickers() {
     const img = stickerImgCache[st.file];
     if (!img || !img.complete || !img.naturalWidth) return;
     const sizePx = st.size * sw;
-    // Respect the sticker image's natural aspect so wide text banners
-    // don't get squashed into a square box.
     const aspect = img.naturalHeight / img.naturalWidth;
     const drawW = sizePx;
     const drawH = sizePx * aspect;
     const cx = st.x * sw;
     const cy = st.y * sh;
-    sctx.drawImage(img, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
+    const rot = st.rot || 0;
 
-    // Draw subtle bounding box if selected
+    sctx.save();
+    sctx.translate(cx, cy);
+    if (rot) sctx.rotate(rot);
+    sctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+
     if (i === selectedStickerIdx) {
-      sctx.save();
+      // Bounding box (in rotated frame so it follows the sticker)
       sctx.strokeStyle = 'rgba(0, 153, 255, 0.8)';
       sctx.lineWidth = 2;
       sctx.setLineDash([6, 4]);
-      sctx.strokeRect(cx - drawW / 2 - 4, cy - drawH / 2 - 4, drawW + 8, drawH + 8);
-      sctx.restore();
+      sctx.strokeRect(-drawW / 2 - 4, -drawH / 2 - 4, drawW + 8, drawH + 8);
+      sctx.setLineDash([]);
+
+      const handleR = Math.max(18, sw * 0.022);
+
+      // Delete handle (red circle with X) — top-right corner of bbox
+      drawHandle(sctx, drawW / 2 + 4, -drawH / 2 - 4, handleR, '#e0344a', drawXMark);
+      // Rotate handle (green circle with curved arrow) — top-left corner
+      drawHandle(sctx, -drawW / 2 - 4, -drawH / 2 - 4, handleR, '#22a06b', drawRotateMark);
     }
+    sctx.restore();
   });
+}
+
+function drawHandle(ctx, hx, hy, r, fill, drawIcon) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(hx, hy, r, 0, Math.PI * 2);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.strokeStyle = '#fff';
+  ctx.fillStyle = '#fff';
+  ctx.lineWidth = Math.max(2, r * 0.18);
+  ctx.lineCap = 'round';
+  drawIcon(ctx, hx, hy, r);
+  ctx.restore();
+}
+
+function drawXMark(ctx, hx, hy, r) {
+  const k = r * 0.42;
+  ctx.beginPath();
+  ctx.moveTo(hx - k, hy - k); ctx.lineTo(hx + k, hy + k);
+  ctx.moveTo(hx + k, hy - k); ctx.lineTo(hx - k, hy + k);
+  ctx.stroke();
+}
+
+function drawRotateMark(ctx, hx, hy, r) {
+  // Circular arrow ~3/4 around with arrow head at end.
+  const ar = r * 0.5;
+  ctx.beginPath();
+  ctx.arc(hx, hy, ar, -Math.PI * 0.85, Math.PI * 0.65);
+  ctx.stroke();
+  // Arrow head at end of arc (angle Math.PI * 0.65)
+  const ang = Math.PI * 0.65;
+  const ax = hx + Math.cos(ang) * ar;
+  const ay = hy + Math.sin(ang) * ar;
+  const ah = r * 0.32;
+  ctx.beginPath();
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(ax - ah * Math.cos(ang - 0.6), ay - ah * Math.sin(ang - 0.6));
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(ax + ah * Math.cos(ang + 0.6) * 0.6, ay + ah * Math.sin(ang + 0.6) * 0.6);
+  ctx.stroke();
 }
 
 // ── Sticker interaction: drag, wheel resize, pinch resize ──
 function setupCanvasDrag() {
   let dragging = null;
   let resizing = null;
+  let rotating = null;
   let offX = 0, offY = 0;
   let pinch = null;
 
@@ -1237,6 +1293,38 @@ function setupCanvasDrag() {
     const hh = (s.size / aspect) / 2;
     return (p.x > s.x + hw * 0.45) && (p.y > s.y + hh * 0.45);
   }
+  // Compute world-space position of a corner handle on the selected sticker,
+  // accounting for rotation. cornerSign: { sx: ±1, sy: ±1 } picks which corner.
+  // sx=+1,sy=-1 = top-right (delete). sx=-1,sy=-1 = top-left (rotate).
+  function handlePos(i, cornerSign) {
+    const s = stickers[i];
+    const sw = stripCanvas.width, sh = stripCanvas.height;
+    const img = stickerImgCache[s.file];
+    const aspect = (img && img.naturalWidth) ? (img.naturalHeight / img.naturalWidth) : 1;
+    const drawW = s.size * sw;
+    const drawH = drawW * aspect;
+    const cx = s.x * sw, cy = s.y * sh;
+    const lx = cornerSign.sx * (drawW / 2 + 4);
+    const ly = cornerSign.sy * (drawH / 2 + 4);
+    const rot = s.rot || 0;
+    const cos = Math.cos(rot), sin = Math.sin(rot);
+    return { x: cx + lx * cos - ly * sin, y: cy + lx * sin + ly * cos, sw, sh };
+  }
+  function isHandleHit(p, hxhy) {
+    const sw = stripCanvas.width;
+    const handleR = Math.max(18, sw * 0.022);
+    const tapR = handleR + 8;
+    const px = p.x * sw, py = p.y * stripCanvas.height;
+    return Math.hypot(px - hxhy.x, py - hxhy.y) <= tapR;
+  }
+  function isDeleteHit(p, i) {
+    if (i !== selectedStickerIdx) return false;
+    return isHandleHit(p, handlePos(i, { sx: 1, sy: -1 }));
+  }
+  function isRotateHit(p, i) {
+    if (i !== selectedStickerIdx) return false;
+    return isHandleHit(p, handlePos(i, { sx: -1, sy: -1 }));
+  }
 
   stripCanvas.addEventListener('mousedown', onDown);
   stripCanvas.addEventListener('touchstart', onTouchStart, { passive: false });
@@ -1249,8 +1337,33 @@ function setupCanvasDrag() {
   function onDown(e) {
     if (!stickers.length) return;
     const p = relE(e);
+
+    // Tapped the X handle on the currently selected sticker → delete it.
+    if (selectedStickerIdx !== null && isDeleteHit(p, selectedStickerIdx)) {
+      stickers.splice(selectedStickerIdx, 1);
+      selectedStickerIdx = null;
+      updateStickerSelectionUI();
+      buildStrip();
+      e.preventDefault();
+      return;
+    }
+    // Tapped the rotate handle → start rotation drag.
+    if (selectedStickerIdx !== null && isRotateHit(p, selectedStickerIdx)) {
+      const s = stickers[selectedStickerIdx];
+      const sw = stripCanvas.width, sh = stripCanvas.height;
+      const cx = s.x * sw, cy = s.y * sh;
+      const px = p.x * sw, py = p.y * sh;
+      rotating = {
+        i: selectedStickerIdx,
+        startAngle: Math.atan2(py - cy, px - cx),
+        startRot: s.rot || 0,
+      };
+      e.preventDefault();
+      return;
+    }
+
     const i = findStickerAt(p);
-    
+
     if (i !== selectedStickerIdx) {
       selectedStickerIdx = i >= 0 ? i : null;
       updateStickerSelectionUI();
@@ -1268,6 +1381,18 @@ function setupCanvasDrag() {
     e.preventDefault();
   }
   function onMove(e) {
+    if (rotating !== null) {
+      e.preventDefault();
+      const p = relE(e);
+      const s = stickers[rotating.i];
+      const sw = stripCanvas.width, sh = stripCanvas.height;
+      const cx = s.x * sw, cy = s.y * sh;
+      const px = p.x * sw, py = p.y * sh;
+      const angle = Math.atan2(py - cy, px - cx);
+      s.rot = rotating.startRot + (angle - rotating.startAngle);
+      scheduleRedraw();
+      return;
+    }
     if (resizing !== null) {
       e.preventDefault();
       const p = relE(e);
@@ -1283,7 +1408,7 @@ function setupCanvasDrag() {
     stickers[dragging].y = Math.max(0, Math.min(1, p.y - offY));
     scheduleRedraw();
   }
-  function onUp() { dragging = null; resizing = null; }
+  function onUp() { dragging = null; resizing = null; rotating = null; }
 
   function onTouchStart(e) {
     if (e.touches.length === 2 && stickers.length) {
