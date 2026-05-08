@@ -1264,8 +1264,16 @@ function setupCanvasDrag() {
   let offX = 0, offY = 0;
   let pinch = null;
 
+  // Cache the canvas rect during a gesture so we don't force layout on
+  // every touchmove (which is a big mobile bottleneck). Refreshed on each
+  // gesture start, and on scroll/resize while a gesture is active.
+  let _cachedRect = null;
+  function refreshRect() { _cachedRect = stripCanvas.getBoundingClientRect(); }
+  window.addEventListener('scroll', () => { if (_cachedRect) refreshRect(); }, { passive: true });
+  window.addEventListener('resize', () => { if (_cachedRect) refreshRect(); }, { passive: true });
+
   function rel(touch) {
-    const rect = stripCanvas.getBoundingClientRect();
+    const rect = _cachedRect || stripCanvas.getBoundingClientRect();
     return {
       x: (touch.clientX - rect.left) / rect.width,
       y: (touch.clientY - rect.top) / rect.height,
@@ -1336,6 +1344,7 @@ function setupCanvasDrag() {
 
   function onDown(e) {
     if (!stickers.length) return;
+    refreshRect();
     const p = relE(e);
 
     // Tapped the X handle on the currently selected sticker → delete it.
@@ -1408,10 +1417,11 @@ function setupCanvasDrag() {
     stickers[dragging].y = Math.max(0, Math.min(1, p.y - offY));
     scheduleRedraw();
   }
-  function onUp() { dragging = null; resizing = null; rotating = null; }
+  function onUp() { dragging = null; resizing = null; rotating = null; _cachedRect = null; }
 
   function onTouchStart(e) {
     if (e.touches.length === 2 && stickers.length) {
+      refreshRect();
       const p = rel(e.touches[0]);
       const i = findStickerAt(p);
       const idx = i >= 0 ? i : stickers.length - 1;
