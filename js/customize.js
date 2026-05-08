@@ -297,6 +297,7 @@ function hideStripSkeleton() {
 
 // ── Build strip (cloned from app.js) ──
 function buildStrip() {
+  _prevDirty = null;
   if (currentTemplate) { return buildTemplateStrip(); }
   if (currentMode === 'tilt3') { buildTilt3Strip(); return; }
   // Use fixed slot dimensions so layouts stay consistent no matter what
@@ -1162,6 +1163,86 @@ function updateStickerSelectionUI() {
   }
 }
 
+// Dirty-rect rendering: instead of repainting the full strip canvas (very
+// expensive on tall layouts like 4-cut, 6-cut, 9-cut, puri 4-cut where the
+// canvas can be 1080×3000+ pixels), compute the union of all sticker bounding
+// boxes (current frame + previous frame, padded for handles) and only clear
+// + redraw that region. Stickers outside the dirty region keep last frame's
+// pixels — correct, since they didn't move. Big win on mobile.
+let _prevDirty = null;
+// Index of the sticker currently being interacted with (drag/resize/rotate).
+// Set by setupCanvasDrag handlers; null means "no active gesture, full redraw".
+let _activeStickerIdx = null;
+
+// Bitmap (rasterized) cache for SVG stickers. SVG → drawImage on a 2D canvas
+// re-rasterizes the vector tree on every draw on most mobile browsers, which
+// is expensive. Once an SVG Image has loaded, we paint it once into a regular
+// <canvas> and reuse the bitmap. Big speedup when many stickers are visible.
+const _stickerBitmap = {};
+const BITMAP_TARGET = 384; // base raster size; renderer scales down/up cleanly
+
+function getStickerBitmap(file, srcImg) {
+  if (!srcImg || !srcImg.complete || !srcImg.naturalWidth) return null;
+  const cached = _stickerBitmap[file];
+  if (cached) return cached;
+  const aspect = srcImg.naturalHeight / srcImg.naturalWidth;
+  const w = BITMAP_TARGET;
+  const h = Math.max(1, Math.round(BITMAP_TARGET * aspect));
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  try {
+    c.getContext('2d').drawImage(srcImg, 0, 0, w, h);
+    _stickerBitmap[file] = c;
+    return c;
+  } catch (e) {
+    return null;
+  }
+}
+
+function stickerBBox(i) {
+  const st = stickers[i];
+  if (!st) return null;
+  const sw = stripCanvas.width, sh = stripCanvas.height;
+  const img = stickerImgCache[st.file];
+  const aspect = (img && img.naturalWidth) ? (img.naturalHeight / img.naturalWidth) : 1;
+  const drawW = st.size * sw;
+  const drawH = drawW * aspect;
+  const cx = st.x * sw, cy = st.y * sh;
+  const half = Math.hypot(drawW, drawH) / 2;
+  const pad = (i === selectedStickerIdx) ? Math.max(40, sw * 0.04) : 4;
+  return {
+    x: Math.max(0, Math.floor(cx - half - pad)),
+    y: Math.max(0, Math.floor(cy - half - pad)),
+    w: Math.min(sw, Math.ceil(cx + half + pad)) - Math.max(0, Math.floor(cx - half - pad)),
+    h: Math.min(sh, Math.ceil(cy + half + pad)) - Math.max(0, Math.floor(cy - half - pad)),
+  };
+}
+
+function computeStickersBBox() {
+  if (!stickers.length) return null;
+  // During an active gesture only the moving sticker dirty-rects; other
+  // stickers haven't moved so their pixels are still valid from last frame.
+  if (_activeStickerIdx !== null) return stickerBBox(_activeStickerIdx);
+  // Otherwise (initial paint, post-build, etc.) cover all stickers.
+  let acc = null;
+  for (let i = 0; i < stickers.length; i++) acc = unionRect(acc, stickerBBox(i));
+  return acc;
+}
+
+function rectsIntersect(a, b) {
+  return !(a.x + a.w < b.x || b.x + b.w < a.x || a.y + a.h < b.y || b.y + b.h < a.y);
+}
+
+function unionRect(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  const x1 = Math.min(a.x, b.x);
+  const y1 = Math.min(a.y, b.y);
+  const x2 = Math.max(a.x + a.w, b.x + b.w);
+  const y2 = Math.max(a.y + a.h, b.y + b.h);
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+}
+
 function redrawStickersOnly() {
   if (!_baseCanvas
       || stripCanvas.width !== _baseCanvas.width
@@ -1169,17 +1250,43 @@ function redrawStickersOnly() {
     buildStrip();
     return;
   }
-  sctx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
-  sctx.drawImage(_baseCanvas, 0, 0);
-  drawAllStickers();
+  const cur = computeStickersBBox();
+  const dirty = unionRect(_prevDirty, cur);
+  if (!dirty || dirty.w <= 0 || dirty.h <= 0) {
+    // No stickers at all — restore base.
+    sctx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
+    sctx.drawImage(_baseCanvas, 0, 0);
+    _prevDirty = null;
+    return;
+  }
+  sctx.save();
+  sctx.beginPath();
+  sctx.rect(dirty.x, dirty.y, dirty.w, dirty.h);
+  sctx.clip();
+  sctx.clearRect(dirty.x, dirty.y, dirty.w, dirty.h);
+  sctx.drawImage(
+    _baseCanvas,
+    dirty.x, dirty.y, dirty.w, dirty.h,
+    dirty.x, dirty.y, dirty.w, dirty.h,
+  );
+  drawAllStickers(dirty);
+  sctx.restore();
+  _prevDirty = cur;
 }
 
-function drawAllStickers() {
+function drawAllStickers(dirtyRect) {
   hideStripSkeleton();
   const sw = stripCanvas.width, sh = stripCanvas.height;
   stickers.forEach((st, i) => {
     const img = stickerImgCache[st.file];
     if (!img || !img.complete || !img.naturalWidth) return;
+    // Cull stickers whose bbox doesn't intersect the dirty rect — saves
+    // setup + drawImage cost when many stickers are present and only one
+    // is being dragged (its bbox is the dirty rect).
+    if (dirtyRect) {
+      const bb = stickerBBox(i);
+      if (bb && !rectsIntersect(bb, dirtyRect)) return;
+    }
     const sizePx = st.size * sw;
     const aspect = img.naturalHeight / img.naturalWidth;
     const drawW = sizePx;
@@ -1188,10 +1295,15 @@ function drawAllStickers() {
     const cy = st.y * sh;
     const rot = st.rot || 0;
 
+    // Prefer pre-rasterized bitmap (much faster than re-rasterizing SVG
+    // vector data on each frame). Falls back to the original Image if the
+    // bitmap can't be created (e.g. CORS-tainted source).
+    const drawSrc = getStickerBitmap(st.file, img) || img;
+
     sctx.save();
     sctx.translate(cx, cy);
     if (rot) sctx.rotate(rot);
-    sctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+    sctx.drawImage(drawSrc, -drawW / 2, -drawH / 2, drawW, drawH);
 
     if (i === selectedStickerIdx) {
       // Bounding box (in rotated frame so it follows the sticker)
@@ -1367,6 +1479,7 @@ function setupCanvasDrag() {
         startAngle: Math.atan2(py - cy, px - cx),
         startRot: s.rot || 0,
       };
+      _activeStickerIdx = selectedStickerIdx;
       e.preventDefault();
       return;
     }
@@ -1387,6 +1500,7 @@ function setupCanvasDrag() {
       offX = p.x - stickers[i].x;
       offY = p.y - stickers[i].y;
     }
+    _activeStickerIdx = i;
     e.preventDefault();
   }
   function onMove(e) {
@@ -1417,7 +1531,7 @@ function setupCanvasDrag() {
     stickers[dragging].y = Math.max(0, Math.min(1, p.y - offY));
     scheduleRedraw();
   }
-  function onUp() { dragging = null; resizing = null; rotating = null; _cachedRect = null; }
+  function onUp() { dragging = null; resizing = null; rotating = null; _activeStickerIdx = null; _cachedRect = null; }
 
   function onTouchStart(e) {
     if (e.touches.length === 2 && stickers.length) {
@@ -1428,6 +1542,7 @@ function setupCanvasDrag() {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       pinch = { i: idx, dist: Math.hypot(dx, dy), size0: stickers[idx].size };
+      _activeStickerIdx = idx;
       e.preventDefault();
       return;
     }
