@@ -1346,14 +1346,16 @@ function initTabs() {
 // ── Download / share ──
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_ANDROID = /Android/i.test(navigator.userAgent);
+const IS_MOBILE = IS_IOS || IS_ANDROID;
 
 async function saveBlob(blob, filename, mime) {
-  if (IS_IOS && navigator.canShare) {
+  if (IS_MOBILE && navigator.canShare) {
     try {
       const file = new File([blob], filename, { type: mime });
       if (navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file] });
-        showToast('Saved! Tap "Save Image" in the share sheet');
+        showToast(IS_IOS ? 'Tap "Save Image" in the share sheet' : 'Tap "Save to Photos" or "Files"');
         return;
       }
     } catch (e) {
@@ -1369,7 +1371,7 @@ async function saveBlob(blob, filename, mime) {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 4000);
-  showToast('Downloaded!');
+  showToast(IS_ANDROID ? 'Saved to Downloads folder' : 'Downloaded! Check your Downloads folder');
 }
 
 async function downloadStrip() {
