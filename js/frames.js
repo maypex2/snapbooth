@@ -238,10 +238,13 @@ function drawFrameDecorations(sctx, frameId, sw, sh) {
     const stampSize = Math.round(sw * 0.055);
     sctx.font = '700 ' + stampSize + 'px "DM Sans", monospace';
     sctx.textAlign = 'right';
+    // Sit above the reserved brand-footer band so the stamp stays visible
+    // (and so the orange numbers don't clash with the snapbooth wordmark).
+    const bottomY = (typeof window !== 'undefined' && window.__frameBottomY) || sh;
     sctx.fillStyle = 'rgba(0,0,0,0.35)';
-    sctx.fillText(stamp, sw - pad + 2, sh - pad + 2);
+    sctx.fillText(stamp, sw - pad + 2, bottomY - pad + 2);
     sctx.fillStyle = '#FF8C2E';
-    sctx.fillText(stamp, sw - pad, sh - pad);
+    sctx.fillText(stamp, sw - pad, bottomY - pad);
     // REC dot, top-left
     sctx.textAlign = 'left';
     sctx.font = '700 ' + Math.round(sw * 0.028) + 'px "DM Sans", monospace';
@@ -390,4 +393,15 @@ function drawFrameDecorations(sctx, frameId, sw, sh) {
 // (mirror trend). Returns true if active.
 function frameMirrorsPhotos(frameId) {
   return frameId === 'mirrored';
+}
+
+// Frames that paint their own designed footer at the bottom of the canvas
+// (wordmark + date built into the frame's identity). When true, the caller
+// should skip the generic snapbooth brand footer AND skip clipping the frame
+// art above the footer band, so the frame's own footer renders intact.
+function frameHasOwnFooter(frameId) {
+  return frameId === 'life4cuts'
+      || frameId === 'photoism'
+      || frameId === 'naver'
+      || frameId === 'webcore';
 }

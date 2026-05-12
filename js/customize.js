@@ -529,19 +529,26 @@ function buildStrip() {
   // the area above the brand-footer band so heavy frames (Y2K Chrome,
   // Coquette, Holiday, etc.) can't bleed art over snapbooth + date.
   const footerReserve = footerReserveFor(currentMode);
+  const ownFooter = typeof frameHasOwnFooter === 'function' && frameHasOwnFooter(currentFrame);
   if (currentMode !== 'photocard' && !bgOverride) {
-    sctx.save();
-    sctx.beginPath();
-    sctx.rect(0, 0, sw, sh - footerReserve);
-    sctx.clip();
-    drawFrameDecorations(sctx, currentFrame, sw, sh);
-    sctx.restore();
+    if (ownFooter) {
+      // Frame has its own designed bottom wordmark/date — draw unclipped.
+      drawFrameDecorations(sctx, currentFrame, sw, sh);
+    } else {
+      window.__frameBottomY = sh - footerReserve;
+      sctx.save();
+      sctx.beginPath();
+      sctx.rect(0, 0, sw, sh - footerReserve);
+      sctx.clip();
+      drawFrameDecorations(sctx, currentFrame, sw, sh);
+      sctx.restore();
+      window.__frameBottomY = null;
+    }
   }
 
   // Unified brand footer — one consistent placement across every layout.
-  // Italic lowercase "snapbooth" in DM Serif, centered above the bottom edge,
-  // with the date below in DM Sans. Size scales with canvas width.
-  if (currentMode !== 'tilt3') drawBrandFooter(sctx, sw, sh, footerReserve);
+  // Skipped when the frame already paints its own designed footer.
+  if (currentMode !== 'tilt3' && !ownFooter) drawBrandFooter(sctx, sw, sh, footerReserve);
 
   // Snapshot the base (everything except stickers) so sticker drags can
   // skip re-rasterizing photos & frame on every pointer event.

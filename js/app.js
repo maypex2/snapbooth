@@ -713,17 +713,25 @@ function buildStrip() {
   // wordmarks, borders) is never hidden by photo content. Clipped above the
   // brand-footer band so frame art can't overlap snapbooth + date.
   const footerReserve = footerReserveFor(currentMode);
+  const ownFooter = typeof frameHasOwnFooter === 'function' && frameHasOwnFooter(currentFrame);
   if (currentMode !== 'photocard') {
-    sctx.save();
-    sctx.beginPath();
-    sctx.rect(0, 0, sw, sh - footerReserve);
-    sctx.clip();
-    drawFrameDecorations(sctx, currentFrame, sw, sh);
-    sctx.restore();
+    if (ownFooter) {
+      drawFrameDecorations(sctx, currentFrame, sw, sh);
+    } else {
+      window.__frameBottomY = sh - footerReserve;
+      sctx.save();
+      sctx.beginPath();
+      sctx.rect(0, 0, sw, sh - footerReserve);
+      sctx.clip();
+      drawFrameDecorations(sctx, currentFrame, sw, sh);
+      sctx.restore();
+      window.__frameBottomY = null;
+    }
   }
 
   // Unified brand footer — same italic centered "snapbooth" + date on every layout.
-  if (currentMode !== 'tilt3') drawBrandFooter(sctx, sw, sh, footerReserve);
+  // Skipped when the frame already paints its own designed footer.
+  if (currentMode !== 'tilt3' && !ownFooter) drawBrandFooter(sctx, sw, sh, footerReserve);
 
   stripCanvas.style.display = 'block';
   gifResult.classList.add('hidden');
