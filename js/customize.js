@@ -1774,9 +1774,13 @@ function initTabs() {
 }
 
 // ── Download / share ──
+// (See app.js for rationale on multi-signal mobile detection.)
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const IS_ANDROID = /Android/i.test(navigator.userAgent);
+const IS_ANDROID =
+  /Android/i.test(navigator.userAgent) ||
+  (navigator.userAgentData && navigator.userAgentData.platform === 'Android') ||
+  (!IS_IOS && navigator.maxTouchPoints > 0 && /Mobi|CrMo|FxiOS/i.test(navigator.userAgent));
 const IS_MOBILE = IS_IOS || IS_ANDROID;
 
 async function saveBlob(blob, filename, mime) {
@@ -1807,8 +1811,10 @@ async function saveBlob(blob, filename, mime) {
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   showToast(IS_ANDROID
-    ? 'Saved to Downloads — open Gallery → Albums → Downloads'
-    : 'Downloaded! Check your Downloads folder');
+    ? 'Saved! Find it in Files → Downloads'
+    : IS_MOBILE
+      ? 'Saved to your downloads'
+      : 'Downloaded! Check your Downloads folder');
 }
 
 // Fullscreen printer-slot animation: stylized white slot at top of screen

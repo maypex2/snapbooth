@@ -869,13 +869,23 @@ async function uploadPhotos(fileList) {
 
 // ── Preview overlay ──
 function openPreview(animate = false) {
-  document.getElementById('preview-overlay').classList.add('open');
   const header = document.querySelector('header');
-  if (header) header.style.display = 'none';
+  const overlay = document.getElementById('preview-overlay');
+  // Animated open (end of capture session): play the printer-slot
+  // animation FIRST, then reveal the preview modal once it starts to
+  // dismiss. The strip canvas already has the rendered content from
+  // buildStrip(), so the printer overlay can grab it even while the
+  // preview is still hidden.
   if (animate) {
-    // Slight delay so the preview modal is in place behind the overlay.
-    setTimeout(playPrinterAnim, 120);
+    playPrinterAnim();
+    setTimeout(() => {
+      overlay.classList.add('open');
+      if (header) header.style.display = 'none';
+    }, 2400);
+    return;
   }
+  overlay.classList.add('open');
+  if (header) header.style.display = 'none';
 }
 function closePreview() {
   document.getElementById('preview-overlay').classList.remove('open');
@@ -931,7 +941,14 @@ const DOWNLOAD_NAMES = {
 // sheet, which lets the user pick "Save Image".
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const IS_ANDROID = /Android/i.test(navigator.userAgent);
+// Detect Android via multiple signals — some privacy-focused browsers
+// (Opera, Brave, Samsung Internet) strip "Android" from the UA string.
+// Fall back to userAgentData and a "touch + narrow viewport + not-iOS"
+// heuristic so we still pick the right save flow / toast wording.
+const IS_ANDROID =
+  /Android/i.test(navigator.userAgent) ||
+  (navigator.userAgentData && navigator.userAgentData.platform === 'Android') ||
+  (!IS_IOS && navigator.maxTouchPoints > 0 && /Mobi|CrMo|FxiOS/i.test(navigator.userAgent));
 const IS_MOBILE = IS_IOS || IS_ANDROID;
 
 // Save a Blob to disk.
@@ -965,8 +982,10 @@ async function saveBlob(blob, filename, mime) {
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   showToast(IS_ANDROID
-    ? 'Saved to Downloads — open Gallery → Albums → Downloads'
-    : 'Downloaded! Check your Downloads folder');
+    ? 'Saved! Find it in Files → Downloads'
+    : IS_MOBILE
+      ? 'Saved to your downloads'
+      : 'Downloaded! Check your Downloads folder');
 }
 
 // Spawn a small polaroid that pops out of the camera's bottom edge,
