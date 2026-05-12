@@ -1806,6 +1806,13 @@ async function saveBlob(blob, filename, mime) {
 
 function playStripPrintAnim() {
   if (!stripCanvas) return;
+  // On phones the user is scrolled down to the download button and can't
+  // see the canvas above. Scroll it back into view so the print-drop is
+  // actually visible. Desktop already has it on screen, so this is a no-op
+  // when the canvas is already centered in viewport.
+  try {
+    stripCanvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch {}
   stripCanvas.classList.remove('strip-print-anim');
   void stripCanvas.offsetWidth;
   stripCanvas.classList.add('strip-print-anim');
@@ -1815,10 +1822,14 @@ async function downloadStrip() {
   await Promise.resolve(buildStrip());
   playStripPrintAnim();
   const filename = 'snapbooth-' + currentMode + '-' + Date.now() + '.png';
-  stripCanvas.toBlob(blob => {
-    if (!blob) { showToast('Could not save image'); return; }
-    saveBlob(blob, filename, 'image/png');
-  }, 'image/png');
+  // Delay the actual save so the print-drop animation has time to play
+  // before the browser's download UI / file dialog takes over the screen.
+  setTimeout(() => {
+    stripCanvas.toBlob(blob => {
+      if (!blob) { showToast('Could not save image'); return; }
+      saveBlob(blob, filename, 'image/png');
+    }, 'image/png');
+  }, 900);
 }
 
 // Brightness check (sRGB) so we can flip wordmark / shadow contrast
@@ -1941,13 +1952,13 @@ async function downloadStory() {
   const bg = await pickBackgroundColor('Pick the background color for your Story export.');
   if (!bg) return;
   playStripPrintAnim();
-  exportComposed(1080, 1920, 'snapbooth-story-' + Date.now() + '.png', 0.07, bg);
+  setTimeout(() => exportComposed(1080, 1920, 'snapbooth-story-' + Date.now() + '.png', 0.07, bg), 900);
 }
 async function downloadSquare() {
   const bg = await pickBackgroundColor('Pick the background color for your Post export.');
   if (!bg) return;
   playStripPrintAnim();
-  exportComposed(1080, 1080, 'snapbooth-square-' + Date.now() + '.png', 0.07, bg);
+  setTimeout(() => exportComposed(1080, 1080, 'snapbooth-square-' + Date.now() + '.png', 0.07, bg), 900);
 }
 
 async function shareStrip() {

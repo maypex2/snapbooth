@@ -995,6 +995,12 @@ function ejectPolaroid(img) {
 function playStripPrintAnim() {
   const el = document.getElementById('strip-canvas') || document.getElementById('gif-result');
   if (!el) return;
+  // Phone users scroll to the download button at the bottom of the modal
+  // and can't see the canvas. Pull it back into view before the animation
+  // fires so the print-drop is actually visible.
+  try {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch {}
   el.classList.remove('strip-print-anim');
   void el.offsetWidth;
   el.classList.add('strip-print-anim');
@@ -1003,17 +1009,21 @@ function playStripPrintAnim() {
 function downloadStrip() {
   if (currentMode === 'gif' && currentGifBlob) {
     playStripPrintAnim();
-    saveBlob(currentGifBlob, 'snapbooth-' + Date.now() + '.gif', 'image/gif');
+    setTimeout(() => saveBlob(currentGifBlob, 'snapbooth-' + Date.now() + '.gif', 'image/gif'), 900);
     return;
   }
   if (!shots.length) return;
   buildStrip();
   playStripPrintAnim();
   const filename = (DOWNLOAD_NAMES[currentMode] || 'snapbooth') + '-' + Date.now() + '.png';
-  stripCanvas.toBlob(blob => {
-    if (!blob) { showToast('Could not save image'); return; }
-    saveBlob(blob, filename, 'image/png');
-  }, 'image/png');
+  // Delay save so the print-drop animation finishes before the browser's
+  // download dialog / file picker yanks focus away.
+  setTimeout(() => {
+    stripCanvas.toBlob(blob => {
+      if (!blob) { showToast('Could not save image'); return; }
+      saveBlob(blob, filename, 'image/png');
+    }, 'image/png');
+  }, 900);
 }
 
 async function shareStrip() {
