@@ -84,6 +84,25 @@
         0 48px 96px -24px rgba(0,0,0,.22);
     }
     #strip-canvas:active { cursor: grabbing; }
+
+    /* Photobooth print-drop animation, replayed on download for a tactile
+       "your photo just printed" beat. Matches the entrance animation on
+       app.html so both flows feel consistent. */
+    @keyframes stripPrintDrop {
+      0%   { transform: translateY(-110vh) rotate(-7deg); opacity: 0; }
+      55%  { transform: translateY(10px)   rotate(2.5deg); opacity: 1; }
+      72%  { transform: translateY(-6px)   rotate(-1.2deg); }
+      86%  { transform: translateY(3px)    rotate(0.5deg); }
+      100% { transform: translateY(0)      rotate(0); opacity: 1; }
+    }
+    .strip-print-anim {
+      animation: stripPrintDrop 950ms cubic-bezier(.2,.75,.3,1) both;
+      transform-origin: 50% 0%;
+      will-change: transform, opacity;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .strip-print-anim { animation: none; }
+    }
     .bg-swatch { transition: transform .12s ease, box-shadow .12s ease; }
     .bg-swatch:hover { transform: scale(1.06); }
     .bg-swatch.active { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2A2520; transform: scale(1.06); }

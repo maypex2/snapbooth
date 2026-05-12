@@ -345,6 +345,7 @@ async function startPhotoSession() {
     if (shots.length >= max) break;
     shots.push(img);
     updateShotDots();
+    ejectPolaroid(img);
     if (i < max - 1 && currentTimer > 0) await sleep(600);
   }
 
@@ -967,13 +968,47 @@ async function saveBlob(blob, filename, mime) {
   showToast(IS_ANDROID ? 'Saved — tap Share to add to Gallery' : 'Downloaded! Check your Downloads folder');
 }
 
+// Spawn a small polaroid that pops out of the camera's bottom edge,
+// hovers, then drifts down and fades. Pure visual feedback after each
+// capture — runs in parallel with the rest of the session, doesn't block.
+function ejectPolaroid(img) {
+  const wrap = document.getElementById('cam-wrap');
+  if (!wrap || !img || !img.src) return;
+  const r = wrap.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'polaroid-eject';
+  // Slight randomization so a burst of 4 shots doesn't look mechanical.
+  const jitter = (Math.random() - 0.5) * 24;
+  el.style.left = (r.left + r.width / 2 + jitter) + 'px';
+  el.style.top  = (r.bottom - 4) + 'px';
+  const thumb = document.createElement('img');
+  thumb.src = img.src;
+  el.appendChild(thumb);
+  const cap = document.createElement('div');
+  cap.className = 'pe-caption';
+  cap.textContent = 'snapbooth';
+  el.appendChild(cap);
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1750);
+}
+
+function playStripPrintAnim() {
+  const el = document.getElementById('strip-canvas') || document.getElementById('gif-result');
+  if (!el) return;
+  el.classList.remove('strip-print-anim');
+  void el.offsetWidth;
+  el.classList.add('strip-print-anim');
+}
+
 function downloadStrip() {
   if (currentMode === 'gif' && currentGifBlob) {
+    playStripPrintAnim();
     saveBlob(currentGifBlob, 'snapbooth-' + Date.now() + '.gif', 'image/gif');
     return;
   }
   if (!shots.length) return;
   buildStrip();
+  playStripPrintAnim();
   const filename = (DOWNLOAD_NAMES[currentMode] || 'snapbooth') + '-' + Date.now() + '.png';
   stripCanvas.toBlob(blob => {
     if (!blob) { showToast('Could not save image'); return; }

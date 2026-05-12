@@ -1804,8 +1804,16 @@ async function saveBlob(blob, filename, mime) {
   showToast(IS_ANDROID ? 'Saved — tap Share to add to Gallery' : 'Downloaded! Check your Downloads folder');
 }
 
+function playStripPrintAnim() {
+  if (!stripCanvas) return;
+  stripCanvas.classList.remove('strip-print-anim');
+  void stripCanvas.offsetWidth;
+  stripCanvas.classList.add('strip-print-anim');
+}
+
 async function downloadStrip() {
   await Promise.resolve(buildStrip());
+  playStripPrintAnim();
   const filename = 'snapbooth-' + currentMode + '-' + Date.now() + '.png';
   stripCanvas.toBlob(blob => {
     if (!blob) { showToast('Could not save image'); return; }
@@ -1932,11 +1940,13 @@ function pickBackgroundColor(label) {
 async function downloadStory() {
   const bg = await pickBackgroundColor('Pick the background color for your Story export.');
   if (!bg) return;
+  playStripPrintAnim();
   exportComposed(1080, 1920, 'snapbooth-story-' + Date.now() + '.png', 0.07, bg);
 }
 async function downloadSquare() {
   const bg = await pickBackgroundColor('Pick the background color for your Post export.');
   if (!bg) return;
+  playStripPrintAnim();
   exportComposed(1080, 1080, 'snapbooth-square-' + Date.now() + '.png', 0.07, bg);
 }
 
