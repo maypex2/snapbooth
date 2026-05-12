@@ -1032,8 +1032,20 @@ function playPrinterAnim(srcCanvas) {
     '<div class="printer-anim-slot"></div>' +
     '<div class="printer-anim-clip"><img class="printer-anim-strip" alt=""></div>';
   const img = overlay.querySelector('img');
+  const slot = overlay.querySelector('.printer-anim-slot');
+  // Once the image is laid out, size the slot to match the strip's
+  // rendered width so the strip looks like it's emerging from a slot
+  // that's the right size, not a tiny mouth (especially for wide layouts
+  // like 3-horiz or 9-cut).
+  function syncSlotWidth() {
+    const w = img.getBoundingClientRect().width;
+    if (w > 0 && slot) slot.style.width = Math.round(w + 28) + 'px';
+  }
+  img.addEventListener('load', () => requestAnimationFrame(syncSlotWidth));
   img.src = dataUrl;
   document.body.appendChild(overlay);
+  // In case the load event already fired (cached / synchronous decode):
+  if (img.complete) requestAnimationFrame(syncSlotWidth);
   requestAnimationFrame(() => overlay.classList.add('go'));
 
   // Auto-dismiss ~400ms after animation completes (2.2s).

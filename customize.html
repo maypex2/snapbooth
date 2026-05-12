@@ -103,9 +103,9 @@
     .printer-anim-overlay.go   { opacity: 1; }
     .printer-anim-overlay.gone { opacity: 0; }
     .printer-anim-slot {
-      width: 220px;
-      max-width: 70vw;
-      height: 28px;
+      width: 260px;
+      max-width: 92vw;
+      height: 30px;
       background: linear-gradient(180deg, #f3eee6 0%, #d8cdb8 100%);
       border-radius: 8px 8px 14px 14px;
       position: relative;
@@ -114,13 +114,14 @@
         inset 0 -2px 3px rgba(0,0,0,.15),
         inset 0 1px 0 rgba(255,255,255,.6);
       z-index: 3;
+      transition: width .25s ease;
     }
     .printer-anim-slot::before {
       content: '';
       position: absolute;
       left: 50%; bottom: 5px;
       transform: translateX(-50%);
-      width: 78%; height: 5px;
+      width: 86%; height: 5px;
       background: #181210;
       border-radius: 3px;
       box-shadow: inset 0 1px 2px rgba(0,0,0,.7);
@@ -134,8 +135,8 @@
     }
     .printer-anim-strip {
       display: block;
-      max-width: min(72vw, 360px);
-      max-height: 70vh;
+      max-width: min(78vw, 380px);
+      max-height: 72vh;
       width: auto;
       height: auto;
       filter: drop-shadow(0 14px 28px rgba(0,0,0,.5));
