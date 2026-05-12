@@ -664,6 +664,26 @@
       opacity: 1;
     }
 
+    /* "Photobooth printing" animation — strip drops in from above with a
+       slight tilt, then settles. Triggered only on fresh captures, not on
+       photo upload. Uses transform-origin top so the tilt looks like the
+       strip is hinged from the printer slot above the modal. */
+    @keyframes stripPrintDrop {
+      0%   { transform: translateY(-110vh) rotate(-7deg); opacity: 0; }
+      55%  { transform: translateY(10px)   rotate(2.5deg); opacity: 1; }
+      72%  { transform: translateY(-6px)   rotate(-1.2deg); }
+      86%  { transform: translateY(3px)    rotate(0.5deg); }
+      100% { transform: translateY(0)      rotate(0); opacity: 1; }
+    }
+    .strip-print-anim {
+      animation: stripPrintDrop 950ms cubic-bezier(.2,.75,.3,1) both;
+      transform-origin: 50% 0%;
+      will-change: transform, opacity;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .strip-print-anim { animation: none; }
+    }
+
     body:has(#preview-overlay.open) header {
       display: none !important;
     }

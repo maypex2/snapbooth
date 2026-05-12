@@ -353,7 +353,7 @@ async function startPhotoSession() {
   isRunning = false;
   shots = shots.slice(0, max);
   buildStrip();
-  openPreview();
+  openPreview(true);
   showToast('Photo strip ready!');
 }
 
@@ -443,7 +443,7 @@ function encodeGif(rawFrames, w, h) {
     gifResult.classList.remove('hidden');
     stripCanvas.style.display = 'none';
     document.getElementById('snap-btn').disabled = false;
-    openPreview();
+    openPreview(true);
     showToast('GIF boomerang ready!');
   });
 
@@ -867,10 +867,19 @@ async function uploadPhotos(fileList) {
 }
 
 // ── Preview overlay ──
-function openPreview() {
+function openPreview(animate = false) {
   document.getElementById('preview-overlay').classList.add('open');
   const header = document.querySelector('header');
   if (header) header.style.display = 'none';
+  if (animate) {
+    const el = document.getElementById('strip-canvas');
+    if (el) {
+      el.classList.remove('strip-print-anim');
+      // Force reflow so the animation restarts on every fresh capture.
+      void el.offsetWidth;
+      el.classList.add('strip-print-anim');
+    }
+  }
 }
 function closePreview() {
   document.getElementById('preview-overlay').classList.remove('open');
