@@ -12,6 +12,8 @@ let customFont   = 'serif-italic';
 let customTextPos = { x: 0.5, y: 0.5 };
 // Font size as fraction of canvas width.
 let customTextSize = 0.06;
+// Text fill color. 'auto' = auto-contrast vs strip background; otherwise a hex.
+let customTextColor = 'auto';
 
 const TITLE_FONT_OPTIONS = [
   { id: 'serif-italic', label: 'Classic',   weight: 'italic ', family: '"DM Serif Display", serif' },
@@ -206,11 +208,19 @@ function drawCustomTextOverlay() {
   sctx.textAlign = 'center';
   sctx.textBaseline = 'middle';
   const dark = isDarkStripBg();
-  sctx.strokeStyle = dark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.7)';
+  let fillColor, strokeColor;
+  if (customTextColor === 'auto' || !customTextColor) {
+    strokeColor = dark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.7)';
+    fillColor   = dark ? 'rgba(255,255,255,0.98)' : 'rgba(0,0,0,0.92)';
+  } else {
+    fillColor = customTextColor;
+    strokeColor = isDarkHex(customTextColor) ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.45)';
+  }
+  sctx.strokeStyle = strokeColor;
   sctx.lineWidth = Math.max(2, fs * 0.06);
   sctx.lineJoin = 'round';
   sctx.strokeText(txt, cx, cy);
-  sctx.fillStyle = dark ? 'rgba(255,255,255,0.98)' : 'rgba(0,0,0,0.92)';
+  sctx.fillStyle = fillColor;
   sctx.fillText(txt, cx, cy);
   sctx.restore();
 }
@@ -2092,6 +2102,41 @@ if (fontPicker) {
     customFont = btn.dataset.font;
     fontPicker.querySelectorAll('.font-pill').forEach(b => b.classList.toggle('active', b === btn));
     buildStrip();
+  });
+}
+
+// Size slider for custom text
+const customTextSizeInput = document.getElementById('custom-text-size');
+if (customTextSizeInput) {
+  customTextSizeInput.value = customTextSize;
+  const debouncedSize = debounce(buildStrip, 60);
+  customTextSizeInput.addEventListener('input', e => {
+    customTextSize = parseFloat(e.target.value);
+    debouncedSize();
+  });
+}
+
+// Color swatches for custom text
+const ctSwatches = document.getElementById('custom-text-color-swatches');
+const ctCustomInput = document.getElementById('custom-text-color-custom');
+function setTextColor(color, sourceBtn) {
+  customTextColor = color;
+  if (ctSwatches) {
+    ctSwatches.querySelectorAll('.ct-swatch').forEach(b => b.classList.remove('active'));
+    if (sourceBtn) sourceBtn.classList.add('active');
+  }
+  buildStrip();
+}
+if (ctSwatches) {
+  ctSwatches.addEventListener('click', e => {
+    const btn = e.target.closest('.ct-swatch');
+    if (!btn) return;
+    setTextColor(btn.dataset.color, btn);
+  });
+}
+if (ctCustomInput) {
+  ctCustomInput.addEventListener('input', e => {
+    setTextColor(e.target.value, null);
   });
 }
 

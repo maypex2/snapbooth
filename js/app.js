@@ -55,6 +55,11 @@ async function enableCamera() {
   if (cameraReady) return true;
   showCameraState('loading');
 
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showCameraState('error');
+    return false;
+  }
+
   // Try tiers from highest → lowest. Android Chrome silently picks a low
   // track if you only specify `ideal`, so we try `min` first to force HD,
   // then progressively relax if the device can't satisfy.
@@ -63,14 +68,28 @@ async function enableCamera() {
     { video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }, audio: false },
     { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
     { video: { facingMode: 'user' }, audio: false },
+    { video: true, audio: false },
   ];
+
+  // Wrap each getUserMedia call in a timeout so Opera / privacy-blocking
+  // browsers that never resolve the promise don't leave us stuck on the
+  // "Starting camera…" overlay forever.
+  function withTimeout(promise, ms) {
+    return new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('gum-timeout')), ms);
+      promise.then(v => { clearTimeout(t); resolve(v); },
+                   e => { clearTimeout(t); reject(e); });
+    });
+  }
 
   for (const constraints of tiers) {
     try {
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      stream = await withTimeout(navigator.mediaDevices.getUserMedia(constraints), 12000);
       break;
     } catch (e) {
       stream = null;
+      // NotAllowedError = user denied; no point retrying lower tiers.
+      if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) break;
     }
   }
 
@@ -81,7 +100,11 @@ async function enableCamera() {
 
   try {
     video.srcObject = stream;
-    await video.play();
+    // Don't block on play() — some browsers (Opera, mobile Safari with
+    // autoplay restrictions) leave this promise pending. We only need the
+    // stream attached; loadedmetadata + autoplay handle the rest.
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {});
     // Use the actual track resolution the browser chose — never fall back
     // to 640×480 which would crop captures to low-res even when the
     // stream is HD.

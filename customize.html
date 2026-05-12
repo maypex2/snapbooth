@@ -204,6 +204,11 @@
     .ts-card:hover { background:#F4F4F5; transform:translateY(-2px); }
     .ts-card span { display:block; line-height:1.15; pointer-events:none; }
 
+    /* Custom text color swatches */
+    .ct-swatch { transition: transform .12s ease, box-shadow .12s ease; cursor: pointer; }
+    .ct-swatch:hover { transform: scale(1.1); }
+    .ct-swatch.active { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2A2520; transform: scale(1.1); }
+
     /* Font picker */
     .font-pill { padding:10px 12px; border-radius:12px; border:1px solid #E4E4E7; background:#fff; font-size:15px; color:#2A2520; cursor:pointer; transition:all .15s; text-align:center; line-height:1.1; min-height:44px; display:flex; align-items:center; justify-content:center; }
     .font-pill:hover { background:#F4F4F5; }
@@ -391,6 +396,29 @@
 
         <label class="block text-xs font-medium uppercase tracking-[0.18em] text-ink2 mt-4 mb-2">Font</label>
         <div id="font-picker" class="grid grid-cols-2 gap-2"></div>
+
+        <label class="block text-xs font-medium uppercase tracking-[0.18em] text-ink2 mt-4 mb-2">Size</label>
+        <input type="range" id="custom-text-size" min="0.025" max="0.18" step="0.005" value="0.06" class="w-full accent-ink">
+
+        <label class="block text-xs font-medium uppercase tracking-[0.18em] text-ink2 mt-4 mb-2">Color</label>
+        <div id="custom-text-color-swatches" class="grid grid-cols-7 gap-2 mb-2">
+          <button type="button" data-color="auto" class="ct-swatch active w-8 h-8 rounded-full border-2 border-sand/60 flex items-center justify-center text-[9px] font-medium text-ink2" title="Auto contrast">A</button>
+          <button type="button" data-color="#000000" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#000000" title="Black"></button>
+          <button type="button" data-color="#FFFFFF" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#FFFFFF" title="White"></button>
+          <button type="button" data-color="#C8313A" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#C8313A" title="Cherry"></button>
+          <button type="button" data-color="#F2B8C6" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#F2B8C6" title="Pink"></button>
+          <button type="button" data-color="#C9A07A" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#C9A07A" title="Tan"></button>
+          <button type="button" data-color="#7ECEC4" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#7ECEC4" title="Teal"></button>
+          <button type="button" data-color="#F4E5B2" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#F4E5B2" title="Butter"></button>
+          <button type="button" data-color="#A47864" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#A47864" title="Mocha"></button>
+          <button type="button" data-color="#6B7BA8" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#6B7BA8" title="Indigo"></button>
+          <button type="button" data-color="#9CB8A4" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#9CB8A4" title="Sage"></button>
+          <button type="button" data-color="#5C0000" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#5C0000" title="Maroon"></button>
+          <button type="button" data-color="#1A1A1A" class="ct-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#1A1A1A" title="Tokyo"></button>
+          <label for="custom-text-color-custom" class="custom-color-wrap relative w-8 h-8 rounded-full border-2 border-sand/60 cursor-pointer overflow-hidden" title="Pick any color">
+            <input type="color" id="custom-text-color-custom" value="#000000" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+          </label>
+        </div>
 
         <div class="flex gap-2 mt-3">
           <button id="custom-text-clear" class="flex-1 py-2.5 rounded-xl bg-white border border-sand/60 text-ink2 text-sm hover:bg-cream2 hover:text-ink transition">Clear</button>
