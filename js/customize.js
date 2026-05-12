@@ -525,13 +525,23 @@ function buildStrip() {
   });
 
   // Frame decorations render ABOVE photos so themed text (REC, date stamp,
-  // wordmarks, borders, sparkles) is never hidden by photo content.
-  if (currentMode !== 'photocard' && !bgOverride) drawFrameDecorations(sctx, currentFrame, sw, sh);
+  // wordmarks, borders, sparkles) is never hidden by photo content. Clip to
+  // the area above the brand-footer band so heavy frames (Y2K Chrome,
+  // Coquette, Holiday, etc.) can't bleed art over snapbooth + date.
+  const footerReserve = footerReserveFor(currentMode);
+  if (currentMode !== 'photocard' && !bgOverride) {
+    sctx.save();
+    sctx.beginPath();
+    sctx.rect(0, 0, sw, sh - footerReserve);
+    sctx.clip();
+    drawFrameDecorations(sctx, currentFrame, sw, sh);
+    sctx.restore();
+  }
 
   // Unified brand footer — one consistent placement across every layout.
   // Italic lowercase "snapbooth" in DM Serif, centered above the bottom edge,
   // with the date below in DM Sans. Size scales with canvas width.
-  if (currentMode !== 'tilt3') drawBrandFooter(sctx, sw, sh, footerReserveFor(currentMode));
+  if (currentMode !== 'tilt3') drawBrandFooter(sctx, sw, sh, footerReserve);
 
   // Snapshot the base (everything except stickers) so sticker drags can
   // skip re-rasterizing photos & frame on every pointer event.
