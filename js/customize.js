@@ -7,6 +7,11 @@ let stickers     = [];
 let shots        = [];
 let customText   = '';
 let customFont   = 'serif-italic';
+// Draggable position for customText overlay. Fractions of canvas (0..1).
+// Default to center so text appears in the middle when first added.
+let customTextPos = { x: 0.5, y: 0.5 };
+// Font size as fraction of canvas width.
+let customTextSize = 0.06;
 
 const TITLE_FONT_OPTIONS = [
   { id: 'serif-italic', label: 'Classic',   weight: 'italic ', family: '"DM Serif Display", serif' },
@@ -184,6 +189,48 @@ function drawBrandFooter(sctx, sw, sh, reserveH) {
     );
   }
   sctx.restore();
+}
+
+// Draw the draggable custom-text overlay. Renders on top of stickers/photos
+// at customTextPos. Centered around (cx, cy), with a contrast outline so it
+// stays legible over any photo or background. Called by every build*Strip().
+function drawCustomTextOverlay() {
+  const txt = customText.trim();
+  if (!txt) return;
+  const sw = stripCanvas.width, sh = stripCanvas.height;
+  const fs = Math.max(18, customTextSize * sw);
+  const cx = customTextPos.x * sw;
+  const cy = customTextPos.y * sh;
+  sctx.save();
+  sctx.font = getCustomFontSpec(fs);
+  sctx.textAlign = 'center';
+  sctx.textBaseline = 'middle';
+  const dark = isDarkStripBg();
+  sctx.strokeStyle = dark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.7)';
+  sctx.lineWidth = Math.max(2, fs * 0.06);
+  sctx.lineJoin = 'round';
+  sctx.strokeText(txt, cx, cy);
+  sctx.fillStyle = dark ? 'rgba(255,255,255,0.98)' : 'rgba(0,0,0,0.92)';
+  sctx.fillText(txt, cx, cy);
+  sctx.restore();
+}
+
+// Measured bounding box of the overlay text in canvas pixels (or null when
+// empty). Used for pointer hit-testing.
+function getCustomTextBBox() {
+  const txt = customText.trim();
+  if (!txt) return null;
+  const sw = stripCanvas.width, sh = stripCanvas.height;
+  const fs = Math.max(18, customTextSize * sw);
+  sctx.save();
+  sctx.font = getCustomFontSpec(fs);
+  const w = sctx.measureText(txt).width;
+  sctx.restore();
+  const cx = customTextPos.x * sw;
+  const cy = customTextPos.y * sh;
+  const h = fs * 1.25;
+  const pad = Math.max(8, fs * 0.25);
+  return { x: cx - w / 2 - pad, y: cy - h / 2 - pad, w: w + pad * 2, h: h + pad * 2 };
 }
 
 // ── Layout selector ──
@@ -436,25 +483,7 @@ function buildStrip() {
   // custom text when provided. Falls back to bottom space (e.g. polaroid,
   // photocard) when there's no usable top area.
   const topReserve = positions[0] ? positions[0].y : 0;
-  const lastPos = positions[positions.length - 1];
-  const bottomReserve = lastPos ? Math.max(0, sh - (lastPos.y + lastPos.h)) : 0;
-  const txt = customText.trim();
-  if (txt) {
-    sctx.fillStyle = 'rgba(0,0,0,0.85)';
-    sctx.textAlign = 'center';
-    sctx.textBaseline = 'middle';
-    if (topReserve >= 30) {
-      const fs = Math.min(72, Math.max(36, Math.floor(topReserve * 0.42)));
-      sctx.font = getCustomFontSpec(fs);
-      sctx.fillText(txt, sw/2, topReserve/2 + 6);
-    } else if (bottomReserve >= 30) {
-      const fs = Math.min(64, Math.max(28, Math.floor(bottomReserve * 0.38)));
-      sctx.font = getCustomFontSpec(fs);
-      sctx.fillText(txt, sw/2, sh - bottomReserve/2);
-    }
-    sctx.textAlign = 'start';
-    sctx.textBaseline = 'alphabetic';
-  } else if (topReserve > 30) {
+  if (topReserve > 30) {
     drawFrameTitle(sctx, currentFrame, sw, sh, topReserve);
   }
 
@@ -516,6 +545,7 @@ function buildStrip() {
 
   // Draw stickers
   drawAllStickers();
+  drawCustomTextOverlay();
 }
 
 // ── Tilt3 layout: dark red strip with 3 slightly-tilted black-bordered
@@ -592,7 +622,10 @@ function buildTilt3Strip() {
 
   sctx.font = getCustomFontSpec(Math.floor(BOT * 0.22));
   sctx.fillStyle = 'rgba(250,246,238,0.92)';
-  sctx.fillText(customText.trim() || 'your text', sw / 2, sh - BOT * 0.22);
+  sctx.fillText(
+    new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    sw / 2, sh - BOT * 0.22
+  );
   sctx.textAlign = 'start';
 
   // Snapshot for sticker drag fast-path
@@ -606,6 +639,7 @@ function buildTilt3Strip() {
 
   // Draw stickers
   drawAllStickers();
+  drawCustomTextOverlay();
 }
 
 // ── Template strip: draw a template image as background and place photos
@@ -683,30 +717,6 @@ function buildTemplateStrip() {
       sctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
     });
 
-    // Custom text overlay on templates: place in available top or bottom
-    // space relative to the first/last slot.
-    const txt = customText.trim();
-    if (txt) {
-      const firstSlot = tpl.slots[0];
-      const lastSlot = tpl.slots[tpl.slots.length - 1];
-      const topRes = firstSlot.y * sh;
-      const bottomRes = sh - (lastSlot.y + lastSlot.h) * sh;
-      sctx.fillStyle = 'rgba(0,0,0,0.85)';
-      sctx.textAlign = 'center';
-      sctx.textBaseline = 'middle';
-      if (topRes >= 30) {
-        const fs = Math.min(72, Math.max(28, Math.floor(topRes * 0.42)));
-        sctx.font = 'italic ' + fs + 'px "DM Serif Display", serif';
-        sctx.fillText(txt, sw/2, topRes/2 + 6);
-      } else if (bottomRes >= 30) {
-        const fs = Math.min(64, Math.max(24, Math.floor(bottomRes * 0.38)));
-        sctx.font = 'italic ' + fs + 'px "DM Serif Display", serif';
-        sctx.fillText(txt, sw/2, sh - bottomRes/2);
-      }
-      sctx.textAlign = 'start';
-      sctx.textBaseline = 'alphabetic';
-    }
-
     // Snapshot for sticker drag fast-path
     if (!_baseCanvas) _baseCanvas = document.createElement('canvas');
     if (_baseCanvas.width !== sw || _baseCanvas.height !== sh) {
@@ -716,6 +726,7 @@ function buildTemplateStrip() {
     bctx.clearRect(0, 0, sw, sh);
     bctx.drawImage(stripCanvas, 0, 0);
     drawAllStickers();
+    drawCustomTextOverlay();
   };
 
   return loadTemplateImage(tpl.file)
@@ -1151,6 +1162,101 @@ function scheduleRedraw() {
   requestAnimationFrame(() => { _rafPending = false; redrawStickersOnly(); });
 }
 
+// ── Drag ghost overlay ─────────────────────────────────────────────────
+// Repainting a 1080×3500 canvas every pointermove is the dominant cost on
+// low-end Android / older iPhone. Even with dirty-rect optimization the
+// browser still recomposites the full canvas to the screen each frame.
+// During an active gesture we instead:
+//   1. Hide the touched sticker from the canvas (skip in drawAllStickers).
+//   2. Render it once as an absolutely-positioned <img> over the canvas.
+//   3. Update only its CSS `transform` per pointermove — GPU-accelerated,
+//      zero canvas redraws, smooth even with 50+ stickers.
+// On pointerup we remove the ghost and do one full buildStrip().
+let _dragGhost = null;
+let _hiddenStickerIdx = null;
+let _ghostRafPending = false;
+
+function ensureRelativeParent(el) {
+  const parent = el && el.parentElement;
+  if (!parent) return null;
+  if (getComputedStyle(parent).position === 'static') {
+    parent.style.position = 'relative';
+  }
+  return parent;
+}
+
+function startDragGhost(idx) {
+  if (idx == null || !stickers[idx]) return;
+  const parent = ensureRelativeParent(stripCanvas);
+  if (!parent) return;
+  // Remove any prior ghost defensively
+  if (_dragGhost && _dragGhost.parentNode) _dragGhost.parentNode.removeChild(_dragGhost);
+  const st = stickers[idx];
+  const ghost = document.createElement('img');
+  ghost.src = st.file;
+  ghost.draggable = false;
+  ghost.alt = '';
+  ghost.style.position = 'absolute';
+  ghost.style.left = '0';
+  ghost.style.top = '0';
+  ghost.style.pointerEvents = 'none';
+  ghost.style.willChange = 'transform';
+  ghost.style.transformOrigin = 'center center';
+  ghost.style.userSelect = 'none';
+  ghost.style.webkitUserSelect = 'none';
+  ghost.style.zIndex = '5';
+  parent.appendChild(ghost);
+  _dragGhost = ghost;
+  _hiddenStickerIdx = idx;
+  // Clear the sticker from the canvas via the dirty-rect fast path so the
+  // ghost is the only on-screen copy. Avoids a full buildStrip() at gesture
+  // start (which would re-rasterize all photos & frame decorations).
+  if (_baseCanvas
+      && stripCanvas.width === _baseCanvas.width
+      && stripCanvas.height === _baseCanvas.height) {
+    redrawStickersOnly();
+  } else {
+    buildStrip();
+  }
+  updateDragGhost();
+}
+
+function updateDragGhost() {
+  if (!_dragGhost || _hiddenStickerIdx == null) return;
+  const st = stickers[_hiddenStickerIdx];
+  if (!st) return;
+  const canvasRect = stripCanvas.getBoundingClientRect();
+  const parent = stripCanvas.parentElement;
+  const parentRect = parent ? parent.getBoundingClientRect() : { left: canvasRect.left, top: canvasRect.top };
+  const cssW = canvasRect.width;
+  const cssH = canvasRect.height;
+  const img = stickerImgCache[st.file];
+  const aspect = (img && img.naturalWidth) ? (img.naturalHeight / img.naturalWidth) : 1;
+  const drawW = st.size * cssW;
+  const drawH = drawW * aspect;
+  const cx = st.x * cssW + (canvasRect.left - parentRect.left);
+  const cy = st.y * cssH + (canvasRect.top - parentRect.top);
+  const rotDeg = ((st.rot || 0) * 180) / Math.PI;
+  _dragGhost.style.width = drawW + 'px';
+  _dragGhost.style.height = drawH + 'px';
+  _dragGhost.style.transform =
+    'translate3d(' + (cx - drawW / 2) + 'px,' + (cy - drawH / 2) + 'px,0) rotate(' + rotDeg + 'deg)';
+}
+
+function scheduleGhostUpdate() {
+  if (_ghostRafPending) return;
+  _ghostRafPending = true;
+  requestAnimationFrame(() => { _ghostRafPending = false; updateDragGhost(); });
+}
+
+function endDragGhost() {
+  const wasHidden = _hiddenStickerIdx != null;
+  if (_dragGhost && _dragGhost.parentNode) _dragGhost.parentNode.removeChild(_dragGhost);
+  _dragGhost = null;
+  _hiddenStickerIdx = null;
+  if (wasHidden) buildStrip();
+}
+
 let selectedStickerIdx = null;
 
 function updateStickerSelectionUI() {
@@ -1256,6 +1362,7 @@ function redrawStickersOnly() {
     // No stickers at all — restore base.
     sctx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
     sctx.drawImage(_baseCanvas, 0, 0);
+    drawCustomTextOverlay();
     _prevDirty = null;
     return;
   }
@@ -1271,6 +1378,7 @@ function redrawStickersOnly() {
   );
   drawAllStickers(dirty);
   sctx.restore();
+  drawCustomTextOverlay();
   _prevDirty = cur;
 }
 
@@ -1278,6 +1386,8 @@ function drawAllStickers(dirtyRect) {
   hideStripSkeleton();
   const sw = stripCanvas.width, sh = stripCanvas.height;
   stickers.forEach((st, i) => {
+    // Skip the sticker currently rendered as a CSS-transform ghost overlay.
+    if (i === _hiddenStickerIdx) return;
     const img = stickerImgCache[st.file];
     if (!img || !img.complete || !img.naturalWidth) return;
     // Cull stickers whose bbox doesn't intersect the dirty rect — saves
@@ -1373,8 +1483,20 @@ function setupCanvasDrag() {
   let dragging = null;
   let resizing = null;
   let rotating = null;
+  let draggingText = false;
+  let textOffX = 0, textOffY = 0;
   let offX = 0, offY = 0;
   let pinch = null;
+
+  // Hit-test the customText overlay. Returns true if pointer is inside the
+  // text's bounding box.
+  function isTextHit(p) {
+    const bb = getCustomTextBBox();
+    if (!bb) return false;
+    const sw = stripCanvas.width, sh = stripCanvas.height;
+    const px = p.x * sw, py = p.y * sh;
+    return px >= bb.x && px <= bb.x + bb.w && py >= bb.y && py <= bb.y + bb.h;
+  }
 
   // Cache the canvas rect during a gesture so we don't force layout on
   // every touchmove (which is a big mobile bottleneck). Refreshed on each
@@ -1455,9 +1577,21 @@ function setupCanvasDrag() {
   stripCanvas.addEventListener('wheel', onWheel, { passive: false });
 
   function onDown(e) {
-    if (!stickers.length) return;
     refreshRect();
     const p = relE(e);
+
+    // Custom text drag takes priority over sticker hits when the pointer is
+    // inside the text bbox — it sits on top of stickers visually so it
+    // should be grabbable from the same area.
+    if (customText.trim() && isTextHit(p)) {
+      draggingText = true;
+      textOffX = p.x - customTextPos.x;
+      textOffY = p.y - customTextPos.y;
+      e.preventDefault();
+      return;
+    }
+
+    if (!stickers.length) return;
 
     // Tapped the X handle on the currently selected sticker → delete it.
     if (selectedStickerIdx !== null && isDeleteHit(p, selectedStickerIdx)) {
@@ -1480,6 +1614,7 @@ function setupCanvasDrag() {
         startRot: s.rot || 0,
       };
       _activeStickerIdx = selectedStickerIdx;
+      startDragGhost(selectedStickerIdx);
       e.preventDefault();
       return;
     }
@@ -1501,9 +1636,18 @@ function setupCanvasDrag() {
       offY = p.y - stickers[i].y;
     }
     _activeStickerIdx = i;
+    startDragGhost(i);
     e.preventDefault();
   }
   function onMove(e) {
+    if (draggingText) {
+      e.preventDefault();
+      const p = relE(e);
+      customTextPos.x = Math.max(0, Math.min(1, p.x - textOffX));
+      customTextPos.y = Math.max(0, Math.min(1, p.y - textOffY));
+      scheduleRedraw();
+      return;
+    }
     if (rotating !== null) {
       e.preventDefault();
       const p = relE(e);
@@ -1513,7 +1657,7 @@ function setupCanvasDrag() {
       const px = p.x * sw, py = p.y * sh;
       const angle = Math.atan2(py - cy, px - cx);
       s.rot = rotating.startRot + (angle - rotating.startAngle);
-      scheduleRedraw();
+      if (_dragGhost) scheduleGhostUpdate(); else scheduleRedraw();
       return;
     }
     if (resizing !== null) {
@@ -1521,7 +1665,7 @@ function setupCanvasDrag() {
       const p = relE(e);
       const dx = p.x - resizing.startX;
       stickers[resizing.i].size = clampSize(resizing.startSize + dx * 1.6);
-      scheduleRedraw();
+      if (_dragGhost) scheduleGhostUpdate(); else scheduleRedraw();
       return;
     }
     if (dragging === null) return;
@@ -1529,9 +1673,17 @@ function setupCanvasDrag() {
     const p = relE(e);
     stickers[dragging].x = Math.max(0, Math.min(1, p.x - offX));
     stickers[dragging].y = Math.max(0, Math.min(1, p.y - offY));
-    scheduleRedraw();
+    if (_dragGhost) scheduleGhostUpdate(); else scheduleRedraw();
   }
-  function onUp() { dragging = null; resizing = null; rotating = null; _activeStickerIdx = null; _cachedRect = null; }
+  function onUp() {
+    dragging = null; resizing = null; rotating = null;
+    if (draggingText) {
+      draggingText = false;
+      buildStrip();
+    }
+    _activeStickerIdx = null; _cachedRect = null;
+    endDragGhost();
+  }
 
   function onTouchStart(e) {
     if (e.touches.length === 2 && stickers.length) {
@@ -1543,6 +1695,7 @@ function setupCanvasDrag() {
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       pinch = { i: idx, dist: Math.hypot(dx, dy), size0: stickers[idx].size };
       _activeStickerIdx = idx;
+      startDragGhost(idx);
       e.preventDefault();
       return;
     }
@@ -1554,7 +1707,7 @@ function setupCanvasDrag() {
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dist = Math.hypot(dx, dy);
       stickers[pinch.i].size = clampSize(pinch.size0 * (dist / pinch.dist));
-      scheduleRedraw();
+      if (_dragGhost) scheduleGhostUpdate(); else scheduleRedraw();
       e.preventDefault();
       return;
     }
@@ -1604,8 +1757,8 @@ async function saveBlob(blob, filename, mime) {
     try {
       const file = new File([blob], filename, { type: mime });
       if (navigator.canShare({ files: [file] })) {
+        showToast(IS_IOS ? 'Tap "Save Image" to add to Photos' : 'Tap "Save to Photos" or "Gallery"');
         await navigator.share({ files: [file] });
-        showToast(IS_IOS ? 'Tap "Save Image" in the share sheet' : 'Tap "Save to Photos" or "Files"');
         return;
       }
     } catch (e) {
@@ -1621,7 +1774,7 @@ async function saveBlob(blob, filename, mime) {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 4000);
-  showToast(IS_ANDROID ? 'Saved to Downloads folder' : 'Downloaded! Check your Downloads folder');
+  showToast(IS_ANDROID ? 'Saved — tap Share to add to Gallery' : 'Downloaded! Check your Downloads folder');
 }
 
 async function downloadStrip() {
@@ -1890,7 +2043,13 @@ const customTextClear = document.getElementById('custom-text-clear');
 if (customTextInput) {
   const debouncedRebuild = debounce(buildStrip, 180);
   customTextInput.addEventListener('input', e => {
+    const wasEmpty = !customText.trim();
     customText = e.target.value;
+    // First non-empty keystroke after empty: recenter so a fresh text
+    // always appears in the middle of the strip.
+    if (wasEmpty && customText.trim()) {
+      customTextPos = { x: 0.5, y: 0.5 };
+    }
     debouncedRebuild();
   });
 }
@@ -1898,6 +2057,7 @@ if (customTextClear) {
   customTextClear.addEventListener('click', () => {
     customText = '';
     if (customTextInput) customTextInput.value = '';
+    customTextPos = { x: 0.5, y: 0.5 };
     buildStrip();
   });
 }

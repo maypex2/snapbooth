@@ -898,8 +898,8 @@ async function saveBlob(blob, filename, mime) {
     try {
       const file = new File([blob], filename, { type: mime });
       if (navigator.canShare({ files: [file] })) {
+        showToast(IS_IOS ? 'Tap "Save Image" to add to Photos' : 'Tap "Save to Photos" or "Gallery"');
         await navigator.share({ files: [file] });
-        showToast(IS_IOS ? 'Tap "Save Image" in the share sheet' : 'Tap "Save to Photos" or "Files"');
         return;
       }
     } catch (e) {
@@ -915,7 +915,7 @@ async function saveBlob(blob, filename, mime) {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 4000);
-  showToast(IS_ANDROID ? 'Saved to Downloads folder' : 'Downloaded! Check your Downloads folder');
+  showToast(IS_ANDROID ? 'Saved — tap Share to add to Gallery' : 'Downloaded! Check your Downloads folder');
 }
 
 function downloadStrip() {
