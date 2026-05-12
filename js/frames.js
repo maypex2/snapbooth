@@ -176,12 +176,16 @@ function drawFrameDecorations(sctx, frameId, sw, sh) {
     sctx.strokeRect(borderW / 2, borderW / 2, sw - borderW, sh - borderW);
     sctx.fillStyle = '#ffffff';
     sctx.textAlign = 'center';
-    sctx.font = '600 ' + Math.round(sw * 0.035) + 'px "DM Sans", sans-serif';
-    sctx.fillText('LIFE4CUTS', sw / 2, sh - borderW * 1.4);
-    sctx.font = '500 ' + Math.round(sw * 0.022) + 'px "DM Sans", sans-serif';
+    const l4Wm   = Math.round(sw * 0.030);
+    const l4Date = Math.round(sw * 0.020);
+    const l4DateY = sh - Math.max(borderW * 0.7, l4Date * 0.55);
+    const l4WmY   = l4DateY - l4Date * 1.0 - l4Wm * 0.45;
+    sctx.font = '600 ' + l4Wm + 'px "DM Sans", sans-serif';
+    sctx.fillText('LIFE4CUTS', sw / 2, l4WmY);
+    sctx.font = '500 ' + l4Date + 'px "DM Sans", sans-serif';
     sctx.fillStyle = 'rgba(255,255,255,0.7)';
     const d = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.');
-    sctx.fillText(d + '  ·  SEOUL', sw / 2, sh - borderW * 0.55);
+    sctx.fillText(d + '  ·  SEOUL', sw / 2, l4DateY);
     sctx.textAlign = 'start';
   } else if (frameId === 'photoism') {
     // Clean grey hairline + Photoism wordmark inside the bottom border.
@@ -335,12 +339,27 @@ function drawFrameDecorations(sctx, frameId, sw, sh) {
     const d = new Date();
     const stamp = d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
     sctx.textAlign = 'center';
-    sctx.fillStyle = '#1d8049'; // Naver-green accent
-    sctx.font = '600 ' + Math.round(sw * 0.022) + 'px "DM Sans", sans-serif';
-    sctx.fillText('SEOUL · 서울', sw / 2, sh - borderW * 1.6);
+    sctx.font = '600 ' + Math.round(sw * 0.020) + 'px "DM Sans", sans-serif';
+    const seoul = 'SEOUL · 서울';
+    const sep = '   ·   ';
+    const wSeoul = sctx.measureText(seoul).width;
+    const wSep = sctx.measureText(sep).width;
+    sctx.font = '400 ' + Math.round(sw * 0.020) + 'px "DM Sans", sans-serif';
+    const wStamp = sctx.measureText(stamp).width;
+    const totalW = wSeoul + wSep + wStamp;
+    const y = sh - borderW * 0.6;
+    let x = (sw - totalW) / 2;
+    sctx.textAlign = 'start';
+    sctx.fillStyle = '#1d8049';
+    sctx.font = '600 ' + Math.round(sw * 0.020) + 'px "DM Sans", sans-serif';
+    sctx.fillText(seoul, x, y);
+    x += wSeoul;
+    sctx.fillStyle = 'rgba(0,0,0,0.35)';
+    sctx.fillText(sep, x, y);
+    x += wSep;
     sctx.fillStyle = 'rgba(0,0,0,0.55)';
     sctx.font = '400 ' + Math.round(sw * 0.020) + 'px "DM Sans", sans-serif';
-    sctx.fillText(stamp, sw / 2, sh - borderW * 0.55);
+    sctx.fillText(stamp, x, y);
     sctx.textAlign = 'start';
   } else if (frameId === 'sanrio') {
     // Soft pastel rounded border with cloud bumps + tiny hearts in corners.
