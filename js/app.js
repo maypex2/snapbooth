@@ -873,13 +873,8 @@ function openPreview(animate = false) {
   const header = document.querySelector('header');
   if (header) header.style.display = 'none';
   if (animate) {
-    const el = document.getElementById('strip-canvas');
-    if (el) {
-      el.classList.remove('strip-print-anim');
-      // Force reflow so the animation restarts on every fresh capture.
-      void el.offsetWidth;
-      el.classList.add('strip-print-anim');
-    }
+    // Slight delay so the preview modal is in place behind the overlay.
+    setTimeout(playPrinterAnim, 120);
   }
 }
 function closePreview() {
@@ -939,16 +934,20 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 const IS_ANDROID = /Android/i.test(navigator.userAgent);
 const IS_MOBILE = IS_IOS || IS_ANDROID;
 
-// Save a Blob to disk. On mobile (iOS/Android), <a download> often fails:
-// iOS Safari blocks blob downloads outright; Android Chrome blocks clicks
-// that lost the user-gesture context after async toBlob(). Route through
-// Web Share API so the user gets a native save sheet that always works.
+// Save a Blob to disk.
+//   • iOS Safari blocks <a download> for blobs, so we MUST route through
+//     Web Share — its sheet has a real "Save Image" entry.
+//   • Android's share sheet only shows apps (Gmail/FB/etc.) with NO "Save
+//     to Gallery" button, so Web Share is the wrong UX there. Direct
+//     anchor download lands the file in the Downloads folder, which the
+//     stock Photos/Gallery app indexes automatically.
+//   • Desktop: anchor download.
 async function saveBlob(blob, filename, mime) {
-  if (IS_MOBILE && navigator.canShare) {
+  if (IS_IOS && navigator.canShare) {
     try {
       const file = new File([blob], filename, { type: mime });
       if (navigator.canShare({ files: [file] })) {
-        showToast(IS_IOS ? 'Tap "Save Image" to add to Photos' : 'Tap "Save to Photos" or "Gallery"');
+        showToast('Tap "Save Image" to add to Photos');
         await navigator.share({ files: [file] });
         return;
       }
@@ -965,7 +964,9 @@ async function saveBlob(blob, filename, mime) {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 4000);
-  showToast(IS_ANDROID ? 'Saved — tap Share to add to Gallery' : 'Downloaded! Check your Downloads folder');
+  showToast(IS_ANDROID
+    ? 'Saved to Downloads — open Gallery → Albums → Downloads'
+    : 'Downloaded! Check your Downloads folder');
 }
 
 // Spawn a small polaroid that pops out of the camera's bottom edge,
@@ -992,38 +993,56 @@ function ejectPolaroid(img) {
   setTimeout(() => el.remove(), 1750);
 }
 
-function playStripPrintAnim() {
-  const el = document.getElementById('strip-canvas') || document.getElementById('gif-result');
-  if (!el) return;
-  // Phone users scroll to the download button at the bottom of the modal
-  // and can't see the canvas. Pull it back into view before the animation
-  // fires so the print-drop is actually visible.
-  try {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } catch {}
-  el.classList.remove('strip-print-anim');
-  void el.offsetWidth;
-  el.classList.add('strip-print-anim');
+// Fullscreen printer-slot animation: a stylized white slot at the top of
+// screen, with the strip emerging downward out of it. Used to celebrate
+// (a) end of a capture session, (b) IG exports, (c) customize-page
+// downloads. NOT used on the in-modal preview download — that one stays
+// silent so the modal stays in focus.
+function playPrinterAnim(srcCanvas) {
+  const src = srcCanvas || document.getElementById('strip-canvas');
+  if (!src || !src.width || !src.height) return;
+  let dataUrl;
+  try { dataUrl = src.toDataURL('image/png'); } catch { return; }
+
+  // Drop any in-flight overlay so rapid re-clicks don't stack.
+  document.querySelectorAll('.printer-anim-overlay').forEach(n => n.remove());
+
+  const overlay = document.createElement('div');
+  overlay.className = 'printer-anim-overlay';
+  overlay.innerHTML =
+    '<div class="printer-anim-slot"></div>' +
+    '<div class="printer-anim-clip"><img class="printer-anim-strip" alt=""></div>';
+  const img = overlay.querySelector('img');
+  img.src = dataUrl;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('go'));
+
+  // Auto-dismiss ~400ms after animation completes (2.2s).
+  setTimeout(() => {
+    overlay.classList.remove('go');
+    overlay.classList.add('gone');
+    setTimeout(() => overlay.remove(), 400);
+  }, 2600);
+
+  // Tap to skip — don't trap the user.
+  overlay.addEventListener('click', () => {
+    overlay.classList.add('gone');
+    setTimeout(() => overlay.remove(), 250);
+  });
 }
 
 function downloadStrip() {
   if (currentMode === 'gif' && currentGifBlob) {
-    playStripPrintAnim();
-    setTimeout(() => saveBlob(currentGifBlob, 'snapbooth-' + Date.now() + '.gif', 'image/gif'), 900);
+    saveBlob(currentGifBlob, 'snapbooth-' + Date.now() + '.gif', 'image/gif');
     return;
   }
   if (!shots.length) return;
   buildStrip();
-  playStripPrintAnim();
   const filename = (DOWNLOAD_NAMES[currentMode] || 'snapbooth') + '-' + Date.now() + '.png';
-  // Delay save so the print-drop animation finishes before the browser's
-  // download dialog / file picker yanks focus away.
-  setTimeout(() => {
-    stripCanvas.toBlob(blob => {
-      if (!blob) { showToast('Could not save image'); return; }
-      saveBlob(blob, filename, 'image/png');
-    }, 'image/png');
-  }, 900);
+  stripCanvas.toBlob(blob => {
+    if (!blob) { showToast('Could not save image'); return; }
+    saveBlob(blob, filename, 'image/png');
+  }, 'image/png');
 }
 
 async function shareStrip() {

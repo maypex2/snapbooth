@@ -1780,11 +1780,16 @@ const IS_ANDROID = /Android/i.test(navigator.userAgent);
 const IS_MOBILE = IS_IOS || IS_ANDROID;
 
 async function saveBlob(blob, filename, mime) {
-  if (IS_MOBILE && navigator.canShare) {
+  // iOS Safari blocks <a download> for blobs → Web Share is the only path,
+  // and its sheet has a real "Save Image" entry. Android's share sheet
+  // doesn't show a save button (just apps like Gmail/FB), so we use direct
+  // download instead — the file lands in Downloads where the Gallery app
+  // auto-indexes it. Desktop also uses direct download.
+  if (IS_IOS && navigator.canShare) {
     try {
       const file = new File([blob], filename, { type: mime });
       if (navigator.canShare({ files: [file] })) {
-        showToast(IS_IOS ? 'Tap "Save Image" to add to Photos' : 'Tap "Save to Photos" or "Gallery"');
+        showToast('Tap "Save Image" to add to Photos');
         await navigator.share({ files: [file] });
         return;
       }
@@ -1801,35 +1806,58 @@ async function saveBlob(blob, filename, mime) {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 4000);
-  showToast(IS_ANDROID ? 'Saved — tap Share to add to Gallery' : 'Downloaded! Check your Downloads folder');
+  showToast(IS_ANDROID
+    ? 'Saved to Downloads — open Gallery → Albums → Downloads'
+    : 'Downloaded! Check your Downloads folder');
 }
 
-function playStripPrintAnim() {
-  if (!stripCanvas) return;
-  // On phones the user is scrolled down to the download button and can't
-  // see the canvas above. Scroll it back into view so the print-drop is
-  // actually visible. Desktop already has it on screen, so this is a no-op
-  // when the canvas is already centered in viewport.
-  try {
-    stripCanvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } catch {}
-  stripCanvas.classList.remove('strip-print-anim');
-  void stripCanvas.offsetWidth;
-  stripCanvas.classList.add('strip-print-anim');
+// Fullscreen printer-slot animation: stylized white slot at top of screen
+// with the current strip emerging downward out of it. Used on customize
+// download + IG exports. The strip is captured as a PNG snapshot of the
+// canvas — works on phones since the overlay is fullscreen so the strip is
+// always front-and-center, no scrolling needed.
+function playPrinterAnim(srcCanvas) {
+  const src = srcCanvas || stripCanvas;
+  if (!src || !src.width || !src.height) return;
+  let dataUrl;
+  try { dataUrl = src.toDataURL('image/png'); } catch { return; }
+
+  document.querySelectorAll('.printer-anim-overlay').forEach(n => n.remove());
+
+  const overlay = document.createElement('div');
+  overlay.className = 'printer-anim-overlay';
+  overlay.innerHTML =
+    '<div class="printer-anim-slot"></div>' +
+    '<div class="printer-anim-clip"><img class="printer-anim-strip" alt=""></div>';
+  const img = overlay.querySelector('img');
+  img.src = dataUrl;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('go'));
+
+  setTimeout(() => {
+    overlay.classList.remove('go');
+    overlay.classList.add('gone');
+    setTimeout(() => overlay.remove(), 400);
+  }, 2600);
+
+  overlay.addEventListener('click', () => {
+    overlay.classList.add('gone');
+    setTimeout(() => overlay.remove(), 250);
+  });
 }
 
 async function downloadStrip() {
   await Promise.resolve(buildStrip());
-  playStripPrintAnim();
+  playPrinterAnim();
   const filename = 'snapbooth-' + currentMode + '-' + Date.now() + '.png';
-  // Delay the actual save so the print-drop animation has time to play
-  // before the browser's download UI / file dialog takes over the screen.
+  // Wait for the animation to mostly finish (2.2s) before the save dialog
+  // steals focus on desktop.
   setTimeout(() => {
     stripCanvas.toBlob(blob => {
       if (!blob) { showToast('Could not save image'); return; }
       saveBlob(blob, filename, 'image/png');
     }, 'image/png');
-  }, 900);
+  }, 2000);
 }
 
 // Brightness check (sRGB) so we can flip wordmark / shadow contrast
@@ -1951,14 +1979,14 @@ function pickBackgroundColor(label) {
 async function downloadStory() {
   const bg = await pickBackgroundColor('Pick the background color for your Story export.');
   if (!bg) return;
-  playStripPrintAnim();
-  setTimeout(() => exportComposed(1080, 1920, 'snapbooth-story-' + Date.now() + '.png', 0.07, bg), 900);
+  playPrinterAnim();
+  setTimeout(() => exportComposed(1080, 1920, 'snapbooth-story-' + Date.now() + '.png', 0.07, bg), 2000);
 }
 async function downloadSquare() {
   const bg = await pickBackgroundColor('Pick the background color for your Post export.');
   if (!bg) return;
-  playStripPrintAnim();
-  setTimeout(() => exportComposed(1080, 1080, 'snapbooth-square-' + Date.now() + '.png', 0.07, bg), 900);
+  playPrinterAnim();
+  setTimeout(() => exportComposed(1080, 1080, 'snapbooth-square-' + Date.now() + '.png', 0.07, bg), 2000);
 }
 
 async function shareStrip() {
