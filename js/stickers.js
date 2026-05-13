@@ -72,6 +72,23 @@ const STICKERS = [
   { name: 'Film Reel',     file: 'assets/stickers/film-reel.svg' },
   { name: '3D Glasses',    file: 'assets/stickers/3d-glasses.svg' },
   { name: 'Movie Ticket',  file: 'assets/stickers/movie-ticket.svg' },
+
+  // Music player widgets (2026-05-14 pack)
+  { name: 'Music Player',  file: 'assets/stickers/music-player.svg' },
+  { name: 'Now Playing',   file: 'assets/stickers/now-playing.svg' },
+
+  // Snacks (2026-05-14 pack)
+  { name: 'Pizza Slice',   file: 'assets/stickers/pizza-slice.svg' },
+  { name: 'Burger',        file: 'assets/stickers/burger.svg' },
+  { name: 'Fries',         file: 'assets/stickers/fries.svg' },
+  { name: 'Ice Cream',     file: 'assets/stickers/ice-cream.svg' },
+  { name: 'Sushi',         file: 'assets/stickers/sushi.svg' },
+  { name: 'Ramen',         file: 'assets/stickers/ramen.svg' },
+  { name: 'Cupcake',       file: 'assets/stickers/cupcake.svg' },
+  { name: 'Lollipop',      file: 'assets/stickers/lollipop.svg' },
+  { name: 'Hot Dog',       file: 'assets/stickers/hotdog.svg' },
+  { name: 'Cookie',        file: 'assets/stickers/cookie.svg' },
+  { name: 'Taco',          file: 'assets/stickers/taco.svg' },
 ];
 
 const stickerImgCache = {};

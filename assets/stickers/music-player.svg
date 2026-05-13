@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60">
+  <rect x="0" y="0" width="200" height="60" rx="10" fill="#1a1a1a"/>
+  <!-- Shuffle -->
+  <path d="M16 20 L20 24 L24 20 M16 28 L20 24 M28 20 L24 24 L28 28" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+  <!-- Previous -->
+  <path d="M42 18 L42 30 M50 18 L42 24 L50 30 Z" fill="#fff" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- Play (centered) -->
+  <circle cx="100" cy="24" r="11" fill="#fff"/>
+  <path d="M96 19 L108 24 L96 29 Z" fill="#1a1a1a"/>
+  <!-- Next -->
+  <path d="M150 18 L150 30 M158 18 L158 30 L150 24 Z" fill="#fff" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- Repeat (green accent) -->
+  <path d="M172 22 L176 26 L180 22 M172 22 L180 22 C184 22 184 28 180 28 L172 28 C168 28 168 22 172 22" stroke="#1db954" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="184" cy="28" r="1.5" fill="#1db954"/>
+  <!-- Progress bar bg -->
+  <rect x="22" y="42" width="156" height="3" rx="1.5" fill="#3a3a3a"/>
+  <!-- Progress fill -->
+  <rect x="22" y="42" width="14" height="3" rx="1.5" fill="#fff"/>
+  <circle cx="36" cy="43.5" r="2.5" fill="#fff"/>
+  <!-- Timestamps -->
+  <text x="6" y="48" font-family="monospace" font-size="6" fill="#aaa" text-anchor="start">0:14</text>
+  <text x="194" y="48" font-family="monospace" font-size="6" fill="#aaa" text-anchor="end">3:50</text>
+</svg>

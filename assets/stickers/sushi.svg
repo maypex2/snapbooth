@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <ellipse cx="40" cy="40" rx="26" ry="22" fill="#fff" stroke="#2a2520" stroke-width="3"/>
+  <ellipse cx="40" cy="40" rx="22" ry="18" fill="#fff8e8"/>
+  <circle cx="40" cy="40" r="14" fill="#f4a874"/>
+  <path d="M28 40 Q34 32 40 36 Q46 32 52 40" stroke="#c8313a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="36" cy="38" r="1.5" fill="#fff" opacity="0.7"/>
+  <circle cx="44" cy="42" r="1.5" fill="#fff" opacity="0.7"/>
+  <rect x="22" y="16" width="36" height="8" rx="2" fill="#c8313a"/>
+  <text x="40" y="22" font-family="serif" font-size="6" fill="#fff" text-anchor="middle" font-weight="700">寿司</text>
+</svg>
