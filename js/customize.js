@@ -265,8 +265,10 @@ function getCustomTextBBox() {
   sctx.restore();
   const cx = customTextPos.x * sw;
   const cy = customTextPos.y * sh;
-  const h = fs * 1.25;
-  const pad = Math.max(8, fs * 0.25);
+  // Generous padding so the stroke + descenders + previous-frame ghost from
+  // a shrinking resize gesture all fall inside the dirty-rect clear region.
+  const h = fs * 1.5;
+  const pad = Math.max(20, fs * 0.45);
   return { x: cx - w / 2 - pad, y: cy - h / 2 - pad, w: w + pad * 2, h: h + pad * 2 };
 }
 
@@ -382,6 +384,7 @@ function hideStripSkeleton() {
 // ── Build strip (cloned from app.js) ──
 function buildStrip() {
   _prevDirty = null;
+  _prevTextBox = null;
   if (currentTemplate) { return buildTemplateStrip(); }
   if (currentMode === 'tilt3') { buildTilt3Strip(); return; }
   // Use fixed slot dimensions so layouts stay consistent no matter what
@@ -1330,6 +1333,9 @@ function updateStickerSelectionUI() {
 // + redraw that region. Stickers outside the dirty region keep last frame's
 // pixels — correct, since they didn't move. Big win on mobile.
 let _prevDirty = null;
+// Last-frame text bbox tracked separately so a shrink-gesture always clears
+// the previous frame's larger text region.
+let _prevTextBox = null;
 // Index of the sticker currently being interacted with (drag/resize/rotate).
 // Set by setupCanvasDrag handlers; null means "no active gesture, full redraw".
 let _activeStickerIdx = null;
@@ -1410,11 +1416,12 @@ function redrawStickersOnly() {
     buildStrip();
     return;
   }
-  // Include the text bbox in the dirty rect so live text drag/resize never
-  // leaves ghosted glyphs from the previous frame.
+  // Include both the current AND previous text bbox in the dirty rect so a
+  // shrinking resize gesture never leaves ghosted glyphs from a larger prior
+  // frame. _prevDirty alone isn't enough — it gets reset on buildStrip etc.
   const stickerBox = computeStickersBBox();
   const textBox = customText.trim() ? getCustomTextBBox() : null;
-  const cur = unionRect(stickerBox, textBox);
+  const cur = unionRect(stickerBox, unionRect(textBox, _prevTextBox));
   const dirty = unionRect(_prevDirty, cur);
   if (!dirty || dirty.w <= 0 || dirty.h <= 0) {
     // No stickers at all — restore base.
@@ -1422,6 +1429,7 @@ function redrawStickersOnly() {
     sctx.drawImage(_baseCanvas, 0, 0);
     drawCustomTextOverlay();
     _prevDirty = null;
+    _prevTextBox = textBox;
     return;
   }
   sctx.save();
@@ -1438,6 +1446,7 @@ function redrawStickersOnly() {
   sctx.restore();
   drawCustomTextOverlay();
   _prevDirty = cur;
+  _prevTextBox = textBox;
 }
 
 function drawAllStickers(dirtyRect) {
