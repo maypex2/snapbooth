@@ -2212,7 +2212,7 @@ async function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColo
   octx.fillStyle = dark ? 'rgba(255, 255, 255, 0.65)' : 'rgba(60, 40, 20, 0.5)';
   octx.font = 'italic ' + Math.round(canvasW * 0.028) + 'px "DM Serif Display", serif';
   octx.textAlign = 'center';
-  octx.fillText('BopBooth.app', canvasW / 2, canvasH - padY * 0.45);
+  octx.fillText('bopbooth.com', canvasW / 2, canvasH - padY * 0.45);
 
   out.toBlob(blob => {
     if (savedSel !== null) {
