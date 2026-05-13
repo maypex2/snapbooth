@@ -2081,6 +2081,19 @@ function initTabs() {
 // (See app.js for rationale on multi-signal mobile detection.)
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// Synchronously convert a data URL to a Blob. Required for iOS where the
+// async toBlob() callback fires AFTER user activation has expired, blocking
+// navigator.share() and window.open(). toDataURL() runs in the same tick as
+// the click handler, preserving the activation window.
+function dataURLToBlob(dataUrl) {
+  const [meta, b64] = dataUrl.split(',');
+  const mime = (meta.match(/:(.*?);/) || [])[1] || 'image/png';
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
 const IS_ANDROID =
   /Android/i.test(navigator.userAgent) ||
   (navigator.userAgentData && navigator.userAgentData.platform === 'Android') ||
@@ -2110,8 +2123,16 @@ async function saveBlob(blob, filename, mime) {
   const url = URL.createObjectURL(blob);
   // iOS fallback: <a download> doesn't actually save on iOS. Open the image
   // in a new tab so the user can long-press → "Save to Photos".
+  // Using an anchor click (vs window.open) survives iOS's popup blocker as
+  // long as we're still inside the user-gesture stack.
   if (IS_IOS) {
-    window.open(url, '_blank');
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     showToast('Long-press the photo → Save to Photos');
     setTimeout(() => URL.revokeObjectURL(url), 30000);
     return;
@@ -2195,13 +2216,30 @@ async function downloadStrip() {
   // doesn't get baked into the exported image.
   const savedSel = selectedStickerIdx;
   selectedStickerIdx = null;
-  await Promise.resolve(buildStrip());
+  buildStrip();
   const filename = 'BopBooth-' + currentMode + '-' + Date.now() + '.png';
-  // Call toBlob → saveBlob immediately so iOS Safari still has a valid
-  // user-activation window for navigator.share. Delaying via setTimeout
-  // expires the activation and iOS silently denies the first download.
+
+  // iOS: synchronous toDataURL keeps navigator.share / window.open inside
+  // the user-activation window. The async toBlob() callback fires AFTER the
+  // click handler returns — iOS revokes activation by then and both share
+  // and popup paths silently fail (the actual cause of the reported issue).
+  if (IS_IOS) {
+    let dataUrl;
+    try { dataUrl = stripCanvas.toDataURL('image/png'); }
+    catch (e) {
+      if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
+      showToast('Could not save image');
+      return;
+    }
+    const blob = dataURLToBlob(dataUrl);
+    if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
+    saveBlob(blob, filename, 'image/png');
+    playPrinterAnim();
+    return;
+  }
+
+  // Android / desktop: async toBlob is fine — saves memory for large canvases.
   stripCanvas.toBlob(blob => {
-    // Restore selection so the user can keep editing the same sticker.
     if (savedSel !== null) {
       selectedStickerIdx = savedSel;
       buildStrip();
@@ -2284,39 +2322,149 @@ async function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColo
 // Open the bg-color picker modal and resolve with the user's choice
 // (or null if they cancel). Used for both Story and Post IG exports.
 let __bgPickerSelected = '#FAF6EE';
-function pickBackgroundColor(label) {
+let __bgPickerAspect   = 9 / 16;   // default to Story 9:16; set per export
+
+// Pre-render a small thumbnail of the strip canvas once when the picker
+// opens. The preview then just paints a colored background and drawImage's
+// this thumbnail on top — much faster than re-rendering the full strip on
+// every swipe.
+let __stripThumb = null;
+function rebuildStripThumbnail() {
+  if (!stripCanvas || !stripCanvas.width) { __stripThumb = null; return; }
+  const TARGET_LONG = 240; // logical px for the thumbnail's longer dimension
+  const sw = stripCanvas.width, sh = stripCanvas.height;
+  const scale = TARGET_LONG / Math.max(sw, sh);
+  const tw = Math.max(1, Math.round(sw * scale));
+  const th = Math.max(1, Math.round(sh * scale));
+  const c = document.createElement('canvas');
+  c.width = tw; c.height = th;
+  const x = c.getContext('2d');
+  x.imageSmoothingEnabled = true;
+  x.imageSmoothingQuality = 'high';
+  x.drawImage(stripCanvas, 0, 0, tw, th);
+  __stripThumb = c;
+}
+
+function renderBgPickerPreview(color) {
+  const preview = document.getElementById('bg-picker-preview');
+  if (!preview) return;
+  // Match preview canvas's aspect to the current export target (9:16 or 1:1)
+  const PREVIEW_W = 360;
+  const PREVIEW_H = Math.round(PREVIEW_W / __bgPickerAspect);
+  preview.width = PREVIEW_W;
+  preview.height = PREVIEW_H;
+  const ctx = preview.getContext('2d');
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, PREVIEW_W, PREVIEW_H);
+  // Subtle texture so the bg doesn't look flat — mirrors exportComposed
+  const dark = isDarkColor(color);
+  ctx.fillStyle = dark ? 'rgba(255,255,255,0.03)' : 'rgba(60,40,20,0.02)';
+  ctx.fillRect(0, 0, PREVIEW_W, PREVIEW_H);
+  if (__stripThumb) {
+    const pad = PREVIEW_W * 0.07;
+    const maxW = PREVIEW_W - pad * 2;
+    const maxH = PREVIEW_H - pad * 2;
+    const t = __stripThumb;
+    const s = Math.min(maxW / t.width, maxH / t.height);
+    const dw = t.width * s, dh = t.height * s;
+    const dx = (PREVIEW_W - dw) / 2;
+    const dy = (PREVIEW_H - dh) / 2;
+    ctx.shadowColor = dark ? 'rgba(0,0,0,0.5)' : 'rgba(60,40,20,0.18)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 5;
+    ctx.drawImage(t, dx, dy, dw, dh);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  }
+  // Wordmark mirrors exportComposed
+  ctx.fillStyle = dark ? 'rgba(255,255,255,0.65)' : 'rgba(60,40,20,0.5)';
+  ctx.font = 'italic ' + Math.round(PREVIEW_W * 0.030) + 'px "DM Serif Display", serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('bopbooth.com', PREVIEW_W / 2, PREVIEW_H - (PREVIEW_W * 0.07) * 0.5);
+}
+
+function pickBackgroundColor(label, aspect) {
   return new Promise(resolve => {
     const overlay = document.getElementById('bg-picker-overlay');
     const desc    = document.getElementById('bg-picker-desc');
-    const swatches = document.querySelectorAll('#bg-picker-swatches .bg-swatch');
+    const rail    = document.getElementById('bg-picker-rail');
+    const swatches = rail ? rail.querySelectorAll('.bg-rail-swatch') : [];
     const custom  = document.getElementById('bg-picker-custom');
     const confirm = document.getElementById('bg-picker-confirm');
     const close   = document.getElementById('bg-picker-close');
-    if (!overlay) { resolve('#FAF6EE'); return; }
+    const nameEl  = document.getElementById('bg-picker-color-name');
+    if (!overlay || !rail) { resolve('#FAF6EE'); return; }
 
-    desc.textContent = label || 'Choose the canvas color behind your strip.';
+    desc.textContent = label || 'Swipe to try colors — preview updates live.';
+    __bgPickerAspect = aspect || (9 / 16);
 
-    // Restore previous selection
+    // Cache a thumbnail of the strip ONCE per modal open so preview redraws
+    // are instant on every swipe (no full strip rebuild).
+    rebuildStripThumbnail();
+
     let picked = __bgPickerSelected;
+    let pickedName = 'Cream';
     custom.value = /^#[0-9a-f]{6}$/i.test(picked) ? picked : '#FAF6EE';
-    swatches.forEach(s => s.classList.toggle('active', s.dataset.color.toLowerCase() === picked.toLowerCase()));
+
+    function setPicked(c, name) {
+      picked = c;
+      if (name) { pickedName = name; nameEl.textContent = name; }
+      swatches.forEach(s => s.classList.toggle('is-active', s.dataset.color.toLowerCase() === c.toLowerCase()));
+      renderBgPickerPreview(c);
+    }
 
     overlay.classList.add('open');
 
-    function setPicked(c) {
-      picked = c;
-      swatches.forEach(s => s.classList.toggle('active', s.dataset.color.toLowerCase() === c.toLowerCase()));
+    // Initial: scroll the rail so the previously-selected color sits in the
+    // center (under the marker).
+    requestAnimationFrame(() => {
+      const target = Array.from(swatches).find(s => s.dataset.color.toLowerCase() === picked.toLowerCase()) || swatches[0];
+      if (target) {
+        const railRect = rail.getBoundingClientRect();
+        const btnRect = target.getBoundingClientRect();
+        const targetLeft = target.offsetLeft - (railRect.width / 2) + (btnRect.width / 2);
+        rail.scrollTo({ left: targetLeft, behavior: 'auto' });
+        setPicked(target.dataset.color, target.dataset.name);
+      } else {
+        setPicked(picked, pickedName);
+      }
+    });
+
+    // Live detect which swatch is closest to the center marker as user scrolls
+    let scrollRAF = null;
+    function onScroll() {
+      if (scrollRAF) return;
+      scrollRAF = requestAnimationFrame(() => {
+        scrollRAF = null;
+        const railRect = rail.getBoundingClientRect();
+        const centerX = railRect.left + railRect.width / 2;
+        let bestEl = null, bestDist = Infinity;
+        swatches.forEach(s => {
+          const r = s.getBoundingClientRect();
+          const d = Math.abs((r.left + r.width / 2) - centerX);
+          if (d < bestDist) { bestDist = d; bestEl = s; }
+        });
+        if (bestEl && bestEl.dataset.color.toLowerCase() !== picked.toLowerCase()) {
+          setPicked(bestEl.dataset.color, bestEl.dataset.name);
+          custom.value = bestEl.dataset.color;
+        }
+      });
     }
-    function onSwatch(e) {
-      const btn = e.target.closest('.bg-swatch');
+    function onSwatchTap(e) {
+      const btn = e.target.closest('.bg-rail-swatch');
       if (!btn) return;
-      setPicked(btn.dataset.color);
-      custom.value = btn.dataset.color;
+      // Scroll-snap to this swatch so it lands under the center marker
+      const railRect = rail.getBoundingClientRect();
+      const targetLeft = btn.offsetLeft - (railRect.width / 2) + (btn.clientWidth / 2);
+      rail.scrollTo({ left: targetLeft, behavior: 'smooth' });
     }
-    function onCustom() { setPicked(custom.value); }
+    function onCustom() {
+      setPicked(custom.value, 'Custom');
+    }
     function done(color) {
       overlay.classList.remove('open');
-      document.getElementById('bg-picker-swatches').removeEventListener('click', onSwatch);
+      rail.removeEventListener('scroll', onScroll);
+      rail.removeEventListener('click', onSwatchTap);
       custom.removeEventListener('input', onCustom);
       confirm.removeEventListener('click', onConfirm);
       close.removeEventListener('click', onCancel);
@@ -2327,7 +2475,8 @@ function pickBackgroundColor(label) {
     function onCancel()  { done(null); }
     function onBackdrop(e) { if (e.target === overlay) onCancel(); }
 
-    document.getElementById('bg-picker-swatches').addEventListener('click', onSwatch);
+    rail.addEventListener('scroll', onScroll, { passive: true });
+    rail.addEventListener('click', onSwatchTap);
     custom.addEventListener('input', onCustom);
     confirm.addEventListener('click', onConfirm);
     close.addEventListener('click', onCancel);
@@ -2336,13 +2485,15 @@ function pickBackgroundColor(label) {
 }
 
 async function downloadStory() {
-  const bg = await pickBackgroundColor('Pick the background color for your Story export.');
+  // 9:16 aspect → tall preview
+  const bg = await pickBackgroundColor('Swipe to try colors for your IG Story (9:16) — preview updates live.', 9 / 16);
   if (!bg) return;
   playPrinterAnim();
   setTimeout(() => exportComposed(1080, 1920, 'BopBooth-story-' + Date.now() + '.png', 0.07, bg), 2000);
 }
 async function downloadSquare() {
-  const bg = await pickBackgroundColor('Pick the background color for your Post export.');
+  // 1:1 aspect → square preview
+  const bg = await pickBackgroundColor('Swipe to try colors for your IG Post (1:1) — preview updates live.', 1);
   if (!bg) return;
   playPrinterAnim();
   setTimeout(() => exportComposed(1080, 1080, 'BopBooth-square-' + Date.now() + '.png', 0.07, bg), 2000);

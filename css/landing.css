@@ -1481,9 +1481,9 @@ body::before {
 /* Quick stats row */
 .vs-stats {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 14px;
-  max-width: 1080px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  max-width: 1180px;
   margin: 56px auto 0;
 }
 .vs-stat {
@@ -1521,8 +1521,7 @@ body::before {
   .vs-filter-img { width: 62px; height: 62px; }
   .vs-filter-more { width: 62px; height: 62px; font-size: 16px; }
   .vs-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 36px; }
-  /* 5 cards on mobile → 2+2+1: stretch the lonely 5th to fill the row */
-  .vs-stat:nth-child(5) { grid-column: 1 / -1; }
+  /* 6 cards on mobile → clean 2×3 grid, no need to stretch any single card */
   .vs-stat { padding: 18px 10px; border-radius: 14px; }
   .vs-stat-num { font-size: 28px; }
   .vs-frame { padding: 8px 14px; font-size: 12px; }

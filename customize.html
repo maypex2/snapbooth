@@ -160,6 +160,51 @@
     .bg-swatch.active { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2A2520; transform: scale(1.06); }
     #bg-picker-overlay.open { display: flex !important; }
 
+    /* ── Swipeable bg-picker rail ── */
+    .bg-picker-rail-wrap { position: relative; }
+    .bg-picker-rail {
+      display: flex;
+      gap: 12px;
+      padding: 8px 0;
+      overflow-x: auto;
+      overflow-y: visible;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      align-items: center;
+    }
+    .bg-picker-rail::-webkit-scrollbar { display: none; }
+    .bg-picker-rail-pad {
+      flex: 0 0 calc(50% - 22px);
+    }
+    .bg-rail-swatch {
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid rgba(0,0,0,0.06);
+      cursor: pointer;
+      scroll-snap-align: center;
+      transition: transform 0.18s ease, border-color 0.18s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .bg-rail-swatch.is-active {
+      transform: scale(1.25);
+      border-color: #2A2520;
+    }
+    /* Static ring at the horizontal center showing the current selection */
+    .bg-picker-center-marker {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      border: 2.5px solid #2A2520;
+      pointer-events: none;
+      z-index: 1;
+    }
+
     .frame-chip { min-height: 110px; padding: 14px 8px; }
     .frame-chip.active { box-shadow: 0 0 0 2px #2A2520, 0 0 0 4px #FAFAFA; }
     .template-card.active { box-shadow: 0 0 0 2px #2A2520, 0 0 0 4px #FAFAFA; background: #F4F4F5; }
@@ -848,38 +893,56 @@
       </div>
       <p class="text-[10px] text-muted text-center -mt-1">Story for Reels &amp; Stories · Post for the feed grid</p>
 
-      <!-- Background-color picker modal for IG exports -->
-      <div id="bg-picker-overlay" class="fixed inset-0 z-[80] bg-ink/70 backdrop-blur-md hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl border border-sand shadow-2xl w-full max-w-sm p-6">
-          <div class="flex items-start justify-between mb-1">
-            <h3 class="font-serif text-xl text-ink">Pick a background</h3>
+      <!-- Background-color picker modal for IG exports — swipeable preview -->
+      <div id="bg-picker-overlay" class="fixed inset-0 z-[80] bg-ink/85 backdrop-blur-md hidden flex-col items-center justify-center p-4">
+        <div class="bg-white rounded-3xl border border-sand shadow-2xl w-full max-w-md flex flex-col overflow-hidden" style="max-height: 92vh">
+          <div class="flex items-center justify-between px-5 pt-4 pb-2">
+            <h3 class="font-serif text-lg text-ink">Pick a background</h3>
             <button id="bg-picker-close" class="w-8 h-8 rounded-full bg-cream2 text-ink flex items-center justify-center hover:bg-sand transition" aria-label="Close">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
           </div>
-          <p class="text-xs text-muted mb-4" id="bg-picker-desc">Choose the canvas color behind your strip.</p>
+          <p class="text-[11px] text-muted px-5 mb-2" id="bg-picker-desc">Swipe to try colors — preview updates live.</p>
 
-          <div class="grid grid-cols-6 gap-2 mb-4" id="bg-picker-swatches">
-            <button data-color="#FAF6EE" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#FAF6EE" title="Cream"></button>
-            <button data-color="#FFFFFF" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#FFFFFF" title="White"></button>
-            <button data-color="#2A2520" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#2A2520" title="Ink"></button>
-            <button data-color="#F2C6CC" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#F2C6CC" title="Blush"></button>
-            <button data-color="#C9A07A" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#C9A07A" title="Tan"></button>
-            <button data-color="#7ECEC4" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#7ECEC4" title="Teal"></button>
-            <button data-color="#F4E5B2" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#F4E5B2" title="Butter"></button>
-            <button data-color="#C8313A" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#C8313A" title="Cherry"></button>
-            <button data-color="#A47864" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#A47864" title="Mocha"></button>
-            <button data-color="#1A1A1A" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#1A1A1A" title="Tokyo"></button>
-            <button data-color="#9CB8A4" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#9CB8A4" title="Sage"></button>
-            <button data-color="#6B7BA8" class="bg-swatch h-10 rounded-xl border border-sand/60" style="background:#6B7BA8" title="Indigo"></button>
+          <!-- Live preview canvas -->
+          <div class="bg-picker-preview-wrap mx-5 mb-3 rounded-2xl overflow-hidden border border-sand/40 flex items-center justify-center" style="background:#f6f3ee; min-height: 220px">
+            <canvas id="bg-picker-preview" style="max-width: 100%; max-height: 38vh; display:block"></canvas>
           </div>
 
-          <label class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-cream2/60 border border-sand/60 cursor-pointer mb-4">
+          <!-- Currently selected color name -->
+          <div class="text-center text-sm font-medium text-ink mb-2" id="bg-picker-color-name">Cream</div>
+
+          <!-- Swipeable color rail with center indicator -->
+          <div class="bg-picker-rail-wrap relative mb-4">
+            <!-- Static center indicator ring -->
+            <div class="bg-picker-center-marker" aria-hidden="true"></div>
+            <div id="bg-picker-rail" class="bg-picker-rail">
+              <!-- Inner padding spacers so first/last swatch can center -->
+              <div class="bg-picker-rail-pad"></div>
+              <button data-color="#FAF6EE" data-name="Cream"    class="bg-rail-swatch" style="background:#FAF6EE"></button>
+              <button data-color="#FFFFFF" data-name="White"    class="bg-rail-swatch" style="background:#FFFFFF"></button>
+              <button data-color="#2A2520" data-name="Ink"      class="bg-rail-swatch" style="background:#2A2520"></button>
+              <button data-color="#F2C6CC" data-name="Blush"    class="bg-rail-swatch" style="background:#F2C6CC"></button>
+              <button data-color="#C9A07A" data-name="Tan"      class="bg-rail-swatch" style="background:#C9A07A"></button>
+              <button data-color="#7ECEC4" data-name="Teal"     class="bg-rail-swatch" style="background:#7ECEC4"></button>
+              <button data-color="#F4E5B2" data-name="Butter"   class="bg-rail-swatch" style="background:#F4E5B2"></button>
+              <button data-color="#C8313A" data-name="Cherry"   class="bg-rail-swatch" style="background:#C8313A"></button>
+              <button data-color="#A47864" data-name="Mocha"    class="bg-rail-swatch" style="background:#A47864"></button>
+              <button data-color="#1A1A1A" data-name="Tokyo"    class="bg-rail-swatch" style="background:#1A1A1A"></button>
+              <button data-color="#9CB8A4" data-name="Sage"     class="bg-rail-swatch" style="background:#9CB8A4"></button>
+              <button data-color="#6B7BA8" data-name="Indigo"   class="bg-rail-swatch" style="background:#6B7BA8"></button>
+              <button data-color="#FFE5EC" data-name="Pink Lemonade" class="bg-rail-swatch" style="background:#FFE5EC"></button>
+              <button data-color="#DDD0F0" data-name="Lavender" class="bg-rail-swatch" style="background:#DDD0F0"></button>
+              <div class="bg-picker-rail-pad"></div>
+            </div>
+          </div>
+
+          <label class="flex items-center justify-between gap-3 mx-5 px-3 py-2 rounded-xl bg-cream2/60 border border-sand/60 cursor-pointer mb-3">
             <span class="text-xs text-ink2">Custom color</span>
             <input type="color" id="bg-picker-custom" value="#FAF6EE" class="w-10 h-7 rounded-md border-0 bg-transparent cursor-pointer">
           </label>
 
-          <button id="bg-picker-confirm" class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-ink text-cream hover:bg-ink2 transition">
+          <button id="bg-picker-confirm" class="mx-5 mb-5 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-ink text-cream hover:bg-ink2 transition">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             <span>Download</span>
           </button>

@@ -977,8 +977,15 @@ async function saveBlob(blob, filename, mime) {
   const url = URL.createObjectURL(blob);
   // iOS fallback: <a download> doesn't actually save on iOS. Open the image
   // in a new tab so the user can long-press → "Save to Photos".
+  // Anchor click survives iOS popup blocker if still in user-gesture stack.
   if (IS_IOS) {
-    window.open(url, '_blank');
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     showToast('Long-press the photo → Save to Photos');
     setTimeout(() => URL.revokeObjectURL(url), 30000);
     return;
@@ -1090,10 +1097,33 @@ function downloadStrip() {
   if (!shots.length) return;
   buildStrip();
   const filename = (DOWNLOAD_NAMES[currentMode] || 'BopBooth') + '-' + Date.now() + '.png';
+
+  // iOS needs synchronous canvas-to-blob conversion so navigator.share /
+  // window.open run inside the click handler's user-activation window.
+  if (IS_IOS) {
+    let dataUrl;
+    try { dataUrl = stripCanvas.toDataURL('image/png'); }
+    catch (e) { showToast('Could not save image'); return; }
+    const blob = dataURLToBlob(dataUrl);
+    saveBlob(blob, filename, 'image/png');
+    return;
+  }
+
   stripCanvas.toBlob(blob => {
     if (!blob) { showToast('Could not save image'); return; }
     saveBlob(blob, filename, 'image/png');
   }, 'image/png');
+}
+
+// Synchronous data-URL → Blob (mirrors customize.js — keeps the iOS user
+// activation window valid for the share/save call that follows).
+function dataURLToBlob(dataUrl) {
+  const [meta, b64] = dataUrl.split(',');
+  const mime = (meta.match(/:(.*?);/) || [])[1] || 'image/png';
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
 }
 
 async function shareStrip() {
