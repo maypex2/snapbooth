@@ -519,70 +519,75 @@
   </section>
 
   <!-- ═══════════════════════════════════════════════════ -->
-  <!-- FEATURES                                           -->
+  <!-- FEATURES — visual showcase                         -->
   <section class="features" id="features" aria-labelledby="features-title">
     <div class="features-inner">
       <div class="features-header">
-        <span class="section-eyebrow" data-animate>What you get</span>
+        <span class="section-eyebrow" data-animate>See the vibes</span>
         <h2 class="section-title" id="features-title" data-animate data-delay="1">
           Everything you need for<br><em>the perfect shot</em>
         </h2>
       </div>
 
-      <div class="features-grid">
-
-        <div class="feature-card" data-animate data-delay="1">
-          <div class="feature-icon">
-            <img src="assets/icons/sliders-horizontal-bold.svg" alt="Filters">
-          </div>
-          <h3>13 Live Filters</h3>
-          <p>B&amp;W, Vintage, Retro, Soft Glow, Warm Film, Noir, Fade, Sunset, Dreamy, Drama, Pastel, Punch
-            and Cool Tone applied to the live camera feed in real time.</p>
+      <!-- Filters row: actual sample photo with each filter applied -->
+      <div class="vs-block" data-animate data-delay="1">
+        <div class="vs-block-head">
+          <h3 class="vs-block-title">22 Live Filters</h3>
+          <p class="vs-block-sub">Y2K Chrome, Vintage, Coquette, Retro Digicam — applied in real time.</p>
         </div>
-
-        <div class="feature-card" data-animate data-delay="2">
-          <div class="feature-icon">
-            <img src="assets/icons/camera-bold.svg" alt="Camera">
-          </div>
-          <h3>4 Shooting Modes</h3>
-          <p>Korean 4-cut strips, Korean 2-cut Strips, Korean 6-cut strip, single shots, Polaroids, GIF boomerangs, and
-            more!. Automatic countdown between each shot.</p>
+        <div class="vs-filter-row" aria-label="Filter preview thumbnails">
+          <div class="vs-filter"><div class="vs-filter-img" data-filter="none"></div><span>None</span></div>
+          <div class="vs-filter"><div class="vs-filter-img" data-filter="vintage"></div><span>Vintage</span></div>
+          <div class="vs-filter"><div class="vs-filter-img" data-filter="chrome"></div><span>Y2K</span></div>
+          <div class="vs-filter"><div class="vs-filter-img" data-filter="bw"></div><span>B&amp;W</span></div>
+          <div class="vs-filter"><div class="vs-filter-img" data-filter="kawaii"></div><span>Kawaii</span></div>
+          <div class="vs-filter"><div class="vs-filter-img" data-filter="noir"></div><span>Noir</span></div>
+          <div class="vs-filter"><div class="vs-filter-img" data-filter="sunset"></div><span>Sunset</span></div>
+          <div class="vs-filter"><div class="vs-filter-img" data-filter="vhs"></div><span>VHS</span></div>
+          <div class="vs-filter"><div class="vs-filter-img" data-filter="dreamy"></div><span>Dreamy</span></div>
+          <div class="vs-filter"><div class="vs-filter-img" data-filter="cinematic"></div><span>Cinema</span></div>
+          <div class="vs-filter vs-filter-more">+12<br><span>more</span></div>
         </div>
+      </div>
 
-        <div class="feature-card" data-animate data-delay="3">
-          <div class="feature-icon">
-            <img src="assets/icons/layout-bold.svg" alt="Frames">
-          </div>
-          <h3>9 Themed Frames</h3>
-          <p>Classic strip, Heart, Valentine, Holiday, Birthday, Graduation, New Year, Minimal, and more.</p>
+      <!-- Frames row: stylized chip previews of each themed frame -->
+      <div class="vs-block" data-animate data-delay="2">
+        <div class="vs-block-head">
+          <h3 class="vs-block-title">15+ Themed Frames</h3>
+          <p class="vs-block-sub">From Y2K Chrome to Coquette to Korean Photoism aesthetic.</p>
         </div>
-
-        <div class="feature-card" data-animate data-delay="1">
-          <div class="feature-icon">
-            <img src="assets/icons/sparkle-bold.svg" alt="Stickers">
-          </div>
-          <h3>Draggable Stickers</h3>
-          <p>30+ emoji stickers click to add, then drag with your finger or mouse to place them exactly where you want.
-          </p>
+        <div class="vs-frame-row" aria-label="Frame previews">
+          <div class="vs-frame" data-frame="y2k"><span class="vs-frame-emoji">✨</span><span>Y2K Chrome</span></div>
+          <div class="vs-frame" data-frame="coquette"><span class="vs-frame-emoji">🎀</span><span>Coquette</span></div>
+          <div class="vs-frame" data-frame="retro"><span class="vs-frame-emoji">📼</span><span>Retro Digicam</span></div>
+          <div class="vs-frame" data-frame="heart"><span class="vs-frame-emoji">💗</span><span>Heart</span></div>
+          <div class="vs-frame" data-frame="valentine"><span class="vs-frame-emoji">🌹</span><span>Valentine</span></div>
+          <div class="vs-frame" data-frame="birthday"><span class="vs-frame-emoji">🎂</span><span>Birthday</span></div>
+          <div class="vs-frame" data-frame="graduation"><span class="vs-frame-emoji">🎓</span><span>Graduation</span></div>
+          <div class="vs-frame" data-frame="holiday"><span class="vs-frame-emoji">🎄</span><span>Holiday</span></div>
+          <div class="vs-frame" data-frame="newyear"><span class="vs-frame-emoji">🎉</span><span>New Year</span></div>
+          <div class="vs-frame vs-frame-more"><span class="vs-frame-emoji">➕</span><span>more</span></div>
         </div>
+      </div>
 
-        <div class="feature-card" data-animate data-delay="2">
-          <div class="feature-icon">
-            <img src="assets/icons/image-bold.svg" alt="GIF">
-          </div>
-          <h3>GIF Boomerang</h3>
-          <p>Record a 2-second clip and get a smooth forward-backward looping GIF, ready to share on Instagram or
-            TikTok.</p>
+      <!-- Quick stats row -->
+      <div class="vs-stats" data-animate data-delay="3">
+        <div class="vs-stat">
+          <div class="vs-stat-num">17+</div>
+          <div class="vs-stat-label">Layouts<br><span>Korean 4-cut · Polaroid · 9-Cut Dump</span></div>
         </div>
-
-        <div class="feature-card" data-animate data-delay="3">
-          <div class="feature-icon">
-            <img src="assets/icons/download-simple-bold.svg" alt="Download">
-          </div>
-          <h3>Free Instant Download</h3>
-          <p>Download your strip as a high-quality PNG or animated GIF. No watermark, no account, no waiting.</p>
+        <div class="vs-stat">
+          <div class="vs-stat-num">30+</div>
+          <div class="vs-stat-label">Stickers<br><span>Drag, rotate, resize anywhere</span></div>
         </div>
-
+        <div class="vs-stat">
+          <div class="vs-stat-num">GIF</div>
+          <div class="vs-stat-label">Boomerang<br><span>2-sec loop, IG/TikTok ready</span></div>
+        </div>
+        <div class="vs-stat">
+          <div class="vs-stat-num">$0</div>
+          <div class="vs-stat-label">Free forever<br><span>No watermark, no signup</span></div>
+        </div>
       </div>
     </div>
   </section>
