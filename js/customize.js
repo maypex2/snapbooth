@@ -1839,7 +1839,7 @@ function playPrinterAnim(srcCanvas) {
   const slot = overlay.querySelector('.printer-anim-slot');
   function syncSlotWidth() {
     const w = img.getBoundingClientRect().width;
-    if (w > 0 && slot) slot.style.width = Math.round(w + 28) + 'px';
+    if (w > 0 && slot) slot.style.width = Math.round(w + 20) + 'px';
   }
   img.addEventListener('load', () => requestAnimationFrame(syncSlotWidth));
   img.src = dataUrl;

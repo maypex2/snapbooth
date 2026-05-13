@@ -1039,7 +1039,7 @@ function playPrinterAnim(srcCanvas) {
   // like 3-horiz or 9-cut).
   function syncSlotWidth() {
     const w = img.getBoundingClientRect().width;
-    if (w > 0 && slot) slot.style.width = Math.round(w + 28) + 'px';
+    if (w > 0 && slot) slot.style.width = Math.round(w + 20) + 'px';
   }
   img.addEventListener('load', () => requestAnimationFrame(syncSlotWidth));
   img.src = dataUrl;
