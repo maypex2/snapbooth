@@ -343,6 +343,29 @@
     .mobile-sheet-backdrop { display: none; }
 
     @media (max-width: 1023px) {
+      /* Tools-footer becomes the always-visible bottom action bar on mobile */
+      #tools-footer {
+        position: fixed;
+        left: 0; right: 0;
+        bottom: 0;
+        z-index: 50;
+        border-radius: 18px 18px 0 0 !important;
+        border: 0 !important;
+        border-top: 1px solid rgba(0,0,0,0.06) !important;
+        padding: 10px 14px calc(env(safe-area-inset-bottom, 0px) + 10px) !important;
+        gap: 6px !important;
+        max-height: 60vh;
+        overflow-y: auto;
+        box-shadow: 0 -6px 18px rgba(0,0,0,0.08);
+      }
+      /* Compact the buttons inside tools-footer on mobile to fit more in less space */
+      #tools-footer #download-btn { padding-top: 12px; padding-bottom: 12px; font-size: 14px; }
+      #tools-footer #print-btn,
+      #tools-footer #share-btn { padding-top: 10px; padding-bottom: 10px; }
+      /* Add bottom space to main so footer doesn't cover the preview */
+      main { padding-bottom: 240px !important; }
+      /* Bottom sheet slides up ABOVE the persistent footer */
+      aside.tools-aside { bottom: 220px !important; max-height: calc(80vh - 220px) !important; }
       /* Hide the desktop tabs row on mobile — replaced by floating rail */
       aside .border-b.border-sand\/40 { display: none; }
       /* Hide all panels by default on mobile — bottom-sheet logic controls visibility */
@@ -407,17 +430,19 @@
         color: #2A2520;
       }
 
-      /* Floating action rail */
+      /* Floating action rail — center it in the area ABOVE the fixed footer */
       .mobile-rail {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
         position: fixed;
-        right: 12px;
-        top: 50%;
+        right: 10px;
+        top: calc((100vh - 240px) / 2);
         transform: translateY(-50%);
         z-index: 40;
       }
+      .mobile-rail-btn { width: 44px !important; height: 44px !important; }
+      .mobile-rail-btn svg { width: 18px !important; height: 18px !important; }
       .mobile-rail-btn {
         width: 50px; height: 50px;
         border-radius: 50%;
@@ -733,10 +758,13 @@
       </div>
 
     </div>
+  </aside>
 
-    <!-- Footer actions -->
-    <div class="border-t border-sand/60 p-4 bg-cream2/30 flex flex-col gap-2">
-      <div id="upload-counter" class="text-[11px] font-medium uppercase tracking-[0.18em] text-ink2 text-center">0 / 0 photos</div>
+  <!-- Footer actions — always visible. On desktop sits below the sidebar's
+       panel area visually; on mobile becomes a fixed bottom bar so download/
+       upload/share never disappear behind the bottom-sheet drawer. -->
+  <div id="tools-footer" class="bg-white rounded-3xl border border-sand/50 shadow-soft p-4 flex flex-col gap-2 lg:col-start-2 lg:-mt-3">
+    <div id="upload-counter" class="text-[11px] font-medium uppercase tracking-[0.18em] text-ink2 text-center">0 / 0 photos</div>
       <input type="file" id="replace-input" accept="image/*" multiple class="hidden">
       <div class="flex gap-2">
         <button id="replace-btn" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-cream2 text-ink2 hover:bg-sand hover:text-ink text-sm transition border border-sand/60">
@@ -813,8 +841,7 @@
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Share
       </button>
-    </div>
-  </aside>
+  </div>
 </main>
 
 <div class="toast" id="toast"></div>
@@ -959,7 +986,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
     <span>Frame</span>
   </button>
-  <button type="button" class="mobile-rail-btn" data-rail="color" aria-label="Color">
+  <button type="button" class="mobile-rail-btn" data-rail="color" aria-label="Frame Color">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="8" cy="9" r="1.5" fill="currentColor"/><circle cx="16" cy="9" r="1.5" fill="currentColor"/><circle cx="17" cy="14" r="1.5" fill="currentColor"/><circle cx="7" cy="14" r="1.5" fill="currentColor"/></svg>
     <span>Color</span>
   </button>
@@ -986,7 +1013,7 @@
 // ── Mobile FB-Story-style tab → bottom-sheet behavior ──
 (function () {
   const RAIL_LABELS = {
-    layout: 'Layout', templates: 'Templates', frame: 'Frame', color: 'Color',
+    layout: 'Layout', templates: 'Templates', frame: 'Frame Style', color: 'Frame Color',
     bgremove: 'Remove Background', text: 'Text', stickers: 'Stickers', adjust: 'Adjust',
   };
   const rail = document.getElementById('mobile-rail');
