@@ -1543,12 +1543,15 @@
     }
 
     // Filter burger panel
-    // Fade the capture button when filters panel is open so it doesn't
-    // overlap the bottom-most filter circles (especially on small phones).
+    // Fade the capture button when filters panel is open ONLY on mobile,
+    // where the panel extends down to overlap the bottom-centered button
+    // (especially in 1:1 mode). On larger screens the panel is right-aligned
+    // and never reaches the center, so the button stays visible there.
     function setSnapBtnVisibilityForFilters(panelOpen) {
       const btn = document.getElementById('snap-btn-inner');
       if (!btn) return;
-      if (panelOpen) {
+      const isMobile = window.innerWidth < 768;
+      if (panelOpen && isMobile) {
         btn.style.opacity = '0';
         btn.style.pointerEvents = 'none';
       } else {
@@ -1572,12 +1575,19 @@
       toggle.setAttribute('aria-expanded', 'false');
       setSnapBtnVisibilityForFilters(false);
     });
-    // Update the toggle's active-filter label when a filter is picked
+    // Update the toggle's active-filter label when a filter is picked.
+    // Also auto-close the panel + restore the capture button so the user
+    // can shoot immediately after picking a filter.
     document.getElementById('filters-panel').addEventListener('click', (e) => {
       const btn = e.target.closest('.filter-btn');
       if (!btn) return;
       const name = btn.getAttribute('data-name') || 'None';
       document.getElementById('filters-active-label').textContent = '· ' + name;
+      const panel = document.getElementById('filters-panel');
+      const toggle = document.getElementById('filters-toggle');
+      panel.classList.add('hidden');
+      toggle.setAttribute('aria-expanded', 'false');
+      setSnapBtnVisibilityForFilters(false);
     });
   </script>
 
