@@ -149,6 +149,13 @@ const MODE_SHOTS = {
 function maxShots() { return MODE_SHOTS[currentMode] || 1; }
 
 function setMode(m) {
+  // Block layout swaps mid-capture — switching `currentMode` while a session
+  // is in flight changes `maxShots()` and the strip geometry, leaving the
+  // session half-applied to the new layout with the wrong slot count.
+  if (isRunning) {
+    showToast('Wait for the capture to finish before switching layouts');
+    return;
+  }
   currentMode = m;
   document.querySelectorAll('.layout-card, .sc-card').forEach(b => b.classList.remove('active'));
   const card = document.getElementById('mode-' + m);
@@ -352,6 +359,7 @@ async function startPhotoSession() {
   document.getElementById('rec-ring').classList.remove('active');
   document.getElementById('snap-btn').disabled = false;
   isRunning = false;
+  document.body.classList.remove('session-running');
   shots = shots.slice(0, max);
   buildStrip();
   openPreview(true);
@@ -438,6 +446,7 @@ function encodeGif(rawFrames, w, h) {
   gif.on('finished', blob => {
     progressWrap.style.display = 'none';
     isRunning      = false;
+    document.body.classList.remove('session-running');
     currentGifBlob = blob;
     const url      = URL.createObjectURL(blob);
     gifResult.src  = url;
@@ -457,6 +466,9 @@ async function startSession() {
   // spawn two concurrent sessions that both push into `shots`.
   isRunning = true;
   document.getElementById('snap-btn').disabled = true;
+  // Visual signal: dim the layout carousel so users can see they can't
+  // switch layouts mid-capture.
+  document.body.classList.add('session-running');
 
   // First-tap behavior: if the camera isn't running yet, turn it on
   // and proceed immediately to the capture session.
@@ -464,6 +476,7 @@ async function startSession() {
     const ok = await enableCamera();
     if (!ok) {
       isRunning = false;
+      document.body.classList.remove('session-running');
       document.getElementById('snap-btn').disabled = false;
       return;
     }

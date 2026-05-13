@@ -255,6 +255,16 @@
       transition: opacity 0.18s ease;
     }
 
+    /* While a capture session is active, dim and disable the layout carousel
+       + filter button so users can't switch mid-session and break the strip. */
+    body.session-running #layout-scroll,
+    body.session-running .layout-section,
+    body.session-running #filters-toggle {
+      opacity: 0.45;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
     /* Camera */
     #video,
     #canvas,
