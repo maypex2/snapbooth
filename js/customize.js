@@ -2346,14 +2346,8 @@ async function downloadStrip() {
     catch (e) {
       console.error('[download] iOS toDataURL failed', e);
       if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
-      // Surface the actual error name so we can diagnose what's blocking.
-      // SecurityError = tainted canvas; QuotaExceededError = canvas too big.
       const errName = e && e.name ? ` (${e.name})` : '';
       showToast('Could not save image' + errName);
-      // Last-resort fallback: show the strip as a normal <img> so the user
-      // can long-press → "Save to Photos". Works even on a tainted canvas
-      // because the image element doesn't depend on canvas pixel extraction.
-      showLongPressFallback();
       return;
     }
     const blob = dataURLToBlob(dataUrl);
@@ -2452,7 +2446,6 @@ function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColor = '#
       if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
       const errName = e && e.name ? ` (${e.name})` : '';
       showToast('Could not save image' + errName);
-      showLongPressFallback();
       return;
     }
     const blob = dataURLToBlob(dataUrl);

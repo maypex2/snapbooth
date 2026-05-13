@@ -78,6 +78,12 @@ function loadTemplateImage(file) {
     const img = new Image();
     img.onload = () => { _templateImgCache[file] = img; res(img); };
     img.onerror = rej;
-    img.src = file;
+    // iOS Safari can taint canvases from direct same-origin image loads in
+    // some cases. Fetching as a blob and using a blob: URL universally avoids
+    // it. Falls back to direct load if fetch fails.
+    fetch(file)
+      .then(r => r.ok ? r.blob() : Promise.reject(r.status))
+      .then(blob => { img.src = URL.createObjectURL(blob); })
+      .catch(() => { img.src = file; });
   });
 }

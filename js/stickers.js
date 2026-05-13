@@ -94,11 +94,18 @@ const STICKERS = [
 const stickerImgCache = {};
 
 function initStickers() {
-  // Preload all SVGs into cache for instant canvas drawing
+  // Preload all SVGs into cache for instant canvas drawing.
+  // iOS Safari treats SVG images as a source of canvas tainting in some
+  // versions, even when same-origin. To dodge this, we fetch each SVG as
+  // a blob and load it via blob: URL — these are universally treated as
+  // clean same-origin sources.
   STICKERS.forEach(s => {
     const img = new Image();
-    img.src = s.file;
     stickerImgCache[s.file] = img;
+    fetch(s.file)
+      .then(r => r.ok ? r.blob() : Promise.reject(r.status))
+      .then(blob => { img.src = URL.createObjectURL(blob); })
+      .catch(() => { img.src = s.file; });  // Fallback to direct load if fetch fails
   });
 
   const grid = document.getElementById('stickers-grid');
