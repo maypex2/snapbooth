@@ -1410,7 +1410,11 @@ function redrawStickersOnly() {
     buildStrip();
     return;
   }
-  const cur = computeStickersBBox();
+  // Include the text bbox in the dirty rect so live text drag/resize never
+  // leaves ghosted glyphs from the previous frame.
+  const stickerBox = computeStickersBBox();
+  const textBox = customText.trim() ? getCustomTextBBox() : null;
+  const cur = unionRect(stickerBox, textBox);
   const dirty = unionRect(_prevDirty, cur);
   if (!dirty || dirty.w <= 0 || dirty.h <= 0) {
     // No stickers at all — restore base.
@@ -1538,9 +1542,11 @@ function setupCanvasDrag() {
   let resizing = null;
   let rotating = null;
   let draggingText = false;
+  let resizingText = null;
   let textOffX = 0, textOffY = 0;
   let offX = 0, offY = 0;
   let pinch = null;
+  let pinchText = null;
 
   // Hit-test the customText overlay. Returns true if pointer is inside the
   // text's bounding box.
@@ -1638,6 +1644,16 @@ function setupCanvasDrag() {
     // inside the text bbox — it sits on top of stickers visually so it
     // should be grabbable from the same area.
     if (customText.trim() && isTextHit(p)) {
+      // Bottom-right ~30% of the text bbox = resize handle zone (same pattern
+      // as sticker corner resize). The rest of the bbox = drag-to-move.
+      const bb = getCustomTextBBox();
+      const sw = stripCanvas.width, sh = stripCanvas.height;
+      const px = p.x * sw, py = p.y * sh;
+      if (bb && px > bb.x + bb.w * 0.70 && py > bb.y + bb.h * 0.55) {
+        resizingText = { startX: p.x, startSize: customTextSize };
+        e.preventDefault();
+        return;
+      }
       draggingText = true;
       textOffX = p.x - customTextPos.x;
       textOffY = p.y - customTextPos.y;
@@ -1694,6 +1710,16 @@ function setupCanvasDrag() {
     e.preventDefault();
   }
   function onMove(e) {
+    if (resizingText) {
+      e.preventDefault();
+      const p = relE(e);
+      // Map horizontal drag delta to font-size delta. Sensitivity ~0.3 keeps
+      // the resize gesture matching the visible movement.
+      const dx = p.x - resizingText.startX;
+      customTextSize = Math.max(0.025, Math.min(0.20, resizingText.startSize + dx * 0.3));
+      scheduleRedraw();
+      return;
+    }
     if (draggingText) {
       e.preventDefault();
       const p = relE(e);
@@ -1735,27 +1761,50 @@ function setupCanvasDrag() {
       draggingText = false;
       buildStrip();
     }
+    if (resizingText) {
+      resizingText = null;
+      buildStrip();
+    }
     _activeStickerIdx = null; _cachedRect = null;
     endDragGhost();
   }
 
   function onTouchStart(e) {
-    if (e.touches.length === 2 && stickers.length) {
+    if (e.touches.length === 2) {
       refreshRect();
       const p = rel(e.touches[0]);
-      const i = findStickerAt(p);
-      const idx = i >= 0 ? i : stickers.length - 1;
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      pinch = { i: idx, dist: Math.hypot(dx, dy), size0: stickers[idx].size };
-      _activeStickerIdx = idx;
-      startDragGhost(idx);
-      e.preventDefault();
-      return;
+      // Two-finger pinch on text overlay = resize text
+      if (customText.trim() && isTextHit(p)) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinchText = { dist: Math.hypot(dx, dy), size0: customTextSize };
+        e.preventDefault();
+        return;
+      }
+      if (stickers.length) {
+        const i = findStickerAt(p);
+        const idx = i >= 0 ? i : stickers.length - 1;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinch = { i: idx, dist: Math.hypot(dx, dy), size0: stickers[idx].size };
+        _activeStickerIdx = idx;
+        startDragGhost(idx);
+        e.preventDefault();
+        return;
+      }
     }
     onDown(e);
   }
   function onTouchMove(e) {
+    if (pinchText && e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      customTextSize = Math.max(0.025, Math.min(0.20, pinchText.size0 * (dist / pinchText.dist)));
+      scheduleRedraw();
+      e.preventDefault();
+      return;
+    }
     if (pinch && e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
@@ -1768,13 +1817,21 @@ function setupCanvasDrag() {
     onMove(e);
   }
   function onTouchEnd(e) {
-    if (e.touches.length < 2) pinch = null;
+    if (e.touches.length < 2) { pinch = null; pinchText = null; }
     onUp();
   }
 
   function onWheel(e) {
-    if (!stickers.length) return;
     const p = relE(e);
+    // Scroll wheel over text = resize text
+    if (customText.trim() && isTextHit(p)) {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+      customTextSize = Math.max(0.025, Math.min(0.20, customTextSize * factor));
+      scheduleRedraw();
+      return;
+    }
+    if (!stickers.length) return;
     const i = findStickerAt(p);
     if (i < 0) return;
     e.preventDefault();

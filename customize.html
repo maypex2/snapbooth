@@ -458,19 +458,42 @@
         color: #2A2520;
       }
 
-      /* Floating action rail — center it in the area ABOVE the fixed footer */
+      /* Floating action rail — bounded between header (top) and footer
+         (bottom) so it never overlaps either. Scrolls internally if the icons
+         don't fit (e.g. on very short phones). */
       .mobile-rail {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
         position: fixed;
-        right: 10px;
-        top: calc((100vh - var(--footer-h, 240px)) / 2);
-        transform: translateY(-50%);
+        right: 8px;
+        top: 68px;
+        bottom: calc(var(--footer-h, 240px) + 8px);
         z-index: 40;
+        overflow-y: auto;
+        overflow-x: visible;
+        padding: 4px 0;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
       }
-      .mobile-rail-btn { width: 44px !important; height: 44px !important; }
-      .mobile-rail-btn svg { width: 18px !important; height: 18px !important; }
+      .mobile-rail::-webkit-scrollbar { display: none; }
+      .mobile-rail-btn {
+        width: 42px !important;
+        height: 42px !important;
+        flex-shrink: 0;
+      }
+      .mobile-rail-btn svg { width: 17px !important; height: 17px !important; }
+      .mobile-rail-btn span { font-size: 7px !important; letter-spacing: 0.2px !important; }
+
+      /* Tiny phones (≤640 / iPhone SE etc.): smaller icons + tighter gaps */
+      @media (max-height: 680px) {
+        .mobile-rail { gap: 4px; top: 60px; }
+        .mobile-rail-btn { width: 38px !important; height: 38px !important; }
+        .mobile-rail-btn svg { width: 15px !important; height: 15px !important; }
+        .mobile-rail-btn span { font-size: 6px !important; }
+      }
       .mobile-rail-btn {
         width: 50px; height: 50px;
         border-radius: 50%;
@@ -718,9 +741,6 @@
 
         <label class="block text-xs font-medium uppercase tracking-[0.18em] text-ink2 mt-4 mb-2">Font</label>
         <div id="font-picker" class="grid grid-cols-2 gap-2"></div>
-
-        <label class="block text-xs font-medium uppercase tracking-[0.18em] text-ink2 mt-4 mb-2">Size</label>
-        <input type="range" id="custom-text-size" min="0.025" max="0.18" step="0.005" value="0.06" class="w-full accent-ink">
 
         <label class="block text-xs font-medium uppercase tracking-[0.18em] text-ink2 mt-4 mb-2">Color</label>
         <div id="custom-text-color-swatches" class="grid grid-cols-7 gap-2 mb-2">
