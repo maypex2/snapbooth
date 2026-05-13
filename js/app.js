@@ -970,9 +970,19 @@ async function saveBlob(blob, filename, mime) {
       }
     } catch (e) {
       if (e && e.name === 'AbortError') return;
+      // NotAllowedError = user-activation expired. Fall through to the
+      // open-in-new-tab path below so the user can long-press → Save Image.
     }
   }
   const url = URL.createObjectURL(blob);
+  // iOS fallback: <a download> doesn't actually save on iOS. Open the image
+  // in a new tab so the user can long-press → "Save to Photos".
+  if (IS_IOS) {
+    window.open(url, '_blank');
+    showToast('Long-press the photo → Save to Photos');
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    return;
+  }
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
@@ -983,9 +993,7 @@ async function saveBlob(blob, filename, mime) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   showToast(IS_ANDROID
     ? 'Saved! Find it in Files → Downloads'
-    : IS_MOBILE
-      ? 'Saved to your downloads'
-      : 'Downloaded! Check your Downloads folder');
+    : 'Downloaded! Check your Downloads folder');
 }
 
 // Spawn a small polaroid that pops out of the camera's bottom edge,

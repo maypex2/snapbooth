@@ -5,6 +5,14 @@ let bgOverride   = null;  // null | { type:'solid', color } | { type:'pattern', 
 let currentTemplate = null;  // null | template id from TEMPLATES
 let stickers     = [];
 let shots        = [];
+// ── Background removal (AI cutout) state ──
+let bgRemoveOn    = false;
+let bgRemoveColor = '#FFE5EC';
+// Cutouts keyed by the shot HTMLImageElement so they get GC'd when shots are
+// replaced. Each value is an HTMLImageElement of a transparent-background PNG.
+const cutouts     = new WeakMap();
+let _bgLibPromise = null;
+let _bgInflight   = 0;
 let customText   = '';
 let customFont   = 'serif-italic';
 // Draggable position for customText overlay. Fractions of canvas (0..1).
@@ -91,6 +99,25 @@ async function loadShots() {
 // Fill the slot completely (cover) — image is center-cropped to the slot's
 // aspect ratio so there are no empty margins. ox/oy in [-1, 1] shift the
 // visible crop window: -1 shows top/left edge, +1 shows bottom/right edge.
+// Draw a single photo slot. If bg-removal is enabled and a cutout exists for
+// this shot, fills the slot with the chosen color and paints the transparent
+// cutout on top so the person appears against the new background.
+function drawShotInto(ctx, shotImg, x, y, w, h, ox, oy) {
+  const cutout = bgRemoveOn ? cutouts.get(shotImg) : null;
+  if (cutout) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+    ctx.fillStyle = bgRemoveColor;
+    ctx.fillRect(x, y, w, h);
+    drawCoverImage(ctx, cutout, x, y, w, h, ox, oy);
+    ctx.restore();
+  } else {
+    drawCoverImage(ctx, shotImg, x, y, w, h, ox, oy);
+  }
+}
+
 function drawCoverImage(ctx, img, x, y, w, h, ox = 0, oy = 0) {
   const imgAspect = img.naturalWidth / img.naturalHeight;
   const boxAspect = w / h;
@@ -507,10 +534,10 @@ function buildStrip() {
         sctx.save();
         sctx.translate(x + w, y);
         sctx.scale(-1, 1);
-        drawCoverImage(sctx, img, 0, 0, w, h, off.ox, off.oy);
+        drawShotInto(sctx, img, 0, 0, w, h, off.ox, off.oy);
         sctx.restore();
       } else {
-        drawCoverImage(sctx, img, x, y, w, h, off.ox, off.oy);
+        drawShotInto(sctx, img, x, y, w, h, off.ox, off.oy);
       }
       sctx.strokeStyle = 'rgba(0,0,0,0.32)';
       sctx.lineWidth = 2;
@@ -621,7 +648,7 @@ function buildTilt3Strip() {
       sctx.fillStyle = '#ffffff';
       sctx.fillRect(-W / 2, -H / 2, W, H);
       const off = photoOffsets[i] || { ox: 0, oy: 0 };
-      drawCoverImage(sctx, img, -W / 2, -H / 2, W, H, off.ox, off.oy);
+      drawShotInto(sctx, img, -W / 2, -H / 2, W, H, off.ox, off.oy);
     } else {
       sctx.fillStyle = 'rgba(255,255,255,0.06)';
       sctx.fillRect(-W / 2, -H / 2, W, H);
@@ -722,7 +749,7 @@ function buildTemplateStrip() {
       const img = shots[i];
       if (img) {
         const off = photoOffsets[i] || { ox: 0, oy: 0 };
-        drawCoverImage(sctx, img, x, y, w, h, off.ox, off.oy);
+        drawShotInto(sctx, img, x, y, w, h, off.ox, off.oy);
       } else {
         sctx.fillStyle = 'rgba(0,0,0,0.06)';
         sctx.fillRect(x, y, w, h);
@@ -1759,6 +1786,115 @@ function setupCanvasDrag() {
 
 function clampSize(v) { return Math.max(0.04, Math.min(0.6, v)); }
 
+// ── Background removal (AI cutout) ──
+// Lazy-loads @imgly/background-removal from a CDN on first toggle-on, processes
+// every shot into a transparent PNG, and caches the result via the WeakMap so
+// subsequent renders (color changes, layout switches) are instant.
+function loadBgLib() {
+  if (_bgLibPromise) return _bgLibPromise;
+  _bgLibPromise = import('https://esm.sh/@imgly/background-removal@1.4.5')
+    .then(m => m.default || m)
+    .catch(err => {
+      _bgLibPromise = null;
+      throw err;
+    });
+  return _bgLibPromise;
+}
+
+function setBgRemoveStatus(text) {
+  const el = document.getElementById('bgremove-status');
+  if (el) el.textContent = text;
+}
+
+async function processShotCutout(shotImg) {
+  if (cutouts.has(shotImg)) return cutouts.get(shotImg);
+  const lib = await loadBgLib();
+  const removeBackground = lib.removeBackground || lib;
+  // Pass the source URL (data: URL) — imgly handles fetching/decoding.
+  const blob = await removeBackground(shotImg.src);
+  const url = URL.createObjectURL(blob);
+  const cutout = await new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = rej;
+    im.src = url;
+  });
+  cutouts.set(shotImg, cutout);
+  return cutout;
+}
+
+async function processAllShotsForBg() {
+  if (!shots.length) return;
+  const pending = shots.filter(s => s && !cutouts.has(s));
+  if (!pending.length) return;
+  _bgInflight = pending.length;
+  setBgRemoveStatus(`Processing ${_bgInflight} photo${_bgInflight === 1 ? '' : 's'}…`);
+  for (let i = 0; i < pending.length; i++) {
+    setBgRemoveStatus(`Processing photo ${i + 1} of ${pending.length}…`);
+    try {
+      await processShotCutout(pending[i]);
+      if (bgRemoveOn) buildStrip();
+    } catch (e) {
+      setBgRemoveStatus('Could not process a photo — try a clearer image.');
+      _bgInflight = 0;
+      return;
+    }
+  }
+  _bgInflight = 0;
+  setBgRemoveStatus(`On — ${shots.length} photo${shots.length === 1 ? '' : 's'} cut out`);
+}
+
+function initBgRemove() {
+  const toggle = document.getElementById('bgremove-toggle');
+  if (!toggle) return;
+
+  toggle.addEventListener('change', async () => {
+    bgRemoveOn = toggle.checked;
+    if (!bgRemoveOn) {
+      setBgRemoveStatus('Off — original backgrounds shown');
+      buildStrip();
+      return;
+    }
+    if (!shots.length) {
+      setBgRemoveStatus('Add photos first, then turn this on.');
+      toggle.checked = false;
+      bgRemoveOn = false;
+      return;
+    }
+    setBgRemoveStatus('Loading AI model… (first use ~25MB)');
+    try {
+      await loadBgLib();
+    } catch {
+      setBgRemoveStatus('Could not load AI model. Check your connection.');
+      toggle.checked = false;
+      bgRemoveOn = false;
+      return;
+    }
+    await processAllShotsForBg();
+    buildStrip();
+  });
+
+  document.querySelectorAll('.bgr-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.bgr-swatch').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      bgRemoveColor = btn.dataset.color;
+      const custom = document.getElementById('bgremove-custom-color');
+      if (custom) custom.value = bgRemoveColor;
+      if (bgRemoveOn) buildStrip();
+    });
+  });
+
+  const custom = document.getElementById('bgremove-custom-color');
+  if (custom) {
+    custom.addEventListener('input', e => {
+      document.querySelectorAll('.bgr-swatch').forEach(b => b.classList.remove('active'));
+      bgRemoveColor = e.target.value;
+      if (bgRemoveOn) buildStrip();
+    });
+  }
+}
+
 // ── Tabs ──
 function initTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1799,9 +1935,19 @@ async function saveBlob(blob, filename, mime) {
       }
     } catch (e) {
       if (e && e.name === 'AbortError') return;
+      // NotAllowedError = user-activation expired. Fall through to the
+      // open-in-new-tab path below so the user can long-press → Save Image.
     }
   }
   const url = URL.createObjectURL(blob);
+  // iOS fallback: <a download> doesn't actually save on iOS. Open the image
+  // in a new tab so the user can long-press → "Save to Photos".
+  if (IS_IOS) {
+    window.open(url, '_blank');
+    showToast('Long-press the photo → Save to Photos');
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    return;
+  }
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
@@ -1812,9 +1958,7 @@ async function saveBlob(blob, filename, mime) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   showToast(IS_ANDROID
     ? 'Saved! Find it in Files → Downloads'
-    : IS_MOBILE
-      ? 'Saved to your downloads'
-      : 'Downloaded! Check your Downloads folder');
+    : 'Downloaded! Check your Downloads folder');
 }
 
 // Fullscreen printer-slot animation: stylized white slot at top of screen
@@ -1860,17 +2004,25 @@ function playPrinterAnim(srcCanvas) {
 }
 
 async function downloadStrip() {
+  // Hide sticker selection UI (dashed box + delete/rotate handles) so it
+  // doesn't get baked into the exported image.
+  const savedSel = selectedStickerIdx;
+  selectedStickerIdx = null;
   await Promise.resolve(buildStrip());
-  playPrinterAnim();
   const filename = 'snapbooth-' + currentMode + '-' + Date.now() + '.png';
-  // Wait for the animation to mostly finish (2.2s) before the save dialog
-  // steals focus on desktop.
-  setTimeout(() => {
-    stripCanvas.toBlob(blob => {
-      if (!blob) { showToast('Could not save image'); return; }
-      saveBlob(blob, filename, 'image/png');
-    }, 'image/png');
-  }, 2000);
+  // Call toBlob → saveBlob immediately so iOS Safari still has a valid
+  // user-activation window for navigator.share. Delaying via setTimeout
+  // expires the activation and iOS silently denies the first download.
+  stripCanvas.toBlob(blob => {
+    // Restore selection so the user can keep editing the same sticker.
+    if (savedSel !== null) {
+      selectedStickerIdx = savedSel;
+      buildStrip();
+    }
+    if (!blob) { showToast('Could not save image'); return; }
+    saveBlob(blob, filename, 'image/png');
+  }, 'image/png');
+  playPrinterAnim();
 }
 
 // Brightness check (sRGB) so we can flip wordmark / shadow contrast
@@ -1885,6 +2037,9 @@ function isDarkColor(hex) {
 // Compose the current strip onto a colored backdrop at a target aspect
 // ratio (used for IG Story 9:16 and IG Square 1:1 exports).
 async function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColor = '#FAF6EE') {
+  // Hide sticker selection UI so it doesn't get baked into the IG export.
+  const savedSel = selectedStickerIdx;
+  selectedStickerIdx = null;
   await Promise.resolve(buildStrip());
   const out = document.createElement('canvas');
   out.width = canvasW;
@@ -1930,6 +2085,10 @@ async function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColo
   octx.fillText('snapbooth.app', canvasW / 2, canvasH - padY * 0.45);
 
   out.toBlob(blob => {
+    if (savedSel !== null) {
+      selectedStickerIdx = savedSel;
+      buildStrip();
+    }
     if (!blob) { showToast('Could not save image'); return; }
     saveBlob(blob, filename, 'image/png');
   }, 'image/png');
@@ -2003,17 +2162,27 @@ async function downloadSquare() {
 }
 
 async function shareStrip() {
+  // Hide sticker selection UI so it doesn't get baked into the shared image.
+  const savedSel = selectedStickerIdx;
+  selectedStickerIdx = null;
   await Promise.resolve(buildStrip());
+  const restoreSelection = () => {
+    if (savedSel !== null) {
+      selectedStickerIdx = savedSel;
+      buildStrip();
+    }
+  };
   try {
     if (navigator.share && navigator.canShare) {
       stripCanvas.toBlob(async blob => {
+        restoreSelection();
         const file = new File([blob], 'snapbooth.png', { type: 'image/png' });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: 'My SnapBooth photo!' });
         } else fallbackCopy();
       }, 'image/png');
-    } else fallbackCopy();
-  } catch { fallbackCopy(); }
+    } else { restoreSelection(); fallbackCopy(); }
+  } catch { restoreSelection(); fallbackCopy(); }
 }
 
 function fallbackCopy() {
@@ -2086,6 +2255,8 @@ async function replacePhotos(fileList) {
   buildStrip();
   updateUploadCounter();
   if (typeof renderAdjustPanel === 'function') renderAdjustPanel();
+  // If background removal is on, process the newly uploaded photos.
+  if (bgRemoveOn) processAllShotsForBg().then(() => buildStrip());
   const filled = Math.min(shots.length, max);
   if (filled >= max) showToast('All slots filled!');
   else               showToast(`${filled}/${max} uploaded keep going`);
@@ -2285,6 +2456,7 @@ initTemplateGrid();
 initFrameGrid();
 initColorSwatches();
 initStickerGrid();
+initBgRemove();
 setupCanvasDrag();
 loadShots().then(renderAdjustPanel);
 updateUploadCounter();

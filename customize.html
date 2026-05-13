@@ -388,10 +388,11 @@
         <button data-tab="frame" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Frame</button>
         <button data-tab="color" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Color</button>
       </div>
-      <div class="grid grid-cols-3 gap-1">
+      <div class="grid grid-cols-4 gap-1">
         <button data-tab="adjust" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Adjust</button>
         <button data-tab="text" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Text</button>
         <button data-tab="stickers" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">Stickers</button>
+        <button data-tab="bgremove" class="tab-btn py-2.5 rounded-xl text-[11px] font-medium text-muted transition">BG ✨</button>
       </div>
     </div>
 
@@ -449,6 +450,50 @@
           <button id="reset-color" class="px-4 py-3 rounded-xl bg-cream2 text-ink2 text-sm hover:bg-sand hover:text-ink transition">Reset</button>
         </div>
         <p class="text-[10px] text-muted mt-1.5 italic">Tap the color box to pick any shade</p>
+      </div>
+
+      <!-- Background Removal (AI) -->
+      <div data-panel="bgremove" class="p-5 hidden">
+        <h3 class="font-serif text-lg mb-1">Remove Background ✨</h3>
+        <p class="text-xs text-muted mb-4">Cut out the person and replace the background with any color. Works on camera shots and uploaded photos.</p>
+
+        <div class="flex items-center justify-between gap-3 mb-4 p-3 rounded-xl bg-cream2/40 border border-sand/50">
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium text-ink">AI cutout</div>
+            <div id="bgremove-status" class="text-[11px] text-muted truncate">Off — original backgrounds shown</div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer shrink-0">
+            <input type="checkbox" id="bgremove-toggle" class="sr-only peer">
+            <div class="w-11 h-6 bg-sand rounded-full peer-checked:bg-ink transition relative">
+              <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition peer-checked:translate-x-5"></span>
+            </div>
+          </label>
+        </div>
+
+        <label class="block text-xs font-medium uppercase tracking-[0.18em] text-ink2 mb-2">Background color</label>
+        <div class="grid grid-cols-7 gap-2 mb-3" id="bgremove-swatches">
+          <button type="button" data-color="#FFE5EC" class="bgr-swatch active w-8 h-8 rounded-full border-2 border-sand/60" style="background:#FFE5EC" title="Blush"></button>
+          <button type="button" data-color="#FAF6EE" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#FAF6EE" title="Cream"></button>
+          <button type="button" data-color="#FFFFFF" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#FFFFFF" title="White"></button>
+          <button type="button" data-color="#1A1A1A" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#1A1A1A" title="Tokyo"></button>
+          <button type="button" data-color="#F2B8C6" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#F2B8C6" title="Pink"></button>
+          <button type="button" data-color="#C8313A" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#C8313A" title="Cherry"></button>
+          <button type="button" data-color="#F4E5B2" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#F4E5B2" title="Butter"></button>
+          <button type="button" data-color="#A47864" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#A47864" title="Mocha"></button>
+          <button type="button" data-color="#7ECEC4" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#7ECEC4" title="Teal"></button>
+          <button type="button" data-color="#9CB8A4" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#9CB8A4" title="Sage"></button>
+          <button type="button" data-color="#6B7BA8" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#6B7BA8" title="Indigo"></button>
+          <button type="button" data-color="#E8DCC4" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#E8DCC4" title="Sand"></button>
+          <button type="button" data-color="#5C0000" class="bgr-swatch w-8 h-8 rounded-full border-2 border-sand/60" style="background:#5C0000" title="Maroon"></button>
+          <label for="bgremove-custom-color" class="custom-color-wrap relative w-8 h-8 rounded-full border-2 border-sand/60 cursor-pointer overflow-hidden" title="Pick any color">
+            <input type="color" id="bgremove-custom-color" value="#FFE5EC" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+          </label>
+        </div>
+
+        <div class="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-cream2/40">
+          <svg width="14" height="14" fill="none" stroke="#9A8E7E" stroke-width="2" viewBox="0 0 24 24" class="mt-0.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          <p class="text-[11px] text-muted leading-snug">First use downloads a ~25MB AI model (one-time). Works best with clear, well-lit photos. Edges may be imperfect on busy backgrounds.</p>
+        </div>
       </div>
 
       <!-- Adjust (per-photo crop position) -->
