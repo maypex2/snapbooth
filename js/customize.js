@@ -2103,6 +2103,39 @@ function dataURLToBlob(dataUrl) {
   for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
   return new Blob([arr], { type: mime });
 }
+
+// iOS Safari has hard canvas limits (~16M pixels total, ~4096px on a single
+// axis on many iPhones). A 4-cut strip (1336×4282) or 9-cut grid (3908×3040)
+// can exceed those limits, causing toDataURL() to throw "Could not save
+// image". This helper scales the source canvas down to a safe dimension
+// before encoding, sacrificing a tiny amount of resolution for reliability.
+function safeCanvasToDataURL(srcCanvas, mime) {
+  const MAX_DIM   = 3800;            // safely under iOS axis ceiling
+  const MAX_AREA  = 14000000;        // safely under iOS area ceiling
+  const sw = srcCanvas.width, sh = srcCanvas.height;
+  const overDim   = Math.max(sw, sh) > MAX_DIM;
+  const overArea  = sw * sh > MAX_AREA;
+  if (!overDim && !overArea) {
+    try { return srcCanvas.toDataURL(mime || 'image/png'); }
+    catch (e) { /* fall through to scaled path */ }
+  }
+  const dimScale  = overDim  ? MAX_DIM / Math.max(sw, sh) : 1;
+  const areaScale = overArea ? Math.sqrt(MAX_AREA / (sw * sh)) : 1;
+  const scale = Math.min(dimScale, areaScale, 1);
+  const tw = Math.max(1, Math.round(sw * scale));
+  const th = Math.max(1, Math.round(sh * scale));
+  const tmp = document.createElement('canvas');
+  tmp.width = tw; tmp.height = th;
+  const tctx = tmp.getContext('2d');
+  tctx.imageSmoothingEnabled = true;
+  tctx.imageSmoothingQuality = 'high';
+  tctx.drawImage(srcCanvas, 0, 0, tw, th);
+  // PNG is lossless but huge as data URL on big canvases — fall back to high
+  // quality JPEG for downloads if PNG still throws, since "saved big JPEG"
+  // beats "no save at all".
+  try { return tmp.toDataURL(mime || 'image/png'); }
+  catch (e) { return tmp.toDataURL('image/jpeg', 0.92); }
+}
 const IS_ANDROID =
   /Android/i.test(navigator.userAgent) ||
   (navigator.userAgentData && navigator.userAgentData.platform === 'Android') ||
@@ -2234,15 +2267,21 @@ async function downloadStrip() {
   // and popup paths silently fail (the actual cause of the reported issue).
   if (IS_IOS) {
     let dataUrl;
-    try { dataUrl = stripCanvas.toDataURL('image/png'); }
+    try { dataUrl = safeCanvasToDataURL(stripCanvas, 'image/png'); }
     catch (e) {
+      console.error('[download] iOS toDataURL failed', e);
       if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
-      showToast('Could not save image');
+      showToast('Could not save image — try a smaller layout');
       return;
     }
     const blob = dataURLToBlob(dataUrl);
     if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
-    saveBlob(blob, filename, 'image/png');
+    // If the data URL is a JPEG fallback, fix the file extension to match.
+    const finalName = dataUrl.startsWith('data:image/jpeg')
+      ? filename.replace(/\.png$/, '.jpg')
+      : filename;
+    const finalMime = dataUrl.startsWith('data:image/jpeg') ? 'image/jpeg' : 'image/png';
+    saveBlob(blob, finalName, finalMime);
     playPrinterAnim();
     return;
   }

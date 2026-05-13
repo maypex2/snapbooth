@@ -1102,10 +1102,18 @@ function downloadStrip() {
   // window.open run inside the click handler's user-activation window.
   if (IS_IOS) {
     let dataUrl;
-    try { dataUrl = stripCanvas.toDataURL('image/png'); }
-    catch (e) { showToast('Could not save image'); return; }
+    try { dataUrl = safeCanvasToDataURL(stripCanvas, 'image/png'); }
+    catch (e) {
+      console.error('[download] iOS toDataURL failed', e);
+      showToast('Could not save image — try a smaller layout');
+      return;
+    }
     const blob = dataURLToBlob(dataUrl);
-    saveBlob(blob, filename, 'image/png');
+    const finalName = dataUrl.startsWith('data:image/jpeg')
+      ? filename.replace(/\.png$/, '.jpg')
+      : filename;
+    const finalMime = dataUrl.startsWith('data:image/jpeg') ? 'image/jpeg' : 'image/png';
+    saveBlob(blob, finalName, finalMime);
     return;
   }
 
@@ -1124,6 +1132,32 @@ function dataURLToBlob(dataUrl) {
   const arr = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
   return new Blob([arr], { type: mime });
+}
+
+// Scales big canvases down to fit iOS Safari canvas limits (~16M pixels total,
+// ~4096px on a single axis). Without this, toDataURL throws "Could not save
+// image" for 4-cut / 9-cut / vertical4 strips on most iPhones.
+function safeCanvasToDataURL(srcCanvas, mime) {
+  const MAX_DIM = 3800, MAX_AREA = 14000000;
+  const sw = srcCanvas.width, sh = srcCanvas.height;
+  const overDim  = Math.max(sw, sh) > MAX_DIM;
+  const overArea = sw * sh > MAX_AREA;
+  if (!overDim && !overArea) {
+    try { return srcCanvas.toDataURL(mime || 'image/png'); } catch (e) {}
+  }
+  const dimScale  = overDim  ? MAX_DIM / Math.max(sw, sh) : 1;
+  const areaScale = overArea ? Math.sqrt(MAX_AREA / (sw * sh)) : 1;
+  const scale = Math.min(dimScale, areaScale, 1);
+  const tw = Math.max(1, Math.round(sw * scale));
+  const th = Math.max(1, Math.round(sh * scale));
+  const tmp = document.createElement('canvas');
+  tmp.width = tw; tmp.height = th;
+  const tctx = tmp.getContext('2d');
+  tctx.imageSmoothingEnabled = true;
+  tctx.imageSmoothingQuality = 'high';
+  tctx.drawImage(srcCanvas, 0, 0, tw, th);
+  try { return tmp.toDataURL(mime || 'image/png'); }
+  catch (e) { return tmp.toDataURL('image/jpeg', 0.92); }
 }
 
 async function shareStrip() {
