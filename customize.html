@@ -351,21 +351,25 @@
         z-index: 50;
         border-radius: 18px 18px 0 0 !important;
         border: 0 !important;
-        border-top: 1px solid rgba(0,0,0,0.06) !important;
         padding: 10px 14px calc(env(safe-area-inset-bottom, 0px) + 10px) !important;
         gap: 6px !important;
         max-height: 60vh;
         overflow-y: auto;
-        box-shadow: 0 -6px 18px rgba(0,0,0,0.08);
+        background: #fff !important;
+        box-shadow: 0 -2px 20px rgba(0,0,0,0.06);
       }
       /* Compact the buttons inside tools-footer on mobile to fit more in less space */
       #tools-footer #download-btn { padding-top: 12px; padding-bottom: 12px; font-size: 14px; }
       #tools-footer #print-btn,
       #tools-footer #share-btn { padding-top: 10px; padding-bottom: 10px; }
-      /* Add bottom space to main so footer doesn't cover the preview */
-      main { padding-bottom: 240px !important; }
-      /* Bottom sheet slides up ABOVE the persistent footer */
-      aside.tools-aside { bottom: 220px !important; max-height: calc(80vh - 220px) !important; }
+      /* Add bottom space to main so footer doesn't cover the preview.
+         --footer-h is set in JS based on the actual measured footer height. */
+      main { padding-bottom: calc(var(--footer-h, 240px) + 16px) !important; }
+      /* Bottom sheet slides up directly above the persistent footer */
+      aside.tools-aside {
+        bottom: var(--footer-h, 220px) !important;
+        max-height: calc(85vh - var(--footer-h, 220px)) !important;
+      }
       /* Hide the desktop tabs row on mobile — replaced by floating rail */
       aside .border-b.border-sand\/40 { display: none; }
       /* Hide all panels by default on mobile — bottom-sheet logic controls visibility */
@@ -437,7 +441,7 @@
         gap: 8px;
         position: fixed;
         right: 10px;
-        top: calc((100vh - 240px) / 2);
+        top: calc((100vh - var(--footer-h, 240px)) / 2);
         transform: translateY(-50%);
         z-index: 40;
       }
@@ -1026,6 +1030,30 @@
 
   function isMobile() { return window.matchMedia('(max-width: 1023px)').matches; }
 
+  // Continuously sync the --footer-h CSS variable to the actual rendered
+  // height of the tools footer, so the bottom sheet always slides up just
+  // above it (never overlapping the upload/download/share buttons).
+  const footerEl = document.getElementById('tools-footer');
+  function syncFooterHeight() {
+    if (!footerEl) return;
+    if (!isMobile()) {
+      document.documentElement.style.removeProperty('--footer-h');
+      return;
+    }
+    const h = Math.ceil(footerEl.getBoundingClientRect().height);
+    if (h > 0) document.documentElement.style.setProperty('--footer-h', h + 'px');
+  }
+  syncFooterHeight();
+  // Re-measure whenever the footer's contents change size or the viewport resizes.
+  if (window.ResizeObserver && footerEl) {
+    new ResizeObserver(syncFooterHeight).observe(footerEl);
+  }
+  window.addEventListener('resize', syncFooterHeight);
+  // Also re-measure once fonts have loaded (counter text width changes).
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(syncFooterHeight);
+  }
+
   function openSheet(tab) {
     if (!isMobile()) return;
     // Hide every panel, then reveal only the one we want
@@ -1055,9 +1083,10 @@
     sidebar.classList.remove('sheet-active');
     backdrop.classList.remove('active');
     document.querySelectorAll('.mobile-rail-btn').forEach(b => b.classList.remove('active'));
-    // Hide the panel after the animation completes so it doesn't flash on close
+    // Hide the panel + handle after the animation completes so nothing bleeds
     setTimeout(() => {
       document.querySelectorAll('aside [data-panel]').forEach(p => p.classList.remove('sheet-open'));
+      if (handle) handle.style.display = 'none';
     }, 280);
   }
 
