@@ -232,6 +232,7 @@
     /* Capture button sits above the home-indicator / gesture area */
     #snap-btn-inner {
       bottom: calc(env(safe-area-inset-bottom, 0px) + 28px) !important;
+      transition: opacity 0.18s ease;
     }
 
     /* Camera */
@@ -721,7 +722,7 @@
        slot graphic and the strip emerging downward out of it. Fires on
        end-of-capture and on IG/customize downloads. */
     .printer-anim-overlay {
-      position: fixed; inset: 0; z-index: 90;
+      position: fixed; inset: 0; z-index: 10001;
       background: rgba(20, 16, 12, 0.78);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
@@ -1369,7 +1370,7 @@
     overflow — they simply scale down to fit the available height.
   -->
   <div id="preview-overlay"
-    class="fixed inset-0 z-[70] bg-ink/70 backdrop-blur-md flex justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    class="fixed inset-0 z-[10000] bg-ink/70 backdrop-blur-md flex justify-center opacity-0 pointer-events-none transition-opacity duration-300">
     <div
       class="preview-card w-full max-w-4xl bg-ink rounded-3xl shadow-2xl border border-ink2 translate-y-6 opacity-0 transition-all duration-400">
 
@@ -1542,11 +1543,25 @@
     }
 
     // Filter burger panel
+    // Fade the capture button when filters panel is open so it doesn't
+    // overlap the bottom-most filter circles (especially on small phones).
+    function setSnapBtnVisibilityForFilters(panelOpen) {
+      const btn = document.getElementById('snap-btn-inner');
+      if (!btn) return;
+      if (panelOpen) {
+        btn.style.opacity = '0';
+        btn.style.pointerEvents = 'none';
+      } else {
+        btn.style.opacity = '';
+        btn.style.pointerEvents = '';
+      }
+    }
     function toggleFiltersPanel() {
       const panel = document.getElementById('filters-panel');
       const toggle = document.getElementById('filters-toggle');
       const open = panel.classList.toggle('hidden') === false;
       toggle.setAttribute('aria-expanded', String(open));
+      setSnapBtnVisibilityForFilters(open);
     }
     document.addEventListener('click', (e) => {
       const panel = document.getElementById('filters-panel');
@@ -1555,6 +1570,7 @@
       if (panel.contains(e.target) || toggle.contains(e.target)) return;
       panel.classList.add('hidden');
       toggle.setAttribute('aria-expanded', 'false');
+      setSnapBtnVisibilityForFilters(false);
     });
     // Update the toggle's active-filter label when a filter is picked
     document.getElementById('filters-panel').addEventListener('click', (e) => {
