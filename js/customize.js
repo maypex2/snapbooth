@@ -2309,11 +2309,13 @@ function isDarkColor(hex) {
 
 // Compose the current strip onto a colored backdrop at a target aspect
 // ratio (used for IG Story 9:16 and IG Square 1:1 exports).
-async function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColor = '#FAF6EE') {
+function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColor = '#FAF6EE') {
   // Hide sticker selection UI so it doesn't get baked into the IG export.
   const savedSel = selectedStickerIdx;
   selectedStickerIdx = null;
-  await Promise.resolve(buildStrip());
+  // Sync buildStrip — any async boundary here destroys iOS user activation,
+  // which is the whole reason the IG export download was silently failing.
+  buildStrip();
   const out = document.createElement('canvas');
   out.width = canvasW;
   out.height = canvasH;
@@ -2356,6 +2358,26 @@ async function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColo
   octx.font = 'italic ' + Math.round(canvasW * 0.028) + 'px "DM Serif Display", serif';
   octx.textAlign = 'center';
   octx.fillText('bopbooth.com', canvasW / 2, canvasH - padY * 0.45);
+
+  // iOS: synchronous toDataURL keeps the share/save call inside the user
+  // activation window. Async toBlob would let activation expire and the
+  // download would silently fail (the bug your friend was hitting).
+  if (IS_IOS) {
+    let dataUrl;
+    try { dataUrl = safeCanvasToDataURL(out, 'image/png'); }
+    catch (e) {
+      console.error('[export] iOS toDataURL failed', e);
+      if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
+      showToast('Could not save image — try a smaller layout');
+      return;
+    }
+    const blob = dataURLToBlob(dataUrl);
+    if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
+    const isJpeg = dataUrl.startsWith('data:image/jpeg');
+    const finalName = isJpeg ? filename.replace(/\.png$/, '.jpg') : filename;
+    saveBlob(blob, finalName, isJpeg ? 'image/jpeg' : 'image/png');
+    return;
+  }
 
   out.toBlob(blob => {
     if (savedSel !== null) {
@@ -2536,28 +2558,53 @@ async function downloadStory() {
   // 9:16 aspect → tall preview
   const bg = await pickBackgroundColor('Swipe to try colors for your IG Story (9:16) — preview updates live.', 9 / 16);
   if (!bg) return;
+  // Run export IMMEDIATELY — the prior setTimeout(2000) was killing iOS
+  // user activation, causing the download to fail silently. Animation plays
+  // in parallel; the share sheet just covers it on mobile (no big deal).
+  exportComposed(1080, 1920, 'BopBooth-story-' + Date.now() + '.png', 0.07, bg);
   playPrinterAnim();
-  setTimeout(() => exportComposed(1080, 1920, 'BopBooth-story-' + Date.now() + '.png', 0.07, bg), 2000);
 }
 async function downloadSquare() {
   // 1:1 aspect → square preview
   const bg = await pickBackgroundColor('Swipe to try colors for your IG Post (1:1) — preview updates live.', 1);
   if (!bg) return;
+  exportComposed(1080, 1080, 'BopBooth-square-' + Date.now() + '.png', 0.07, bg);
   playPrinterAnim();
-  setTimeout(() => exportComposed(1080, 1080, 'BopBooth-square-' + Date.now() + '.png', 0.07, bg), 2000);
 }
 
 async function shareStrip() {
   // Hide sticker selection UI so it doesn't get baked into the shared image.
   const savedSel = selectedStickerIdx;
   selectedStickerIdx = null;
-  await Promise.resolve(buildStrip());
+  buildStrip();
   const restoreSelection = () => {
     if (savedSel !== null) {
       selectedStickerIdx = savedSel;
       buildStrip();
     }
   };
+
+  // iOS: synchronous path to keep user activation intact for navigator.share
+  if (IS_IOS) {
+    let dataUrl;
+    try { dataUrl = safeCanvasToDataURL(stripCanvas, 'image/png'); }
+    catch (e) { restoreSelection(); fallbackCopy(); return; }
+    const blob = dataURLToBlob(dataUrl);
+    restoreSelection();
+    try {
+      if (navigator.canShare) {
+        const file = new File([blob], 'BopBooth.png', { type: blob.type });
+        if (navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], title: 'My BopBooth photo!' })
+            .catch(err => { if (err && err.name !== 'AbortError') fallbackCopy(); });
+          return;
+        }
+      }
+    } catch (e) {}
+    fallbackCopy();
+    return;
+  }
+
   try {
     if (navigator.share && navigator.canShare) {
       stripCanvas.toBlob(async blob => {
