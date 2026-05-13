@@ -1801,6 +1801,19 @@ function loadBgLib() {
   return _bgLibPromise;
 }
 
+// Network-aware: returns 'fast' | 'slow' | 'unknown'. iOS Safari doesn't
+// expose navigator.connection so we treat it as unknown and rely on the
+// reactive timers below instead.
+function detectConnectionSpeed() {
+  const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (!c) return 'unknown';
+  if (c.saveData) return 'slow';
+  const t = c.effectiveType;
+  if (t === 'slow-2g' || t === '2g') return 'slow';
+  if (t === '3g' && c.downlink && c.downlink < 1.5) return 'slow';
+  return 'fast';
+}
+
 function setBgRemoveStatus(text) {
   const el = document.getElementById('bgremove-status');
   if (el) el.textContent = text;
@@ -1889,18 +1902,52 @@ function initBgRemove() {
       bgRemoveOn = false;
       return;
     }
-    setBgRemoveStatus('Loading AI model… (first use ~25MB)');
-    showBgOverlay('Loading AI model…', 2);
-    try {
-      await loadBgLib();
-    } catch {
-      setBgRemoveStatus('Could not load AI model. Check your connection.');
-      showBgOverlay('Could not load AI model', 0);
-      setTimeout(hideBgOverlay, 1800);
+    // First-use requires downloading the ~25MB model — bail early if offline
+    // so the user gets a clear message instead of a 60s hang then timeout.
+    if (!_bgLibPromise && navigator.onLine === false) {
+      const msg = 'You appear to be offline. Connect to Wi-Fi or data to use this feature.';
+      setBgRemoveStatus(msg);
+      showBgOverlay(msg, 0);
+      setTimeout(hideBgOverlay, 2800);
       toggle.checked = false;
       bgRemoveOn = false;
       return;
     }
+    // Proactive: if we can detect a slow connection up front, warn the user
+    // before they spend 30s wondering if the app is frozen.
+    const speed = detectConnectionSpeed();
+    const slowConnUpfront = speed === 'slow';
+    const initialMsg = slowConnUpfront
+      ? 'Slow connection detected — model download may take a while…'
+      : 'Loading AI model… (first use ~25MB)';
+    setBgRemoveStatus(initialMsg);
+    showBgOverlay(initialMsg, slowConnUpfront ? 1 : 2);
+
+    // Reactive: even if we couldn't detect speed (iOS Safari), watch the wall
+    // clock. If the model is still loading after 8s / 20s / 40s, update the
+    // overlay so users know it's the network, not the app.
+    const slowTimers = [
+      setTimeout(() => showBgOverlay('Still loading — your connection seems slow…', 8), 8000),
+      setTimeout(() => showBgOverlay('Almost there — slow network is the culprit…', 14), 20000),
+      setTimeout(() => showBgOverlay('Hanging on — model is still downloading…', 18), 40000),
+    ];
+    const clearSlowTimers = () => slowTimers.forEach(clearTimeout);
+
+    try {
+      await loadBgLib();
+    } catch {
+      clearSlowTimers();
+      const msg = navigator.onLine
+        ? 'Could not load AI model. Try again or refresh the page.'
+        : 'You appear to be offline. Reconnect and try again.';
+      setBgRemoveStatus(msg);
+      showBgOverlay(msg, 0);
+      setTimeout(hideBgOverlay, 2400);
+      toggle.checked = false;
+      bgRemoveOn = false;
+      return;
+    }
+    clearSlowTimers();
     await processAllShotsForBg();
     buildStrip();
   });
@@ -2012,21 +2059,40 @@ function playPrinterAnim(srcCanvas) {
     '<div class="printer-anim-clip"><img class="printer-anim-strip" alt=""></div>';
   const img = overlay.querySelector('img');
   const slot = overlay.querySelector('.printer-anim-slot');
+  // Default duration — overridden by syncAnimDuration once the rendered
+  // height is known. We track it in a closure so the dismiss timer matches.
+  let animDur = 2200;
   function syncSlotWidth() {
     const w = img.getBoundingClientRect().width;
     if (w > 0 && slot) slot.style.width = Math.round(w + 20) + 'px';
   }
-  img.addEventListener('load', () => requestAnimationFrame(syncSlotWidth));
+  // Scale animation duration to rendered strip height. Short strips
+  // (polaroid, photocard, diptych) cover much less pixel distance during
+  // the slide-out — without this they're done before the user can tell
+  // anything happened. Inverse relationship: smaller strip → longer hold.
+  function syncAnimDuration() {
+    const h = img.getBoundingClientRect().height;
+    if (!h) return;
+    animDur = Math.max(2000, Math.min(3500, Math.round(3300 - h * 1.4)));
+    img.style.animationDuration = animDur + 'ms';
+  }
+  img.addEventListener('load', () => requestAnimationFrame(() => {
+    syncSlotWidth();
+    syncAnimDuration();
+  }));
   img.src = dataUrl;
   document.body.appendChild(overlay);
-  if (img.complete) requestAnimationFrame(syncSlotWidth);
+  if (img.complete) requestAnimationFrame(() => { syncSlotWidth(); syncAnimDuration(); });
   requestAnimationFrame(() => overlay.classList.add('go'));
 
-  setTimeout(() => {
+  // Auto-dismiss ~400ms after the (now dynamic) animation finishes.
+  const dismissAfter = () => {
     overlay.classList.remove('go');
     overlay.classList.add('gone');
     setTimeout(() => overlay.remove(), 400);
-  }, 2600);
+  };
+  // Defer scheduling until next frame so animDur reflects the measured value.
+  requestAnimationFrame(() => setTimeout(dismissAfter, animDur + 400));
 
   overlay.addEventListener('click', () => {
     overlay.classList.add('gone');

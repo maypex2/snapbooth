@@ -1045,23 +1045,35 @@ function playPrinterAnim(srcCanvas) {
   // rendered width so the strip looks like it's emerging from a slot
   // that's the right size, not a tiny mouth (especially for wide layouts
   // like 3-horiz or 9-cut).
+  // Default duration — overridden by syncAnimDuration once the rendered
+  // height is known. Short strips need more time so the slide-out is visible.
+  let animDur = 2200;
   function syncSlotWidth() {
     const w = img.getBoundingClientRect().width;
     if (w > 0 && slot) slot.style.width = Math.round(w + 20) + 'px';
   }
-  img.addEventListener('load', () => requestAnimationFrame(syncSlotWidth));
+  function syncAnimDuration() {
+    const h = img.getBoundingClientRect().height;
+    if (!h) return;
+    animDur = Math.max(2000, Math.min(3500, Math.round(3300 - h * 1.4)));
+    img.style.animationDuration = animDur + 'ms';
+  }
+  img.addEventListener('load', () => requestAnimationFrame(() => {
+    syncSlotWidth();
+    syncAnimDuration();
+  }));
   img.src = dataUrl;
   document.body.appendChild(overlay);
-  // In case the load event already fired (cached / synchronous decode):
-  if (img.complete) requestAnimationFrame(syncSlotWidth);
+  if (img.complete) requestAnimationFrame(() => { syncSlotWidth(); syncAnimDuration(); });
   requestAnimationFrame(() => overlay.classList.add('go'));
 
-  // Auto-dismiss ~400ms after animation completes (2.2s).
-  setTimeout(() => {
+  // Auto-dismiss ~400ms after the (now dynamic) animation finishes.
+  const dismissAfter = () => {
     overlay.classList.remove('go');
     overlay.classList.add('gone');
     setTimeout(() => overlay.remove(), 400);
-  }, 2600);
+  };
+  requestAnimationFrame(() => setTimeout(dismissAfter, animDur + 400));
 
   // Tap to skip — don't trap the user.
   overlay.addEventListener('click', () => {
