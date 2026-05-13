@@ -77,6 +77,18 @@ const MODE_SHOTS = {
 function maxShots() { return MODE_SHOTS[currentMode] || 1; }
 
 // ── Load shots ──
+// iOS Safari taints canvases when images loaded from data: URLs are drawn on
+// them, even though data URLs are same-origin everywhere else. Once tainted,
+// toDataURL/toBlob throw SecurityError — which is the actual reason exports
+// silently fail on iPhone for users with stickers + photos. Converting data
+// URLs to blob: URLs sidesteps this entirely (blob URLs are clean same-origin
+// from iOS Safari's perspective).
+function dataURLToObjectURL(u) {
+  if (typeof u !== 'string' || !u.startsWith('data:')) return u;
+  try { return URL.createObjectURL(dataURLToBlob(u)); }
+  catch (e) { return u; }
+}
+
 async function loadShots() {
   // Fresh-start link from landing page: wipe any leftover photos.
   if (new URLSearchParams(location.search).get('fresh') === '1') {
@@ -89,7 +101,7 @@ async function loadShots() {
     shots = await Promise.all(sliced.map(u => new Promise(res => {
       const img = new Image();
       img.onload = () => res(img);
-      img.src = u;
+      img.src = dataURLToObjectURL(u);
     })));
   }
   buildStrip();
@@ -2650,10 +2662,15 @@ function normalizeUploaded(srcImg) {
   c.width = w; c.height = h;
   const cx = c.getContext('2d');
   cx.drawImage(srcImg, 0, 0, w, h);
+  // Use blob URL (via toBlob) instead of data URL (via toDataURL) so iOS
+  // Safari doesn't taint the strip canvas when this normalized image is
+  // drawn on it later — taint = download fails silently with SecurityError.
   return new Promise(res => {
-    const out = new Image();
-    out.onload = () => res(out);
-    out.src = c.toDataURL('image/jpeg', 0.92);
+    c.toBlob(blob => {
+      const out = new Image();
+      out.onload = () => res(out);
+      out.src = blob ? URL.createObjectURL(blob) : c.toDataURL('image/jpeg', 0.92);
+    }, 'image/jpeg', 0.92);
   });
 }
 
@@ -2677,7 +2694,11 @@ async function replacePhotos(fileList) {
       r.readAsDataURL(file);
     });
     const raw = await new Promise(res => {
-      const im = new Image(); im.onload = () => res(im); im.src = dataUrl;
+      const im = new Image(); im.onload = () => res(im);
+      // Use blob URL instead of data URL so iOS Safari doesn't taint the
+      // strip canvas when this image gets drawn — required for downloads
+      // to work after uploading photos.
+      im.src = dataURLToObjectURL(dataUrl);
     });
     working.push(await normalizeUploaded(raw));
   }
