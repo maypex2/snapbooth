@@ -1391,7 +1391,7 @@ body::before {
 .vs-filter-img {
   width: 72px; height: 72px;
   border-radius: 50%;
-  background-image: url('../assets/sample.jpg');
+  background-image: url('../assets/sample.webp');
   background-size: cover;
   background-position: center;
   border: 2.5px solid rgba(255,255,255,0.6);
