@@ -1806,6 +1806,21 @@ function setBgRemoveStatus(text) {
   if (el) el.textContent = text;
 }
 
+function showBgOverlay(text, percent) {
+  const overlay = document.getElementById('bgremove-overlay');
+  const txt     = document.getElementById('bgremove-overlay-text');
+  const bar     = document.getElementById('bgremove-overlay-bar');
+  if (!overlay) return;
+  overlay.classList.add('active');
+  if (txt && text != null) txt.textContent = text;
+  if (bar && percent != null) bar.style.width = Math.max(0, Math.min(100, percent)) + '%';
+}
+
+function hideBgOverlay() {
+  const overlay = document.getElementById('bgremove-overlay');
+  if (overlay) overlay.classList.remove('active');
+}
+
 async function processShotCutout(shotImg) {
   if (cutouts.has(shotImg)) return cutouts.get(shotImg);
   const lib = await loadBgLib();
@@ -1829,19 +1844,32 @@ async function processAllShotsForBg() {
   if (!pending.length) return;
   _bgInflight = pending.length;
   setBgRemoveStatus(`Processing ${_bgInflight} photo${_bgInflight === 1 ? '' : 's'}…`);
+  showBgOverlay(`Processing photo 1 of ${pending.length}…`, 5);
   for (let i = 0; i < pending.length; i++) {
-    setBgRemoveStatus(`Processing photo ${i + 1} of ${pending.length}…`);
+    const label = `Processing photo ${i + 1} of ${pending.length}…`;
+    setBgRemoveStatus(label);
+    // 5% slot for "starting", then linear ramp from there to 95% as photos
+    // finish. We show progress BEFORE each photo starts so the bar visibly
+    // moves even on the first photo (which takes the longest due to model warm-up).
+    const startPct = 5 + (i / pending.length) * 90;
+    showBgOverlay(label, startPct);
     try {
       await processShotCutout(pending[i]);
+      const donePct = 5 + ((i + 1) / pending.length) * 90;
+      showBgOverlay(label, donePct);
       if (bgRemoveOn) buildStrip();
     } catch (e) {
       setBgRemoveStatus('Could not process a photo — try a clearer image.');
+      showBgOverlay('Failed — try a clearer photo', 0);
+      setTimeout(hideBgOverlay, 1800);
       _bgInflight = 0;
       return;
     }
   }
   _bgInflight = 0;
   setBgRemoveStatus(`On — ${shots.length} photo${shots.length === 1 ? '' : 's'} cut out`);
+  showBgOverlay('Done ✨', 100);
+  setTimeout(hideBgOverlay, 600);
 }
 
 function initBgRemove() {
@@ -1862,10 +1890,13 @@ function initBgRemove() {
       return;
     }
     setBgRemoveStatus('Loading AI model… (first use ~25MB)');
+    showBgOverlay('Loading AI model…', 2);
     try {
       await loadBgLib();
     } catch {
       setBgRemoveStatus('Could not load AI model. Check your connection.');
+      showBgOverlay('Could not load AI model', 0);
+      setTimeout(hideBgOverlay, 1800);
       toggle.checked = false;
       bgRemoveOn = false;
       return;
