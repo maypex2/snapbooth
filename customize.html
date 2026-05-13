@@ -386,6 +386,11 @@
     /* Desktop: hide the rail, sidebar works as normal. */
     .mobile-rail { display: none; }
     .mobile-sheet-backdrop { display: none; }
+    /* Force-hide the bottom-sheet handle on desktop to defeat any leftover
+       inline display:flex left over from a prior mobile-viewport session. */
+    @media (min-width: 1024px) {
+      .mobile-sheet-handle { display: none !important; }
+    }
 
     @media (max-width: 1023px) {
       /* Tools-footer becomes the always-visible bottom action bar on mobile */
@@ -1239,10 +1244,16 @@
   // If user resizes from mobile → desktop, clean up state so desktop view works
   window.addEventListener('resize', () => {
     if (!isMobile()) {
+      // Fully reset mobile-only sheet state when the viewport grows back to
+      // desktop — otherwise the sheet handle (with "Text ×" header) and the
+      // body sheet-open class leak into the desktop sidebar view.
       sidebar.classList.remove('sheet-active');
       backdrop.classList.remove('active');
+      document.body.classList.remove('sheet-open');
       sidebar.style.transform = '';
       document.querySelectorAll('aside [data-panel]').forEach(p => p.classList.remove('sheet-open'));
+      document.querySelectorAll('.mobile-rail-btn').forEach(b => b.classList.remove('active'));
+      if (handle) handle.style.display = 'none';
     }
   });
 })();
