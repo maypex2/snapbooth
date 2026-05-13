@@ -1838,13 +1838,31 @@ async function processShotCutout(shotImg) {
   if (cutouts.has(shotImg)) return cutouts.get(shotImg);
   const lib = await loadBgLib();
   const removeBackground = lib.removeBackground || lib;
-  // Pass the source URL (data: URL) — imgly handles fetching/decoding.
-  const blob = await removeBackground(shotImg.src);
+  // Force CPU mode + non-worker for max compatibility on Android Chrome,
+  // Samsung Internet, and any browser that lacks SharedArrayBuffer (which
+  // requires COOP/COEP headers GitHub Pages doesn't send).
+  const opts = { device: 'cpu', output: { format: 'image/png' } };
+  let blob;
+  try {
+    blob = await removeBackground(shotImg.src, opts);
+  } catch (e) {
+    console.error('[bg-remove] removeBackground threw:', e);
+    const err = new Error(e && e.message ? e.message : 'bg-remove-failed');
+    err.cause = e;
+    throw err;
+  }
+  if (!blob || !blob.size) {
+    console.error('[bg-remove] empty blob returned');
+    throw new Error('bg-remove-empty-blob');
+  }
   const url = URL.createObjectURL(blob);
   const cutout = await new Promise((res, rej) => {
     const im = new Image();
     im.onload = () => res(im);
-    im.onerror = rej;
+    im.onerror = (ev) => {
+      console.error('[bg-remove] cutout image failed to decode', ev);
+      rej(new Error('bg-remove-decode-failed'));
+    };
     im.src = url;
   });
   cutouts.set(shotImg, cutout);
@@ -1872,9 +1890,24 @@ async function processAllShotsForBg() {
       showBgOverlay(label, donePct);
       if (bgRemoveOn) buildStrip();
     } catch (e) {
-      setBgRemoveStatus('Could not process a photo — try a clearer image.');
-      showBgOverlay('Failed — try a clearer photo', 0);
-      setTimeout(hideBgOverlay, 1800);
+      console.error('[bg-remove] failed on photo', i + 1, e);
+      // Surface a more useful diagnosis. Common Android failure modes:
+      // SharedArrayBuffer missing (GitHub Pages lacks COOP/COEP headers),
+      // out-of-memory on low-RAM devices, or WebAssembly init failure.
+      const msg = (e && e.message) || '';
+      let userMsg;
+      if (/SharedArrayBuffer|crossOriginIsolated/i.test(msg)) {
+        userMsg = 'Your browser is missing a security feature this needs. Try Chrome on desktop.';
+      } else if (/memory|allocation/i.test(msg)) {
+        userMsg = 'Not enough memory on this device — close other tabs and retry.';
+      } else if (/network|fetch|load|404/i.test(msg)) {
+        userMsg = 'Could not download the AI model. Check your connection.';
+      } else {
+        userMsg = 'BG removal not supported on this device/browser.';
+      }
+      setBgRemoveStatus(userMsg);
+      showBgOverlay(userMsg, 0);
+      setTimeout(hideBgOverlay, 3500);
       _bgInflight = 0;
       return;
     }
