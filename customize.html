@@ -365,11 +365,19 @@
       /* Add bottom space to main so footer doesn't cover the preview.
          --footer-h is set in JS based on the actual measured footer height. */
       main { padding-bottom: calc(var(--footer-h, 240px) + 16px) !important; }
-      /* Bottom sheet slides up directly above the persistent footer */
+      /* Bottom sheet anchors to the very bottom of the viewport on mobile so
+         the preview gets maximum vertical space and the user can see their
+         edits live as they tap stickers / change colors / etc.
+         Scales with viewport: ~70vh on short phones, taller on big phones.
+         Uses dvh to respect mobile browser chrome (address bar), with vh fallback. */
       aside.tools-aside {
-        bottom: var(--footer-h, 220px) !important;
-        max-height: calc(85vh - var(--footer-h, 220px)) !important;
+        bottom: 0 !important;
+        max-height: 78vh !important;
+        max-height: 78dvh !important;
       }
+      /* Hide the always-visible footer while the sheet is open — the sheet
+         replaces it. Footer reappears as soon as the sheet closes. */
+      body.sheet-open #tools-footer { display: none !important; }
       /* Hide the desktop tabs row on mobile — replaced by floating rail */
       aside .border-b.border-sand\/40 { display: none; }
       /* Hide all panels by default on mobile — bottom-sheet logic controls visibility */
@@ -399,8 +407,24 @@
       /* Show the panel content body fully on mobile when sheet is open */
       aside.tools-aside.sheet-active [data-panel].sheet-open {
         display: block;
-        max-height: calc(75vh - 60px);
+        max-height: calc(78vh - 60px);
+        max-height: calc(78dvh - 60px);
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      /* On very tall phones (≥800px), give the sheet a bit more room */
+      @media (min-height: 800px) {
+        aside.tools-aside { max-height: 82dvh !important; }
+        aside.tools-aside.sheet-active [data-panel].sheet-open {
+          max-height: calc(82dvh - 60px);
+        }
+      }
+      /* On extra-tall phones (≥900px tablets / Pro Max), even more */
+      @media (min-height: 900px) {
+        aside.tools-aside { max-height: 85dvh !important; }
+        aside.tools-aside.sheet-active [data-panel].sheet-open {
+          max-height: calc(85dvh - 60px);
+        }
       }
       /* Drag handle at top of sheet */
       .mobile-sheet-handle {
@@ -1063,6 +1087,7 @@
     panel.classList.add('sheet-open');
     sidebar.classList.add('sheet-active');
     backdrop.classList.add('active');
+    document.body.classList.add('sheet-open');
     if (handle) handle.style.display = 'flex';
     if (titleEl) titleEl.textContent = RAIL_LABELS[tab] || tab;
     // Update rail active state
@@ -1082,6 +1107,7 @@
   function closeSheet() {
     sidebar.classList.remove('sheet-active');
     backdrop.classList.remove('active');
+    document.body.classList.remove('sheet-open');
     document.querySelectorAll('.mobile-rail-btn').forEach(b => b.classList.remove('active'));
     // Hide the panel + handle after the animation completes so nothing bleeds
     setTimeout(() => {
