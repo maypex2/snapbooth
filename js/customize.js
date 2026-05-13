@@ -2121,6 +2121,69 @@ function dataURLToBlob(dataUrl) {
 // can exceed those limits, causing toDataURL() to throw "Could not save
 // image". This helper scales the source canvas down to a safe dimension
 // before encoding, sacrificing a tiny amount of resolution for reliability.
+// Bulletproof "screenshot fallback" modal: when toDataURL throws (e.g. iOS
+// canvas tainting that we couldn't avoid), show the strip canvas itself in a
+// modal with instructions to either screenshot it OR long-press if iOS lets
+// them. The user always has SOMETHING to save.
+function showLongPressFallback() {
+  // Remove any existing fallback first
+  const existing = document.getElementById('save-fallback-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'save-fallback-modal';
+  modal.style.cssText =
+    'position:fixed;inset:0;z-index:99999;background:rgba(20,16,12,0.92);' +
+    'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);' +
+    'display:flex;flex-direction:column;align-items:center;justify-content:flex-start;' +
+    'padding:24px 16px;overflow-y:auto;-webkit-overflow-scrolling:touch;';
+
+  const close = document.createElement('button');
+  close.textContent = '✕';
+  close.style.cssText =
+    'position:absolute;top:14px;right:18px;width:36px;height:36px;border-radius:50%;' +
+    'background:rgba(255,255,255,0.18);color:#fff;border:0;font-size:18px;cursor:pointer;';
+  close.addEventListener('click', () => modal.remove());
+
+  const title = document.createElement('div');
+  title.textContent = 'Save your strip';
+  title.style.cssText = 'color:#fff;font:600 18px/1.3 "DM Serif Display",serif;margin:8px 0 4px;text-align:center;';
+
+  const instructions = document.createElement('div');
+  instructions.innerHTML =
+    '📸 <strong>Take a screenshot</strong> of the image below to save it.<br>' +
+    '<span style="opacity:.75;font-size:12px;">(Side button + Volume Up on iPhone, or Power + Volume Down on Android)</span>';
+  instructions.style.cssText =
+    'color:#fff;font:400 14px/1.5 "DM Sans",sans-serif;text-align:center;max-width:360px;margin-bottom:18px;padding:0 8px;';
+
+  // Mount the original strip canvas content into a fresh DOM image element.
+  // Since toDataURL fails, we display the canvas via CSS instead — it's a
+  // live HTML element that the user can screenshot.
+  const wrap = document.createElement('div');
+  wrap.style.cssText =
+    'background:#fff;border-radius:14px;padding:8px;box-shadow:0 12px 40px rgba(0,0,0,.4);' +
+    'max-width:min(86vw,440px);max-height:70vh;overflow:hidden;display:flex;align-items:center;justify-content:center;';
+
+  // Clone the strip canvas (visually only) into the modal
+  const clone = document.createElement('canvas');
+  clone.width = stripCanvas.width;
+  clone.height = stripCanvas.height;
+  clone.style.cssText = 'display:block;max-width:100%;max-height:66vh;height:auto;width:auto;';
+  try {
+    clone.getContext('2d').drawImage(stripCanvas, 0, 0);
+  } catch (e) { /* even drawImage tainted — fall through, will still show empty canvas */ }
+  wrap.appendChild(clone);
+
+  modal.appendChild(close);
+  modal.appendChild(title);
+  modal.appendChild(instructions);
+  modal.appendChild(wrap);
+
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+  document.body.appendChild(modal);
+}
+
 function safeCanvasToDataURL(srcCanvas, mime) {
   const MAX_DIM   = 3800;            // safely under iOS axis ceiling
   const MAX_AREA  = 14000000;        // safely under iOS area ceiling
@@ -2283,7 +2346,14 @@ async function downloadStrip() {
     catch (e) {
       console.error('[download] iOS toDataURL failed', e);
       if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
-      showToast('Could not save image — try a smaller layout');
+      // Surface the actual error name so we can diagnose what's blocking.
+      // SecurityError = tainted canvas; QuotaExceededError = canvas too big.
+      const errName = e && e.name ? ` (${e.name})` : '';
+      showToast('Could not save image' + errName);
+      // Last-resort fallback: show the strip as a normal <img> so the user
+      // can long-press → "Save to Photos". Works even on a tainted canvas
+      // because the image element doesn't depend on canvas pixel extraction.
+      showLongPressFallback();
       return;
     }
     const blob = dataURLToBlob(dataUrl);
@@ -2380,7 +2450,9 @@ function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColor = '#
     catch (e) {
       console.error('[export] iOS toDataURL failed', e);
       if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
-      showToast('Could not save image — try a smaller layout');
+      const errName = e && e.name ? ` (${e.name})` : '';
+      showToast('Could not save image' + errName);
+      showLongPressFallback();
       return;
     }
     const blob = dataURLToBlob(dataUrl);
@@ -2465,7 +2537,7 @@ function renderBgPickerPreview(color) {
   ctx.fillText('bopbooth.com', PREVIEW_W / 2, PREVIEW_H - (PREVIEW_W * 0.07) * 0.5);
 }
 
-function pickBackgroundColor(label, aspect) {
+function pickBackgroundColor(label, aspect, onPickSync) {
   return new Promise(resolve => {
     const overlay = document.getElementById('bg-picker-overlay');
     const desc    = document.getElementById('bg-picker-desc');
@@ -2553,7 +2625,18 @@ function pickBackgroundColor(label, aspect) {
       overlay.removeEventListener('click', onBackdrop);
       resolve(color);
     }
-    function onConfirm() { __bgPickerSelected = picked; done(picked); }
+    function onConfirm() {
+      __bgPickerSelected = picked;
+      // CRITICAL FOR iOS: invoke onPickSync BEFORE closing the modal so the
+      // entire export pipeline (toDataURL → saveBlob → navigator.share) runs
+      // inside the *same* click handler tick. Going through a Promise +
+      // await chain causes iOS Safari to revoke user activation between the
+      // tap and the share call, silently aborting the download.
+      if (typeof onPickSync === 'function') {
+        try { onPickSync(picked); } catch (e) { console.error(e); }
+      }
+      done(picked);
+    }
     function onCancel()  { done(null); }
     function onBackdrop(e) { if (e.target === overlay) onCancel(); }
 
@@ -2566,22 +2649,30 @@ function pickBackgroundColor(label, aspect) {
   });
 }
 
-async function downloadStory() {
-  // 9:16 aspect → tall preview
-  const bg = await pickBackgroundColor('Swipe to try colors for your IG Story (9:16) — preview updates live.', 9 / 16);
-  if (!bg) return;
-  // Run export IMMEDIATELY — the prior setTimeout(2000) was killing iOS
-  // user activation, causing the download to fail silently. Animation plays
-  // in parallel; the share sheet just covers it on mobile (no big deal).
-  exportComposed(1080, 1920, 'BopBooth-story-' + Date.now() + '.png', 0.07, bg);
-  playPrinterAnim();
+function downloadStory() {
+  // Use the SYNCHRONOUS callback variant so toDataURL + navigator.share both
+  // run inside the same click handler that opened the picker — preserves iOS
+  // Safari user activation. The Promise return value is ignored on purpose.
+  pickBackgroundColor(
+    'Swipe to try colors for your IG Story (9:16) — preview updates live.',
+    9 / 16,
+    function (bg) {
+      if (!bg) return;
+      exportComposed(1080, 1920, 'BopBooth-story-' + Date.now() + '.png', 0.07, bg);
+      playPrinterAnim();
+    }
+  );
 }
-async function downloadSquare() {
-  // 1:1 aspect → square preview
-  const bg = await pickBackgroundColor('Swipe to try colors for your IG Post (1:1) — preview updates live.', 1);
-  if (!bg) return;
-  exportComposed(1080, 1080, 'BopBooth-square-' + Date.now() + '.png', 0.07, bg);
-  playPrinterAnim();
+function downloadSquare() {
+  pickBackgroundColor(
+    'Swipe to try colors for your IG Post (1:1) — preview updates live.',
+    1,
+    function (bg) {
+      if (!bg) return;
+      exportComposed(1080, 1080, 'BopBooth-square-' + Date.now() + '.png', 0.07, bg);
+      playPrinterAnim();
+    }
+  );
 }
 
 async function shareStrip() {
