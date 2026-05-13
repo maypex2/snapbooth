@@ -142,7 +142,7 @@ function showEmptyState() { /* no-op empty slots are drawn by buildStrip */ }
 function clearEmptyState() { /* no-op */ }
 
 // ── Unified brand footer ─────────────────────────────────────────
-// One shared "snapbooth" wordmark + date placement used by every
+// One shared "BopBooth" wordmark + date placement used by every
 // layout (except tilt3, which has its own designed footer). This
 // keeps brand presentation visually consistent across all formats.
 function footerReserveFor(mode) {
@@ -207,7 +207,7 @@ function drawBrandFooter(sctx, sw, sh, reserveH) {
   if (showWordmark) {
     sctx.fillStyle = wmColor;
     sctx.font = `italic ${Math.round(wmSize)}px "DM Serif Display", serif`;
-    sctx.fillText('snapbooth', cx, wmY);
+    sctx.fillText('BopBooth', cx, wmY);
   }
   if (showDate) {
     sctx.fillStyle = dateColor;
@@ -564,7 +564,7 @@ function buildStrip() {
   // Frame decorations render ABOVE photos so themed text (REC, date stamp,
   // wordmarks, borders, sparkles) is never hidden by photo content. Clip to
   // the area above the brand-footer band so heavy frames (Y2K Chrome,
-  // Coquette, Holiday, etc.) can't bleed art over snapbooth + date.
+  // Coquette, Holiday, etc.) can't bleed art over BopBooth + date.
   const footerReserve = footerReserveFor(currentMode);
   const ownFooter = typeof frameHasOwnFooter === 'function' && frameHasOwnFooter(currentFrame);
   if (currentMode !== 'photocard' && !bgOverride) {
@@ -603,7 +603,7 @@ function buildStrip() {
 }
 
 // ── Tilt3 layout: dark red strip with 3 slightly-tilted black-bordered
-// photo slots and a "SNAPBOOTH / your text" footer (matches the Canva
+// photo slots and a "BopBooth / your text" footer (matches the Canva
 // design from the user). Drawn programmatically so it stays crisp at
 // any scale and respects bgOverride / customText.
 function buildTilt3Strip() {
@@ -668,11 +668,11 @@ function buildTilt3Strip() {
     sctx.restore();
   }
 
-  // Footer text: SNAPBOOTH + custom subline
+  // Footer text: BopBooth + custom subline
   sctx.fillStyle = '#FAF6EE';
   sctx.textAlign = 'center';
   sctx.font = Math.floor(BOT * 0.34) + 'px "DM Serif Display", serif';
-  sctx.fillText('SNAPBOOTH', sw / 2, sh - BOT * 0.55);
+  sctx.fillText('BopBooth', sw / 2, sh - BOT * 0.55);
 
   sctx.font = getCustomFontSpec(Math.floor(BOT * 0.22));
   sctx.fillStyle = 'rgba(250,246,238,0.92)';
@@ -2106,7 +2106,7 @@ async function downloadStrip() {
   const savedSel = selectedStickerIdx;
   selectedStickerIdx = null;
   await Promise.resolve(buildStrip());
-  const filename = 'snapbooth-' + currentMode + '-' + Date.now() + '.png';
+  const filename = 'BopBooth-' + currentMode + '-' + Date.now() + '.png';
   // Call toBlob → saveBlob immediately so iOS Safari still has a valid
   // user-activation window for navigator.share. Delaying via setTimeout
   // expires the activation and iOS silently denies the first download.
@@ -2175,11 +2175,11 @@ async function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColo
   octx.shadowBlur = 0;
   octx.shadowOffsetY = 0;
 
-  // SnapBooth wordmark — color follows backdrop
+  // BopBooth wordmark — color follows backdrop
   octx.fillStyle = dark ? 'rgba(255, 255, 255, 0.65)' : 'rgba(60, 40, 20, 0.5)';
   octx.font = 'italic ' + Math.round(canvasW * 0.028) + 'px "DM Serif Display", serif';
   octx.textAlign = 'center';
-  octx.fillText('snapbooth.app', canvasW / 2, canvasH - padY * 0.45);
+  octx.fillText('BopBooth.app', canvasW / 2, canvasH - padY * 0.45);
 
   out.toBlob(blob => {
     if (savedSel !== null) {
@@ -2249,13 +2249,13 @@ async function downloadStory() {
   const bg = await pickBackgroundColor('Pick the background color for your Story export.');
   if (!bg) return;
   playPrinterAnim();
-  setTimeout(() => exportComposed(1080, 1920, 'snapbooth-story-' + Date.now() + '.png', 0.07, bg), 2000);
+  setTimeout(() => exportComposed(1080, 1920, 'BopBooth-story-' + Date.now() + '.png', 0.07, bg), 2000);
 }
 async function downloadSquare() {
   const bg = await pickBackgroundColor('Pick the background color for your Post export.');
   if (!bg) return;
   playPrinterAnim();
-  setTimeout(() => exportComposed(1080, 1080, 'snapbooth-square-' + Date.now() + '.png', 0.07, bg), 2000);
+  setTimeout(() => exportComposed(1080, 1080, 'BopBooth-square-' + Date.now() + '.png', 0.07, bg), 2000);
 }
 
 async function shareStrip() {
@@ -2273,9 +2273,9 @@ async function shareStrip() {
     if (navigator.share && navigator.canShare) {
       stripCanvas.toBlob(async blob => {
         restoreSelection();
-        const file = new File([blob], 'snapbooth.png', { type: 'image/png' });
+        const file = new File([blob], 'BopBooth.png', { type: 'image/png' });
         if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: 'My SnapBooth photo!' });
+          await navigator.share({ files: [file], title: 'My BopBooth photo!' });
         } else fallbackCopy();
       }, 'image/png');
     } else { restoreSelection(); fallbackCopy(); }

@@ -495,7 +495,7 @@ function drawCoverImage(ctx, img, x, y, w, h) {
 }
 
 // ── Unified brand footer ─────────────────────────────────────────
-// Single source of truth for "snapbooth" wordmark + date placement
+// Single source of truth for "BopBooth" wordmark + date placement
 // across every layout, so brand presentation stays consistent.
 function footerReserveFor(mode) {
   switch (mode) {
@@ -547,7 +547,7 @@ function drawBrandFooter(sctx, sw, sh, reserveH) {
   sctx.textBaseline = 'alphabetic';
   sctx.fillStyle = wmColor;
   sctx.font = `italic ${Math.round(wmSize)}px "DM Serif Display", serif`;
-  sctx.fillText('snapbooth', cx, wmY);
+  sctx.fillText('BopBooth', cx, wmY);
   sctx.fillStyle = dateColor;
   sctx.font = `400 ${Math.round(dateSize)}px "DM Sans", sans-serif`;
   sctx.fillText(
@@ -591,7 +591,7 @@ function buildStrip() {
     sctx.fillStyle = '#FAF6EE';
     sctx.textAlign = 'center';
     sctx.font = Math.floor(BOT * 0.34) + 'px "DM Serif Display", serif';
-    sctx.fillText('SNAPBOOTH', sw / 2, sh - BOT * 0.55);
+    sctx.fillText('BopBooth', sw / 2, sh - BOT * 0.55);
     sctx.font = 'italic ' + Math.floor(BOT * 0.22) + 'px "DM Serif Display", serif';
     sctx.fillText('your text', sw / 2, sh - BOT * 0.22);
     sctx.textAlign = 'start';
@@ -735,7 +735,7 @@ function buildStrip() {
 
   // Frame decorations render ABOVE photos so themed text (REC, date stamp,
   // wordmarks, borders) is never hidden by photo content. Clipped above the
-  // brand-footer band so frame art can't overlap snapbooth + date.
+  // brand-footer band so frame art can't overlap BopBooth + date.
   const footerReserve = footerReserveFor(currentMode);
   const ownFooter = typeof frameHasOwnFooter === 'function' && frameHasOwnFooter(currentFrame);
   if (currentMode !== 'photocard') {
@@ -753,7 +753,7 @@ function buildStrip() {
     }
   }
 
-  // Unified brand footer — same italic centered "snapbooth" + date on every layout.
+  // Unified brand footer — same italic centered "BopBooth" + date on every layout.
   // Skipped when the frame already paints its own designed footer.
   if (currentMode !== 'tilt3' && !ownFooter) drawBrandFooter(sctx, sw, sh, footerReserve);
 
@@ -930,10 +930,10 @@ function retake() {
 
 // ── Download ──
 const DOWNLOAD_NAMES = {
-  '4cut':'snapbooth-4cut-strip','2cut':'snapbooth-2cut-strip','6cut':'snapbooth-6cut-grid',
-  '3horiz':'snapbooth-3cut-horizontal','squaregrid':'snapbooth-square-collage',
-  '9cut':'snapbooth-9cut-grid','vertical4':'snapbooth-puri-4cut','diptych':'snapbooth-diptych',
-  'polaroid':'snapbooth-polaroid','photocard':'snapbooth-photo-card','single':'snapbooth',
+  '4cut':'BopBooth-4cut-strip','2cut':'BopBooth-2cut-strip','6cut':'BopBooth-6cut-grid',
+  '3horiz':'BopBooth-3cut-horizontal','squaregrid':'BopBooth-square-collage',
+  '9cut':'BopBooth-9cut-grid','vertical4':'BopBooth-puri-4cut','diptych':'BopBooth-diptych',
+  'polaroid':'BopBooth-polaroid','photocard':'BopBooth-photo-card','single':'BopBooth',
 };
 
 // iOS Safari can't actually download via <a download> — clicks are silently
@@ -1014,7 +1014,7 @@ function ejectPolaroid(img) {
   el.appendChild(thumb);
   const cap = document.createElement('div');
   cap.className = 'pe-caption';
-  cap.textContent = 'snapbooth';
+  cap.textContent = 'BopBooth';
   el.appendChild(cap);
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 1750);
@@ -1084,12 +1084,12 @@ function playPrinterAnim(srcCanvas) {
 
 function downloadStrip() {
   if (currentMode === 'gif' && currentGifBlob) {
-    saveBlob(currentGifBlob, 'snapbooth-' + Date.now() + '.gif', 'image/gif');
+    saveBlob(currentGifBlob, 'BopBooth-' + Date.now() + '.gif', 'image/gif');
     return;
   }
   if (!shots.length) return;
   buildStrip();
-  const filename = (DOWNLOAD_NAMES[currentMode] || 'snapbooth') + '-' + Date.now() + '.png';
+  const filename = (DOWNLOAD_NAMES[currentMode] || 'BopBooth') + '-' + Date.now() + '.png';
   stripCanvas.toBlob(blob => {
     if (!blob) { showToast('Could not save image'); return; }
     saveBlob(blob, filename, 'image/png');
@@ -1099,9 +1099,9 @@ function downloadStrip() {
 async function shareStrip() {
   if (currentMode === 'gif' && currentGifBlob) {
     try {
-      const file = new File([currentGifBlob], 'snapbooth.gif', { type: 'image/gif' });
+      const file = new File([currentGifBlob], 'BopBooth.gif', { type: 'image/gif' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'My SnapBooth GIF!' });
+        await navigator.share({ files: [file], title: 'My BopBooth GIF!' });
         return;
       }
     } catch {}
@@ -1113,9 +1113,9 @@ async function shareStrip() {
   try {
     if (navigator.share && navigator.canShare) {
       stripCanvas.toBlob(async blob => {
-        const file = new File([blob], 'snapbooth.png', { type: 'image/png' });
+        const file = new File([blob], 'BopBooth.png', { type: 'image/png' });
         if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: 'My SnapBooth photo strip!' });
+          await navigator.share({ files: [file], title: 'My BopBooth photo strip!' });
         } else fallbackCopy();
       }, 'image/png');
     } else fallbackCopy();

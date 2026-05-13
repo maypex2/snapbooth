@@ -243,7 +243,7 @@ function drawFrameDecorations(sctx, frameId, sw, sh) {
     sctx.font = '700 ' + stampSize + 'px "DM Sans", monospace';
     sctx.textAlign = 'right';
     // Sit above the reserved brand-footer band so the stamp stays visible
-    // (and so the orange numbers don't clash with the snapbooth wordmark).
+    // (and so the orange numbers don't clash with the BopBooth wordmark).
     const bottomY = (typeof window !== 'undefined' && window.__frameBottomY) || sh;
     sctx.fillStyle = 'rgba(0,0,0,0.35)';
     sctx.fillText(stamp, sw - pad + 2, bottomY - pad + 2);
@@ -416,7 +416,7 @@ function frameMirrorsPhotos(frameId) {
 
 // Frames that paint their own designed footer at the bottom of the canvas
 // (wordmark + date built into the frame's identity). When true, the caller
-// should skip the generic snapbooth brand footer AND skip clipping the frame
+// should skip the generic BopBooth brand footer AND skip clipping the frame
 // art above the footer band, so the frame's own footer renders intact.
 function frameHasOwnFooter(frameId) {
   return frameId === 'life4cuts'

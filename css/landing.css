@@ -901,7 +901,7 @@ body::before {
   50%      { opacity: 1;  transform: scale(1.15); }
 }
 
-/* Cycles the polaroid photo through 4 different SnapBooth filters
+/* Cycles the polaroid photo through 4 different BopBooth filters
    so visitors see the filter system without reading about it. */
 @keyframes filter-cycle {
   0%, 22%   { filter: sepia(35%) saturate(1.4) brightness(1.05); }      /* Vintage */

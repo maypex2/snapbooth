@@ -43,7 +43,7 @@
     <priority>0.3</priority>
   </url>
 
-  <!-- Layout deep-links â€” each pre-selects a layout and is independently indexable -->
+  <!-- Layout deep-links — each pre-selects a layout and is independently indexable -->
   <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=4cut</loc><priority>0.8</priority></url>
   <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=2cut</loc><priority>0.7</priority></url>
   <url><loc>https://maypex2.github.io/snapbooth/app.html?mode=3cut</loc><priority>0.7</priority></url>

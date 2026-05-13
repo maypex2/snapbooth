@@ -1,5 +1,5 @@
-const dbPromise = new Promise((resolve, reject) => {
-  const req = indexedDB.open('SnapBoothDB', 1);
+﻿const dbPromise = new Promise((resolve, reject) => {
+  const req = indexedDB.open('BopBoothDB', 1);
   req.onupgradeneeded = e => {
     e.target.result.createObjectStore('store');
   };
