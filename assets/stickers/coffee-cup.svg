@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <path d="M22 12 C22 10 22 8 24 8 C26 6 28 8 28 10 C28 8 30 6 32 8 C34 6 36 8 36 10" fill="none" stroke="#c8b8a8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M44 14 C44 12 44 10 46 10 C48 8 50 10 50 12 C50 10 52 8 54 10 C56 8 58 10 58 12" fill="none" stroke="#c8b8a8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M18 26 L62 26 L58 70 C58 72 56 74 54 74 L26 74 C24 74 22 72 22 70 Z" fill="#d6b894" stroke="#8b6f47" stroke-width="2.5"/>
+  <rect x="18" y="38" width="44" height="14" fill="#fff" stroke="#8b6f47" stroke-width="2"/>
+  <text x="40" y="48" font-family="Georgia, serif" font-size="9" fill="#8b6f47" text-anchor="middle" font-weight="700">COFFEE</text>
+</svg>

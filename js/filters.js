@@ -22,6 +22,12 @@ const FILTER_CSS = {
   moody:     'saturate(0.6) contrast(1.35) brightness(0.85)',
   honey:     'sepia(35%) saturate(1.5) brightness(1.08) hue-rotate(-15deg)',
   bluehour:  'saturate(0.95) contrast(1.1) brightness(0.95) hue-rotate(15deg)',
+  // Trend pack 2026-05 — Filipino-teen aesthetic refresh
+  aura:        'saturate(1.3) brightness(1.1) contrast(1.02) hue-rotate(-22deg)',
+  disposable:  'sepia(18%) saturate(0.9) contrast(0.92) brightness(1.05)',
+  mocha:       'sepia(45%) saturate(1.2) brightness(1.04) contrast(1.06) hue-rotate(-10deg)',
+  sage:        'saturate(0.5) brightness(1.04) contrast(1.05) hue-rotate(15deg)',
+  twilight:    'saturate(0.95) brightness(0.93) contrast(1.12) hue-rotate(35deg)',
 };
 
 function setFilter(f, btn) {
@@ -224,6 +230,65 @@ function applyFilterToCanvas(f) {
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
+  }
+  // ── Trend pack 2026-05 ──
+  if (f === 'aura') {
+    // Soft pink-to-violet ethereal glow + light bloom
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    g.addColorStop(0, 'rgba(255,180,210,0.40)');
+    g.addColorStop(1, 'rgba(180,140,240,0.40)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    // Light dreamy bloom
+    ctx.save();
+    ctx.globalAlpha = 0.10;
+    ctx.filter = 'blur(8px) brightness(1.25)';
+    ctx.drawImage(canvas, 0, 0);
+    ctx.restore();
+    ctx.filter = 'none';
+  }
+  if (f === 'disposable') {
+    // 35mm disposable camera: heavy grain + warm cast + vignette
+    drawGrain(0.09);
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.fillStyle = 'rgba(240,180,120,0.18)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    drawVignette(0.28);
+  }
+  if (f === 'mocha') {
+    // Warm cinnamon brown (Mocha Mousse 2025 color of year)
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.fillStyle = 'rgba(164,120,100,0.30)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    drawVignette(0.18);
+  }
+  if (f === 'sage') {
+    // Muted Pinterest-aesthetic olive/sage green
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.fillStyle = 'rgba(156,184,164,0.30)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+  if (f === 'twilight') {
+    // Dusky deep blue-to-violet sunset
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    g.addColorStop(0, 'rgba(60,80,180,0.45)');
+    g.addColorStop(0.6, 'rgba(140,90,200,0.35)');
+    g.addColorStop(1, 'rgba(240,140,150,0.30)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    drawVignette(0.22);
   }
 }
 

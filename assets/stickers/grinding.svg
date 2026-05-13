@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <rect x="4" y="18" width="72" height="38" rx="18" fill="#2a2520" stroke="#000" stroke-width="2.5"/>
+  <path d="M24 56 L18 70 L34 58" fill="#2a2520" stroke="#000" stroke-width="2.5" stroke-linejoin="round"/>
+  <text x="40" y="36" font-family="Arial, sans-serif" font-weight="900" font-size="10" fill="#e8c4a0" text-anchor="middle" letter-spacing="0.5">ON THE</text>
+  <text x="40" y="50" font-family="Arial, sans-serif" font-weight="900" font-size="14" fill="#e8c4a0" text-anchor="middle" letter-spacing="1">GRIND</text>
+</svg>

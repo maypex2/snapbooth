@@ -177,6 +177,26 @@
       filter: saturate(.95) contrast(1.1) brightness(.95) hue-rotate(15deg);
     }
 
+    .filter-thumb[data-filter="aura"] {
+      filter: saturate(1.3) brightness(1.1) contrast(1.02) hue-rotate(-22deg);
+    }
+
+    .filter-thumb[data-filter="disposable"] {
+      filter: sepia(18%) saturate(.9) contrast(.92) brightness(1.05);
+    }
+
+    .filter-thumb[data-filter="mocha"] {
+      filter: sepia(45%) saturate(1.2) brightness(1.04) contrast(1.06) hue-rotate(-10deg);
+    }
+
+    .filter-thumb[data-filter="sage"] {
+      filter: saturate(.5) brightness(1.04) contrast(1.05) hue-rotate(15deg);
+    }
+
+    .filter-thumb[data-filter="twilight"] {
+      filter: saturate(.95) brightness(.93) contrast(1.12) hue-rotate(35deg);
+    }
+
     .filter-btn .filter-thumb {
       transition: box-shadow .15s ease, transform .15s ease;
     }
@@ -1092,6 +1112,41 @@
                   class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">HOT</span>
                 <div class="filter-thumb w-12 h-12 rounded-full" data-filter="bluehour"></div>
                 <span class="filter-label text-[10px] text-white/85">Blue Hour</span>
+              </button>
+              <button data-f="aura" data-name="Aura"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="aura"></div>
+                <span class="filter-label text-[10px] text-white/85">Aura</span>
+              </button>
+              <button data-f="disposable" data-name="Disposable"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="disposable"></div>
+                <span class="filter-label text-[10px] text-white/85">Disposable</span>
+              </button>
+              <button data-f="mocha" data-name="Mocha"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="mocha"></div>
+                <span class="filter-label text-[10px] text-white/85">Mocha</span>
+              </button>
+              <button data-f="sage" data-name="Sage"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="sage"></div>
+                <span class="filter-label text-[10px] text-white/85">Sage</span>
+              </button>
+              <button data-f="twilight" data-name="Twilight"
+                class="filter-btn relative flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
+                <span
+                  class="absolute top-1 right-1 text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-accent text-ink">NEW</span>
+                <div class="filter-thumb w-12 h-12 rounded-full" data-filter="twilight"></div>
+                <span class="filter-label text-[10px] text-white/85">Twilight</span>
               </button>
             </div>
           </div>

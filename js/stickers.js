@@ -37,6 +37,27 @@ const STICKERS = [
   { name: 'Party Hat',     file: 'assets/stickers/party-hat.svg' },
   { name: 'Gift',          file: 'assets/stickers/gift.svg' },
   { name: 'Party Popper',  file: 'assets/stickers/party-popper.svg' },
+
+  // Couple / Lover (2026-05 pack)
+  { name: 'Rings',         file: 'assets/stickers/rings.svg' },
+  { name: 'Forever',       file: 'assets/stickers/forever.svg' },
+  { name: 'Love Key',      file: 'assets/stickers/love-key.svg' },
+  { name: 'Love Bird',     file: 'assets/stickers/dove.svg' },
+  { name: 'You & Me',      file: 'assets/stickers/you-and-me.svg' },
+
+  // Coffee lover (2026-05 pack)
+  { name: 'Coffee Cup',    file: 'assets/stickers/coffee-cup.svg' },
+  { name: 'Iced Coffee',   file: 'assets/stickers/iced-coffee.svg' },
+  { name: 'Latte Heart',   file: 'assets/stickers/latte-heart.svg' },
+  { name: 'But First...',  file: 'assets/stickers/but-first-coffee.svg' },
+  { name: 'Donut',         file: 'assets/stickers/donut.svg' },
+
+  // Work / Grind (2026-05 pack)
+  { name: 'Laptop',        file: 'assets/stickers/laptop.svg' },
+  { name: 'On The Grind',  file: 'assets/stickers/grinding.svg' },
+  { name: 'Money Bag',     file: 'assets/stickers/money-bag.svg' },
+  { name: 'Briefcase',     file: 'assets/stickers/briefcase.svg' },
+  { name: 'Boss Mode',     file: 'assets/stickers/boss-mode.svg' },
 ];
 
 const stickerImgCache = {};

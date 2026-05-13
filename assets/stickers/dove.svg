@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <ellipse cx="40" cy="48" rx="22" ry="14" fill="#fff" stroke="#d0d0e0" stroke-width="2"/>
+  <circle cx="58" cy="38" r="9" fill="#fff" stroke="#d0d0e0" stroke-width="2"/>
+  <path d="M22 42 C16 32 18 22 28 24 C30 30 28 42 22 42 Z" fill="#fff" stroke="#d0d0e0" stroke-width="2"/>
+  <circle cx="62" cy="36" r="1.5" fill="#333"/>
+  <path d="M65 40 L72 38 L70 42 Z" fill="#f4a460"/>
+  <path d="M52 56 C50 60 46 62 42 60" fill="none" stroke="#f2b8c6" stroke-width="2"/>
+  <path d="M30 36 C30 32 32 30 36 32" fill="none" stroke="#f2b8c6" stroke-width="2"/>
+  <text x="40" y="74" font-size="9" fill="#c06070" text-anchor="middle" font-family="Georgia, serif" font-style="italic">love</text>
+</svg>
