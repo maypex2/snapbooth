@@ -1,6 +1,6 @@
-﻿{
+{
   "name": "BopBooth",
-  "short_name": "Snap",
+  "short_name": "BopBooth",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
