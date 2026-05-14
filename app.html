@@ -282,21 +282,44 @@
         top: calc(0.75rem + 38px) !important;                /* drop below the chip */
       }
       .ratio-chip { display: inline-flex !important; }       /* show compact chip */
-      /* Flash button: own pill, sits to the RIGHT of the ratio popover with a
-         visible gap. Hidden until the ratio chip is tapped (paired control). */
+      /* Flash button: permanent pill at top-RIGHT, mirroring the ratio chip
+         on the left. Independent of the ratio popover. */
       .flash-btn {
-        display: none !important;
+        display: inline-flex !important;
         position: absolute !important;
         z-index: 20;
-        top: calc(0.75rem + 38px);                           /* same row as the popover */
-        padding: 4px 12px !important;
+        top: 0.75rem;
+        right: 0.75rem;
+        left: auto !important;
+        padding: 5px 12px !important;
         background: rgba(0, 0, 0, 0.55) !important;
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         border-radius: 999px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.25);
       }
-      .flash-btn.is-revealed { display: inline-flex !important; }
+    }
+    /* Desktop: keep the flash pill visible too — same top-right placement.
+       The original Filters burger is hidden because the rail replaces it,
+       so flash can sit flush at the right edge. */
+    @media (min-width: 1024px) {
+      .flash-btn {
+        display: inline-flex !important;
+        position: absolute;
+        z-index: 20;
+        top: 0.75rem;
+        right: 0.75rem;
+        left: auto;
+        padding: 5px 12px;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: 999px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      }
+      /* Flip button also visible on desktop so users with multiple webcams
+         can switch — matches the mobile experience. */
+      #flip-cam-btn { display: flex !important; }
     }
     /* Glass cap chip-buttons too */
     .ratio-chip, .flash-btn {
@@ -311,7 +334,7 @@
     .mobile-filter-rail {
       display: none;
       gap: 8px;
-      bottom: calc(8px + 80px);                              /* just above capture btn */
+      bottom: calc(8px + 64px + 4px);                        /* tight gap above the 64px capture btn */
       left: 0;
       right: 0;
       padding: 0 16px;
@@ -328,9 +351,17 @@
     @media (max-width: 1023px) {
       .mobile-filter-rail { display: flex !important; }
     }
+    /* Desktop also gets the rail — same control surface for both viewports.
+       Sits above the capture button inside the camera card. */
+    @media (min-width: 1024px) {
+      .mobile-filter-rail {
+        display: flex !important;
+        bottom: calc(18px + 64px + 6px);
+      }
+    }
     body.cam-fullscreen .mobile-filter-rail {
       display: flex !important;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 28px + 80px);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 18px + 64px + 4px);
     }
     /* Hide rail during an active capture session for a clean shot */
     body.session-running .mobile-filter-rail { opacity: 0; pointer-events: none; transition: opacity .2s; }
@@ -377,15 +408,14 @@
        centered with it. Shown on mobile + whenever the camera is fullscreen so
        it stays reachable in both normal and immersive modes. */
     #flip-cam-btn {
-      left: calc(50% + 66px);                                 /* wider gap from capture */
-      bottom: calc(8px + (64px - 44px) / 2);                  /* matches mobile snap bottom + center */
+      left: calc(50% + 60px);                                 /* gap from capture */
+      bottom: calc(8px + (64px - 48px) / 2);                  /* vertically center on the 64px capture */
     }
     @media (min-width: 1024px) {
-      /* Desktop keeps the previous offset since #snap-btn-inner sits higher */
-      #flip-cam-btn { bottom: calc(18px + (64px - 44px) / 2); }
+      #flip-cam-btn { bottom: calc(18px + (64px - 48px) / 2); }
     }
     body.cam-fullscreen #flip-cam-btn {
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 18px + (64px - 44px) / 2) !important;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 18px + (64px - 48px) / 2) !important;
     }
     @media (max-width: 1023px) {
       #flip-cam-btn { display: flex !important; }
@@ -1358,13 +1388,12 @@
 
           <!-- Flip camera button (mobile / fullscreen only — see CSS) -->
           <button id="flip-cam-btn" type="button" aria-label="Switch camera"
-            class="hidden absolute z-[20] w-11 h-11 rounded-full bg-ink/70 hover:bg-ink/90 text-white border border-white/30 backdrop-blur-sm shadow-soft transition items-center justify-center">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-              <path d="M3 7h3l2-2h4l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
-              <path d="M9 13a3 3 0 0 0 5.2 2"/>
-              <path d="M15 13a3 3 0 0 0-5.2-2"/>
-              <path d="M8 11l1.5 1.5L11 11"/>
-              <path d="M16 15l-1.5-1.5L13 15"/>
+            class="hidden absolute z-[20] w-12 h-12 rounded-full bg-black/55 hover:bg-black/75 text-white border border-white/25 backdrop-blur-md shadow-soft transition items-center justify-center">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M2 12a10 10 0 0 1 16.7-7.4L21 7"/>
+              <polyline points="17 7 21 7 21 3"/>
+              <path d="M22 12a10 10 0 0 1-16.7 7.4L3 17"/>
+              <polyline points="7 17 3 17 3 21"/>
             </svg>
           </button>
 
@@ -1728,7 +1757,7 @@
   <script src="js/filters.js"></script>
   <script src="js/frames.js"></script>
   <script src="js/db.js"></script>
-  <script src="js/app.js?v=11"></script>
+  <script src="js/app.js?v=12"></script>
 
   <script>
       // ── Header-height CSS variable ──────────────────────────────────
@@ -1835,45 +1864,15 @@
         rail.appendChild(item);
       });
       rail.dataset.built = '1';
-      // Hide the desktop Filters chip on mobile — the rail replaces it
-      if (window.matchMedia('(max-width: 1023px)').matches) {
-        const ft = document.getElementById('filters-toggle');
-        if (ft) ft.style.display = 'none';
-      }
+      // Hide the original Filters burger chip on both mobile + desktop — the
+      // horizontal rail above the capture button replaces it everywhere.
+      const ft = document.getElementById('filters-toggle');
+      if (ft) ft.style.display = 'none';
+      const fp = document.getElementById('filters-panel');
+      if (fp) fp.style.display = 'none';
     }
     document.addEventListener('DOMContentLoaded', buildMobileFilterRail);
 
-    // On mobile, pair the flash button visibility with the ratio popover so
-    // both controls live behind the single ratio chip — but render flash as
-    // its own pill sitting to the RIGHT of the ratio popover (separated).
-    function positionFlashPill() {
-      const bar = document.getElementById('ratio-bar');
-      const flash = document.getElementById('flash-btn');
-      if (!bar || !flash) return;
-      const r = bar.getBoundingClientRect();
-      const parent = bar.offsetParent || bar.parentElement;
-      const pr = parent ? parent.getBoundingClientRect() : { left: 0 };
-      // 12px gap between the ratio pill's right edge and the flash pill
-      flash.style.left = (r.right - pr.left + 12) + 'px';
-    }
-    function syncFlashReveal() {
-      const bar = document.getElementById('ratio-bar');
-      const flash = document.getElementById('flash-btn');
-      if (!bar || !flash) return;
-      if (!window.matchMedia('(max-width: 1023px)').matches) return;
-      if (bar.classList.contains('is-open')) {
-        flash.classList.add('is-revealed');
-        requestAnimationFrame(positionFlashPill);
-      } else {
-        flash.classList.remove('is-revealed');
-      }
-    }
-    document.addEventListener('DOMContentLoaded', () => {
-      // Watch for ratio-bar open/close changes to mirror flash visibility
-      const bar = document.getElementById('ratio-bar');
-      if (bar) new MutationObserver(syncFlashReveal).observe(bar, { attributes: true, attributeFilter: ['class'] });
-      window.addEventListener('resize', () => { syncFlashReveal(); });
-    });
 
     // Camera aspect-ratio selector
     function setAspect(btn) {
