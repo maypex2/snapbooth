@@ -564,6 +564,18 @@ async function startSession() {
   // switch layouts mid-capture.
   document.body.classList.add('session-running');
 
+  // ── Performance: drop the live CSS filter from <video> during the session ──
+  // A CSS filter on a 30fps video element forces a full GPU composite pass per
+  // frame — that's what was making the countdown stutter on mid-range Androids
+  // (Samsung A52s testing). Capture-time canvas filter still runs, so the
+  // OUTPUT photos look identical — we just stop hammering the live preview.
+  try {
+    if (video) {
+      video.style.setProperty('filter', 'none', 'important');
+      video.style.setProperty('-webkit-filter', 'none', 'important');
+    }
+  } catch {}
+
   // First-tap behavior: if the camera isn't running yet, turn it on
   // and proceed immediately to the capture session.
   if (!cameraReady) {
