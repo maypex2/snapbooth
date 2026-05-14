@@ -387,8 +387,26 @@ function getCaptureCrop() {
 function captureFrame() {
   return new Promise(resolve => {
     const { sx, sy, sw, sh } = getCaptureCrop();
-    canvas.width  = sw;
-    canvas.height = sh;
+
+    // ── Cap output dimensions at MAX_CAPTURE_EDGE px ──
+    // Back-cam at 4K (3840×2160) gave the worst experience: each captureFrame
+    // was running a synchronous toDataURL on a 4K canvas which took 1–2s
+    // and froze the main thread between countdowns (the "2-second pause
+    // after 1" your friend saw). Capping the long edge at 1920px:
+    //   - Cuts encode time ~4× (15MP → 4MP)
+    //   - Output still looks great in strips (downscaled further anyway)
+    //   - Front-cam already at 720p is unaffected — no upscale
+    //   - Works identically on iOS Safari (toBlob is supported since iOS 13).
+    const MAX_CAPTURE_EDGE = 1920;
+    let dw = sw, dh = sh;
+    const longest = Math.max(sw, sh);
+    if (longest > MAX_CAPTURE_EDGE) {
+      const k = MAX_CAPTURE_EDGE / longest;
+      dw = Math.round(sw * k);
+      dh = Math.round(sh * k);
+    }
+    canvas.width  = dw;
+    canvas.height = dh;
     ctx.save();
     if (mirrorCamera) {
       ctx.translate(canvas.width, 0);
@@ -397,13 +415,30 @@ function captureFrame() {
     if (ctxFilterSupported() && currentFilter && currentFilter !== 'none') {
       ctx.filter = FILTER_CSS[currentFilter] || 'none';
     }
-    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, dw, dh);
     ctx.restore();
     ctx.filter = 'none';
     applyFilterToCanvas(currentFilter);
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.src = canvas.toDataURL('image/jpeg', 0.92);
+
+    // ── Async toBlob instead of sync toDataURL ──
+    // toDataURL is base64-encoding the entire canvas on the main thread —
+    // visible UI freeze on big captures. toBlob runs the JPEG encode on a
+    // background thread, so the next countdown can start immediately. The
+    // resulting blob URL is cheaper to decode than a data URL on iOS too.
+    const handleSrc = (src) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(img); // never hang the session
+      img.src = src;
+    };
+    if (canvas.toBlob) {
+      canvas.toBlob(blob => {
+        if (blob) handleSrc(URL.createObjectURL(blob));
+        else handleSrc(canvas.toDataURL('image/jpeg', 0.92));
+      }, 'image/jpeg', 0.9);
+    } else {
+      handleSrc(canvas.toDataURL('image/jpeg', 0.92));
+    }
   });
 }
 

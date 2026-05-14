@@ -1181,6 +1181,8 @@
             class="relative w-full rounded-[28px] overflow-hidden bg-white shadow-card border border-sand/70"
             style="aspect-ratio:1/1;">
           <video id="video" autoplay muted playsinline></video>
+          <!-- WebGL prototype canvas — hidden by default, shown when ?webgl=1 -->
+          <canvas id="webgl-canvas" class="hidden absolute inset-0 w-full h-full object-cover"></canvas>
           <canvas id="canvas"></canvas>
           <canvas id="overlay-canvas"></canvas>
 
@@ -1833,7 +1835,89 @@
   <script src="js/filters.js"></script>
   <script src="js/frames.js"></script>
   <script src="js/db.js"></script>
-  <script src="js/app.js?v=17"></script>
+  <script src="js/webgl-filter.js?v=1"></script>
+  <script src="js/app.js?v=19"></script>
+
+  <script>
+    // ── WebGL filter prototype activation ──
+    // Enable via ?webgl=1 in the URL. Keeps the existing CSS-filter path
+    // intact as the default so we can compare side-by-side and revert
+    // instantly if any phone misbehaves.
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const enable = params.get('webgl') === '1';
+      if (!enable) return;
+      if (!window.WebGLFilter || !window.WebGLFilter.supported) {
+        console.warn('[WebGL] Not supported — keeping CSS filter fallback.');
+        return;
+      }
+
+      const video = document.getElementById('video');
+      const glCanvas = document.getElementById('webgl-canvas');
+      if (!video || !glCanvas) return;
+
+      let glFilter = null;
+
+      function activate() {
+        if (glFilter) return;
+        try {
+          glFilter = new WebGLFilter(glCanvas, video);
+        } catch (e) {
+          console.error('[WebGL] init failed', e);
+          return;
+        }
+        // Show the GL canvas, hide the underlying <video>. Same visual
+        // size + position; the GL canvas takes over rendering duties.
+        glCanvas.classList.remove('hidden');
+        video.style.visibility = 'hidden';
+        // Mirror state matches the current camera facing
+        glFilter.setMirror(typeof mirrorCamera !== 'undefined' ? mirrorCamera : true);
+        glFilter.setFilter(typeof currentFilter !== 'undefined' ? currentFilter : 'none');
+        glFilter.start();
+        console.log('[WebGL] filter pipeline active');
+
+        // Hook the existing setFilter() to also drive the shader uniforms.
+        if (typeof window.setFilter === 'function' && !window.__sbWebGLPatched) {
+          const orig = window.setFilter;
+          window.setFilter = function (f, btn) {
+            const ret = orig(f, btn);
+            if (glFilter) {
+              try { glFilter.setFilter(f); } catch (e) {}
+              // Once the shader handles the filter, the <video> doesn't
+              // need a CSS filter at all — strip it to avoid double-pass.
+              try {
+                video.style.setProperty('filter', 'none', 'important');
+                video.style.setProperty('-webkit-filter', 'none', 'important');
+              } catch (e) {}
+            }
+            return ret;
+          };
+          window.__sbWebGLPatched = true;
+        }
+      }
+
+      // Wait for the camera stream to be live before activating.
+      if (video.readyState >= 2 && video.videoWidth > 0) {
+        activate();
+      } else {
+        video.addEventListener('loadeddata', activate, { once: true });
+        video.addEventListener('playing', activate, { once: true });
+      }
+
+      // Re-mirror whenever the user flips the camera
+      const flipBtn = document.getElementById('flip-cam-btn');
+      if (flipBtn) {
+        flipBtn.addEventListener('click', () => {
+          // After flipCamera resolves the new stream, sync the shader's mirror
+          setTimeout(() => {
+            if (glFilter && typeof mirrorCamera !== 'undefined') {
+              glFilter.setMirror(mirrorCamera);
+            }
+          }, 800);
+        });
+      }
+    })();
+  </script>
 
   <script>
       // ── Header-height CSS variable ──────────────────────────────────
