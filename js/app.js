@@ -82,17 +82,24 @@ async function enableCamera(facing) {
   // phones (Samsung A52s, etc.). Forcing 1080p on a budget Android picks a
   // slow track that runs at 15fps and lags the countdown + filter overlay.
   // Selfies don't need 1080p; the strip output is downscaled anyway.
-  // Back cam: stay aggressive — 4K → 1080p → 720p (back sensors are stronger).
+  //
+  // Back cam: SAME 720p-first strategy. The previous 4K-first ordering was
+  // the cause of "back cam less smooth than front cam" — 4K stream + CSS
+  // filter on the live <video> was burning 4× the GPU per frame, fighting
+  // for the same GPU resources as the filter rail's scroll. 720p back cam
+  // is still plenty for the strip output (down-scaled per slot anyway) and
+  // the user-perceived smoothness gain is huge. Higher tiers stay available
+  // for users who genuinely need them but won't be auto-selected on slow phones.
   const tiers = isBack ? [
-    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
-    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
-    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
+    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 24, max: 24 } }, audio: false },
+    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 24, max: 24 } }, audio: false },
+    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24, max: 24 } }, audio: false },
     { video: { facingMode: { ideal: 'environment' } }, audio: false },
     { video: true, audio: false },
   ] : [
-    { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
-    { video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
-    { video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
+    { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 24, max: 24 } }, audio: false },
+    { video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 24, max: 24 } }, audio: false },
+    { video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24, max: 24 } }, audio: false },
     { video: { facingMode: 'user' }, audio: false },
     { video: true, audio: false },
   ];
@@ -1268,27 +1275,36 @@ function playPrinterAnim(srcCanvas) {
   // Drop any in-flight overlay so rapid re-clicks don't stack.
   document.querySelectorAll('.printer-anim-overlay').forEach(n => n.remove());
 
+  // ── Render the strip as a CANVAS (not an <img>) ──
+  // The old path encoded the full-resolution strip to PNG via toBlob
+  // (400-800ms on back-cam captures) before the <img> could even start
+  // loading. By the time it appeared, the modal had already opened on
+  // top — user never saw the animation.
+  //
+  // Canvas-to-canvas drawImage is a GPU blit (~5ms regardless of size).
+  // The animation runs visibly INSTANTLY and the printer rasterizes
+  // pixels directly without any encode/decode round-trip.
+  //
+  // Output capped at 600px wide — the printer-slot animation only needs
+  // thumbnail quality; full 1920px would burn GPU memory for nothing.
+  const MAX_W = 600;
+  const scale = Math.min(1, MAX_W / src.width);
+  const dw = Math.max(1, Math.round(src.width  * scale));
+  const dh = Math.max(1, Math.round(src.height * scale));
+  const stripCanvas = document.createElement('canvas');
+  stripCanvas.className = 'printer-anim-strip';
+  stripCanvas.width  = dw;
+  stripCanvas.height = dh;
+  stripCanvas.getContext('2d', { alpha: false }).drawImage(src, 0, 0, dw, dh);
+
   const overlay = document.createElement('div');
   overlay.className = 'printer-anim-overlay';
   overlay.innerHTML =
     '<div class="printer-anim-slot"></div>' +
-    '<div class="printer-anim-clip"><img class="printer-anim-strip" alt=""></div>';
-  const img = overlay.querySelector('img');
+    '<div class="printer-anim-clip"></div>';
+  overlay.querySelector('.printer-anim-clip').appendChild(stripCanvas);
+  const img = stripCanvas;  // animation code below treats it the same
   const slot = overlay.querySelector('.printer-anim-slot');
-
-  // Encode the strip canvas to an image asynchronously. toDataURL on a big
-  // strip canvas is synchronous and takes ~1–2s on mid-range phones, which
-  // is what caused the ~2s frozen pause right after capture before the
-  // printer animation could appear. toBlob runs off the main thread, so the
-  // overlay can be inserted + animated immediately and the strip image just
-  // pops in as soon as it's encoded.
-  if (src.toBlob) {
-    src.toBlob(blob => {
-      if (blob && img) img.src = URL.createObjectURL(blob);
-    }, 'image/png');
-  } else {
-    try { img.src = src.toDataURL('image/png'); } catch {}
-  }
   // Once the image is laid out, size the slot to match the strip's
   // rendered width so the strip looks like it's emerging from a slot
   // that's the right size, not a tiny mouth (especially for wide layouts
@@ -1306,31 +1322,27 @@ function playPrinterAnim(srcCanvas) {
     animDur = Math.max(2000, Math.min(3500, Math.round(3300 - h * 1.4)));
     img.style.animationDuration = animDur + 'ms';
   }
-  img.addEventListener('load', () => requestAnimationFrame(() => {
+  // Canvas is already drawn — no load event needed (canvases don't fire one).
+  // Append + measure + start the animation on the next paint, all in one go.
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => {
     syncSlotWidth();
     syncAnimDuration();
-  }));
-  document.body.appendChild(overlay);
-  if (img.complete && img.src) requestAnimationFrame(() => { syncSlotWidth(); syncAnimDuration(); });
-  requestAnimationFrame(() => overlay.classList.add('go'));
+    overlay.classList.add('go');
+  });
 
   // Auto-dismiss ~400ms after the (now dynamic) animation finishes.
-  const cleanupBlob = () => {
-    if (img && img.src && img.src.startsWith('blob:')) {
-      try { URL.revokeObjectURL(img.src); } catch {}
-    }
-  };
   const dismissAfter = () => {
     overlay.classList.remove('go');
     overlay.classList.add('gone');
-    setTimeout(() => { cleanupBlob(); overlay.remove(); }, 400);
+    setTimeout(() => overlay.remove(), 400);
   };
   requestAnimationFrame(() => setTimeout(dismissAfter, animDur + 400));
 
   // Tap to skip — don't trap the user.
   overlay.addEventListener('click', () => {
     overlay.classList.add('gone');
-    setTimeout(() => { cleanupBlob(); overlay.remove(); }, 250);
+    setTimeout(() => overlay.remove(), 250);
   });
 }
 
