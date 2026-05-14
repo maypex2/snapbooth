@@ -249,16 +249,24 @@
       z-index: 9999;
     }
 
-    /* Capture button sits above the home-indicator / gesture area */
-    #snap-btn-inner {
+    /* ── Capture row (flex container holding capture + flip) ──
+       Both buttons are flex children so they ALWAYS align as a unit, even
+       when the camera card resizes (aspect-ratio changes). Spacer divs on
+       both sides keep the capture button visually centered while flip lives
+       on the right — symmetric layout that doesn't break across ratios. */
+    .capture-row {
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      transition: opacity 0.18s ease;
+    }
+    @media (max-width: 1023px) { .capture-row { bottom: 10px; } }
+    body.cam-fullscreen .capture-row {
       bottom: calc(env(safe-area-inset-bottom, 0px) + 18px) !important;
-      transition: opacity 0.18s ease, transform 0.12s ease;
     }
-    /* On mobile (normal, non-fullscreen) push it slightly lower toward the
-       bottom edge so it doesn't crowd the filter rail above it. */
-    @media (max-width: 1023px) {
-      #snap-btn-inner { bottom: 8px !important; }
-    }
+    .cr-side { width: 48px; flex-shrink: 0; }                /* matches flip btn width for symmetry */
+    .cr-side--left { pointer-events: none; }                 /* invisible spacer */
+    #snap-btn-inner:active { transform: scale(0.95); }
 
     /* ── Glass capture button ── */
     .snap-glass {
@@ -272,7 +280,7 @@
         inset 0 -2px 6px rgba(0,0,0,0.18);
     }
     .snap-glass:hover { background: rgba(255, 255, 255, 0.28); }
-    .snap-glass:active { transform: translate(-50%, 2px) scale(0.96); }
+    .snap-glass:active { transform: scale(0.95); }
 
     /* ── Mobile ratio chip + flash button ── */
     @media (max-width: 1023px) {
@@ -317,9 +325,9 @@
         border-radius: 999px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.25);
       }
-      /* Flip button also visible on desktop so users with multiple webcams
-         can switch — matches the mobile experience. */
-      #flip-cam-btn { display: flex !important; }
+      /* Flip button visible on desktop too — multiple-webcam users get it,
+         single-webcam users see it inert but harmless. */
+      .cr-side--right #flip-cam-btn { display: inline-flex; }
     }
     /* Glass cap chip-buttons too */
     .ratio-chip, .flash-btn {
@@ -334,7 +342,7 @@
     .mobile-filter-rail {
       display: none;
       gap: 8px;
-      bottom: calc(8px + 64px + 4px);                        /* tight gap above the 64px capture btn */
+      bottom: calc(10px + 64px + 6px);                       /* clears the mobile capture row */
       left: 0;
       right: 0;
       padding: 0 16px;
@@ -404,24 +412,54 @@
     }
     .mfr-item.active .mfr-label { color: #fff; font-weight: 600; }
 
+    /* ── Active filter name badge ── */
+    .filter-name-badge {
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%, 6px);
+      bottom: calc(10px + 64px + 6px + 64px + 14px);          /* sits above the filter rail */
+      z-index: 22;
+      pointer-events: none;
+      opacity: 0;
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #fff;
+      font-family: 'DM Serif Display', serif;
+      font-style: italic;
+      font-size: 16px;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      box-shadow: 0 6px 22px rgba(0,0,0,0.32);
+      transition: opacity .25s ease, transform .25s cubic-bezier(.2,.7,.2,1);
+    }
+    .filter-name-badge.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    @media (min-width: 1024px) {
+      .filter-name-badge {
+        bottom: calc(18px + 64px + 6px + 64px + 14px);
+        font-size: 17px;
+      }
+    }
+    body.cam-fullscreen .filter-name-badge {
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 18px + 64px + 6px + 64px + 14px);
+    }
+    /* Hide during an active session so it doesn't appear in mid-capture */
+    body.session-running .filter-name-badge { opacity: 0 !important; }
+
     /* Flip-camera button — sits to the right of the capture button, vertically
        centered with it. Shown on mobile + whenever the camera is fullscreen so
        it stays reachable in both normal and immersive modes. */
-    #flip-cam-btn {
-      left: calc(50% + 60px);                                 /* gap from capture */
-      bottom: calc(8px + (64px - 48px) / 2);                  /* vertically center on the 64px capture */
-    }
-    @media (min-width: 1024px) {
-      #flip-cam-btn { bottom: calc(18px + (64px - 48px) / 2); }
-    }
-    body.cam-fullscreen #flip-cam-btn {
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 18px + (64px - 48px) / 2) !important;
-    }
+    /* Flip button display modes (positioning is handled by the flex row above) */
     @media (max-width: 1023px) {
-      #flip-cam-btn { display: flex !important; }
+      .cr-side--right #flip-cam-btn { display: inline-flex; }
     }
-    body.cam-fullscreen #flip-cam-btn { display: flex !important; }
-    /* Hide during an active capture session — switching mid-shoot would break the strip. */
+    body.cam-fullscreen .cr-side--right #flip-cam-btn { display: inline-flex !important; }
+    /* Dim during an active capture session — switching mid-shoot would break the strip. */
     body.session-running #flip-cam-btn { opacity: 0.35; pointer-events: none; }
     #flip-cam-btn.flipping svg { animation: flipSpin 0.5s ease; }
     @keyframes flipSpin {
@@ -1375,27 +1413,40 @@
                capture button. One-tap selection, auto-hides during capture. -->
           <div id="mobile-filter-rail" class="mobile-filter-rail hidden absolute z-[19]" aria-label="Filter strip"></div>
 
-          <!-- Inline capture button — glassmorphism (frosted translucent) -->
-          <button id="snap-btn-inner" onclick="document.getElementById('snap-btn').click()" type="button"
-            aria-label="Capture"
-            class="absolute left-1/2 -translate-x-1/2 bottom-6 z-[20] w-16 h-16 rounded-full text-white transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center snap-glass">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M8 2h8l2 3H6l2-3z" />
-              <rect x="2" y="5" width="20" height="16" rx="3" />
-            </svg>
-          </button>
+          <!-- Active-filter name badge — fades in briefly when a filter is picked -->
+          <div id="filter-name-badge" class="filter-name-badge" aria-live="polite"></div>
 
-          <!-- Flip camera button (mobile / fullscreen only — see CSS) -->
-          <button id="flip-cam-btn" type="button" aria-label="Switch camera"
-            class="hidden absolute z-[20] w-12 h-12 rounded-full bg-black/55 hover:bg-black/75 text-white border border-white/25 backdrop-blur-md shadow-soft transition items-center justify-center">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-              <path d="M2 12a10 10 0 0 1 16.7-7.4L21 7"/>
-              <polyline points="17 7 21 7 21 3"/>
-              <path d="M22 12a10 10 0 0 1-16.7 7.4L3 17"/>
-              <polyline points="7 17 3 17 3 21"/>
-            </svg>
-          </button>
+          <!-- Capture row: capture + flip wrapped in a flex container so they
+               always sit together as a unit, perfectly centered regardless of
+               camera aspect ratio. -->
+          <div id="capture-row" class="capture-row absolute z-[20] flex items-center gap-4">
+            <!-- Spacer (left) keeps capture visually centered while flip lives right -->
+            <div class="cr-side cr-side--left"></div>
+
+            <!-- Inline capture button — glassmorphism (frosted translucent) -->
+            <button id="snap-btn-inner" onclick="document.getElementById('snap-btn').click()" type="button"
+              aria-label="Capture"
+              class="w-16 h-16 rounded-full text-white transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center snap-glass">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M8 2h8l2 3H6l2-3z" />
+                <rect x="2" y="5" width="20" height="16" rx="3" />
+              </svg>
+            </button>
+
+            <!-- Flip camera button (sits as flex sibling — always aligned) -->
+            <div class="cr-side cr-side--right">
+              <button id="flip-cam-btn" type="button" aria-label="Switch camera"
+                class="w-12 h-12 rounded-full bg-black/55 hover:bg-black/75 text-white border border-white/25 backdrop-blur-md shadow-soft transition items-center justify-center inline-flex">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <path d="M2 12a10 10 0 0 1 16.7-7.4L21 7"/>
+                  <polyline points="17 7 21 7 21 3"/>
+                  <path d="M22 12a10 10 0 0 1-16.7 7.4L3 17"/>
+                  <polyline points="7 17 3 17 3 21"/>
+                </svg>
+              </button>
+            </div>
+          </div>
 
           <!-- Camera states -->
           <div id="cam-state" class="absolute inset-0 flex items-center justify-center transition-opacity duration-300">
@@ -1757,7 +1808,7 @@
   <script src="js/filters.js"></script>
   <script src="js/frames.js"></script>
   <script src="js/db.js"></script>
-  <script src="js/app.js?v=12"></script>
+  <script src="js/app.js?v=14"></script>
 
   <script>
       // ── Header-height CSS variable ──────────────────────────────────
@@ -1839,6 +1890,19 @@
     }
     window.__sbFlashOn = () => flashOn;   // exposed for app.js capture flow
 
+    // ── Active filter name badge ──
+    // Briefly shows the filter name after selection so users feel confident
+    // it changed (the rail's ring indicator can be subtle on dark scenes).
+    let __filterBadgeTimer = null;
+    function showFilterBadge(name) {
+      const badge = document.getElementById('filter-name-badge');
+      if (!badge) return;
+      badge.textContent = name;
+      badge.classList.add('is-visible');
+      clearTimeout(__filterBadgeTimer);
+      __filterBadgeTimer = setTimeout(() => badge.classList.remove('is-visible'), 1500);
+    }
+
     // ── Mobile filter carousel — mirrors filter-btn list above into a horizontal rail ──
     function buildMobileFilterRail() {
       const rail = document.getElementById('mobile-filter-rail');
@@ -1860,6 +1924,8 @@
           rail.querySelectorAll('.mfr-item').forEach(b => b.classList.toggle('active', b.dataset.f === f));
           // Center the chosen filter in the rail.
           item.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          // Show the filter-name badge briefly so users feel confident the filter changed.
+          showFilterBadge(name);
         });
         rail.appendChild(item);
       });
