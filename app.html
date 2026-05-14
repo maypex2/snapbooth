@@ -1836,7 +1836,7 @@
   <script src="js/frames.js"></script>
   <script src="js/db.js"></script>
   <script src="js/webgl-filter.js?v=2"></script>
-  <script src="js/app.js?v=22"></script>
+  <script src="js/app.js?v=24"></script>
 
   <script>
     // ── WebGL filter pipeline (now DEFAULT) ──
@@ -1909,16 +1909,65 @@
         video.addEventListener('playing', activate, { once: true });
       }
 
-      // Re-mirror whenever the user flips the camera
+      // ── Mirror sync (deterministic, no timer guess) ──
+      // applyFacingMirror() in app.js toggles `body.no-mirror` whenever the
+      // facing changes. Watch that class directly so the shader's mirror
+      // uniform updates the moment the camera state actually changes.
+      function syncMirrorFromBody() {
+        if (!glFilter) return;
+        const isBack = document.body.classList.contains('no-mirror');
+        glFilter.setMirror(!isBack);
+      }
+      new MutationObserver(syncMirrorFromBody)
+        .observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+      // ── Flip-transition handling ──
+      // The "mirror duplication" bug after front→back→front happened because
+      // the WebGL render loop kept calling texImage2D while the underlying
+      // MediaStream was being swapped — half-uploaded frames + a mirror
+      // uniform toggling mid-frame produced ghost double-images. Fix is to
+      // hard-stop the GL pipeline during the swap, fully reset GPU state,
+      // and resume cleanly once the new stream is actually producing frames.
       const flipBtn = document.getElementById('flip-cam-btn');
       if (flipBtn) {
         flipBtn.addEventListener('click', () => {
-          // After flipCamera resolves the new stream, sync the shader's mirror
-          setTimeout(() => {
-            if (glFilter && typeof mirrorCamera !== 'undefined') {
-              glFilter.setMirror(mirrorCamera);
+          if (!glFilter) return;
+          // Stop rendering immediately — no more texture uploads from a
+          // transitioning video element.
+          glFilter.stop();
+          // Clear the canvas to black so any stale frame isn't visible
+          // while the new stream warms up. preserveDrawingBuffer was false,
+          // but an explicit clear is still good hygiene.
+          try {
+            const gl = glFilter.gl;
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+          } catch (e) {}
+
+          // Resume only after the new stream is producing real frames.
+          // Poll videoWidth + a fresh frame appearing, up to 2s.
+          let tries = 0;
+          const lastSize = { w: video.videoWidth, h: video.videoHeight };
+          function tryResume() {
+            tries++;
+            const ready = video.readyState >= 2 && !video.paused
+                       && video.videoWidth > 0
+                       && (video.videoWidth !== lastSize.w || video.videoHeight !== lastSize.h || tries > 6);
+            if (ready) {
+              // Re-sync everything from the new ground truth
+              syncMirrorFromBody();
+              try { glFilter.setFilter(currentFilter || 'none'); } catch (e) {}
+              glFilter.start();
+              return;
             }
-          }, 800);
+            if (tries < 40) setTimeout(tryResume, 50);
+            else {
+              // Last-resort restart even if signals weren't all detected
+              syncMirrorFromBody();
+              glFilter.start();
+            }
+          }
+          setTimeout(tryResume, 100);
         });
       }
     })();
