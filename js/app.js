@@ -564,17 +564,8 @@ async function startSession() {
   // switch layouts mid-capture.
   document.body.classList.add('session-running');
 
-  // ── Performance: drop the live CSS filter from <video> during the session ──
-  // A CSS filter on a 30fps video element forces a full GPU composite pass per
-  // frame — that's what was making the countdown stutter on mid-range Androids
-  // (Samsung A52s testing). Capture-time canvas filter still runs, so the
-  // OUTPUT photos look identical — we just stop hammering the live preview.
-  try {
-    if (video) {
-      video.style.setProperty('filter', 'none', 'important');
-      video.style.setProperty('-webkit-filter', 'none', 'important');
-    }
-  } catch {}
+  // (Live CSS filter is kept ON during the session — users want WYSIWYG.
+  // The 720p front-cam tier + 30fps cap is what keeps things smooth now.)
 
   // First-tap behavior: if the camera isn't running yet, turn it on
   // and proceed immediately to the capture session.
@@ -1004,12 +995,27 @@ function suspendLivePreview() {
 function resumeLivePreview() {
   try {
     if (video && stream) {
+      // Resume playback FIRST without any filter — applying a CSS filter to
+      // a paused/just-resumed video element forces an extra composite pass
+      // while the decode pipeline is still warming up, which is exactly what
+      // makes the retake transition stutter on low-end phones.
+      video.style.setProperty('filter', 'none', 'important');
+      video.style.setProperty('-webkit-filter', 'none', 'important');
       const p = video.play();
       if (p && p.catch) p.catch(() => {});
-      // Restore the active filter
+      // Reapply the user's filter only AFTER the video is actually playing
+      // and the close animation has had a chance to finish (rAF + ~120ms).
+      // This keeps the retake transition smooth and pushes the filter
+      // composite cost out of the critical user-perceived window.
       const css = (typeof FILTER_CSS !== 'undefined' && currentFilter && FILTER_CSS[currentFilter]) || 'none';
-      video.style.setProperty('filter', css, 'important');
-      video.style.setProperty('-webkit-filter', css, 'important');
+      if (css && css !== 'none') {
+        const reapply = () => {
+          video.style.setProperty('filter', css, 'important');
+          video.style.setProperty('-webkit-filter', css, 'important');
+        };
+        // Wait for the next paint, then ~120ms more (covers the modal slide).
+        requestAnimationFrame(() => setTimeout(reapply, 120));
+      }
     }
   } catch {}
 }
@@ -1025,20 +1031,42 @@ function openPreview(animate = false) {
   // preview is still hidden.
   if (animate) {
     playPrinterAnim();
+    // Reveal the preview modal roughly when the printer-slide animation
+    // finishes. Shortened from 2400ms — the toBlob encoding is now async so
+    // there's no longer a frozen pre-anim pause to compensate for.
     setTimeout(() => {
       overlay.classList.add('open');
       if (header) header.style.display = 'none';
-    }, 2400);
+    }, 1800);
     return;
   }
   overlay.classList.add('open');
   if (header) header.style.display = 'none';
 }
 function closePreview() {
+  // Drop the modal first so the slide-out animation begins immediately on
+  // the next frame — heavy work (camera resume, filter reapply, GC) happens
+  // AFTER the visual transition completes, not blocking it.
   document.getElementById('preview-overlay').classList.remove('open');
   const header = document.querySelector('header');
   if (header) header.style.display = '';
-  resumeLivePreview();
+
+  // Clean up any leftover printer-animation overlay + its blob URL so we
+  // don't keep a multi-MB image hanging in GPU memory after retake.
+  document.querySelectorAll('.printer-anim-overlay').forEach(node => {
+    const img = node.querySelector('img');
+    if (img && img.src && img.src.startsWith('blob:')) {
+      try { URL.revokeObjectURL(img.src); } catch {}
+    }
+    node.remove();
+  });
+
+  // Defer the camera resume until AFTER the close transition has had time
+  // to render — keeps the slide-out smooth on low-end devices. Using rAF
+  // chain rather than setTimeout(0) so we hit an actual paint boundary.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    resumeLivePreview();
+  }));
 }
 
 // ── Customize ──
@@ -1188,8 +1216,6 @@ function ejectPolaroid(img) {
 function playPrinterAnim(srcCanvas) {
   const src = srcCanvas || document.getElementById('strip-canvas');
   if (!src || !src.width || !src.height) return;
-  let dataUrl;
-  try { dataUrl = src.toDataURL('image/png'); } catch { return; }
 
   // Drop any in-flight overlay so rapid re-clicks don't stack.
   document.querySelectorAll('.printer-anim-overlay').forEach(n => n.remove());
@@ -1201,6 +1227,20 @@ function playPrinterAnim(srcCanvas) {
     '<div class="printer-anim-clip"><img class="printer-anim-strip" alt=""></div>';
   const img = overlay.querySelector('img');
   const slot = overlay.querySelector('.printer-anim-slot');
+
+  // Encode the strip canvas to an image asynchronously. toDataURL on a big
+  // strip canvas is synchronous and takes ~1–2s on mid-range phones, which
+  // is what caused the ~2s frozen pause right after capture before the
+  // printer animation could appear. toBlob runs off the main thread, so the
+  // overlay can be inserted + animated immediately and the strip image just
+  // pops in as soon as it's encoded.
+  if (src.toBlob) {
+    src.toBlob(blob => {
+      if (blob && img) img.src = URL.createObjectURL(blob);
+    }, 'image/png');
+  } else {
+    try { img.src = src.toDataURL('image/png'); } catch {}
+  }
   // Once the image is laid out, size the slot to match the strip's
   // rendered width so the strip looks like it's emerging from a slot
   // that's the right size, not a tiny mouth (especially for wide layouts
@@ -1222,23 +1262,27 @@ function playPrinterAnim(srcCanvas) {
     syncSlotWidth();
     syncAnimDuration();
   }));
-  img.src = dataUrl;
   document.body.appendChild(overlay);
-  if (img.complete) requestAnimationFrame(() => { syncSlotWidth(); syncAnimDuration(); });
+  if (img.complete && img.src) requestAnimationFrame(() => { syncSlotWidth(); syncAnimDuration(); });
   requestAnimationFrame(() => overlay.classList.add('go'));
 
   // Auto-dismiss ~400ms after the (now dynamic) animation finishes.
+  const cleanupBlob = () => {
+    if (img && img.src && img.src.startsWith('blob:')) {
+      try { URL.revokeObjectURL(img.src); } catch {}
+    }
+  };
   const dismissAfter = () => {
     overlay.classList.remove('go');
     overlay.classList.add('gone');
-    setTimeout(() => overlay.remove(), 400);
+    setTimeout(() => { cleanupBlob(); overlay.remove(); }, 400);
   };
   requestAnimationFrame(() => setTimeout(dismissAfter, animDur + 400));
 
   // Tap to skip — don't trap the user.
   overlay.addEventListener('click', () => {
     overlay.classList.add('gone');
-    setTimeout(() => overlay.remove(), 250);
+    setTimeout(() => { cleanupBlob(); overlay.remove(); }, 250);
   });
 }
 
