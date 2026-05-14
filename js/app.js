@@ -1031,13 +1031,15 @@ function openPreview(animate = false) {
   // preview is still hidden.
   if (animate) {
     playPrinterAnim();
-    // Reveal the preview modal roughly when the printer-slide animation
-    // finishes. Shortened from 2400ms — the toBlob encoding is now async so
-    // there's no longer a frozen pre-anim pause to compensate for.
+    // Wait long enough for the printer-slide animation to actually finish
+    // before the preview modal slides up over it. Front-cam at 720p encodes
+    // in <100ms (anim plays smoothly) but the modal was previously covering
+    // it at 1800ms before it could finish. Back-cam at 4K takes ~300-500ms
+    // to encode, so we need extra runway too. 2400ms covers both reliably.
     setTimeout(() => {
       overlay.classList.add('open');
       if (header) header.style.display = 'none';
-    }, 1800);
+    }, 2400);
     return;
   }
   overlay.classList.add('open');

@@ -350,10 +350,22 @@
       overflow-y: hidden;
       scrollbar-width: none;
       -ms-overflow-style: none;
-      scroll-snap-type: x proximity;
       -webkit-overflow-scrolling: touch;
-      mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent);
-      -webkit-mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+      /* ── Low-end-device scroll optimizations ──
+         - will-change tells the browser to promote the rail to its own
+           compositor layer up front so scrolling doesn't trigger repaints
+           on the entire viewport.
+         - contain: layout style paint isolates the rail so scroll work
+           never causes reflows outside this element.
+         - translate3d nudges the layer onto the GPU on older Androids that
+           don't auto-promote on overflow-scroll alone.
+         Scroll-snap was removed — on budget phones it forces an extra
+         settle calculation per frame and the smoothness loss is bigger than
+         the snap benefit. */
+      will-change: scroll-position;
+      contain: layout style paint;
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
     }
     .mobile-filter-rail::-webkit-scrollbar { display: none; }
     @media (max-width: 1023px) {
@@ -375,7 +387,6 @@
     body.session-running .mobile-filter-rail { opacity: 0; pointer-events: none; transition: opacity .2s; }
     .mfr-item {
       flex: 0 0 auto;
-      scroll-snap-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -385,6 +396,11 @@
       padding: 4px 2px;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
+      /* Each item gets its own compositor layer + paint containment so
+         scrolling 27 filtered thumbs doesn't repaint the rail on every
+         frame on a low-end GPU. */
+      contain: layout paint;
+      transform: translateZ(0);
     }
     .mfr-thumb {
       width: 46px; height: 46px;
@@ -393,12 +409,21 @@
       background-size: cover;
       background-position: center;
       border: 2px solid rgba(255,255,255,0.45);
-      transition: border-color .15s, transform .15s, box-shadow .15s;
+      /* Drop the multi-property transition while scrolling — only the
+         active state needs to animate. Scroll-only frames hit this rule
+         constantly and the transition recalculation adds up on weak GPUs. */
+      transition: border-color .15s, box-shadow .15s;
+      /* Promote each thumb to its own GPU layer so the per-thumb CSS
+         filter (sepia/grayscale/etc.) is rasterized once and reused on
+         scroll, instead of recomposited every frame. */
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
     .mfr-item.active .mfr-thumb {
       border-color: #fff;
       box-shadow: 0 0 0 2px rgba(0,0,0,0.4), 0 0 14px rgba(255,255,255,0.45);
-      transform: scale(1.08);
+      transform: translateZ(0) scale(1.08);                  /* keep GPU layer */
     }
     .mfr-label {
       font-size: 9px;
@@ -1808,7 +1833,7 @@
   <script src="js/filters.js"></script>
   <script src="js/frames.js"></script>
   <script src="js/db.js"></script>
-  <script src="js/app.js?v=16"></script>
+  <script src="js/app.js?v=17"></script>
 
   <script>
       // ── Header-height CSS variable ──────────────────────────────────
