@@ -78,16 +78,21 @@ async function enableCamera(facing) {
   // modern phones support 4K — try that first when facing="environment" so
   // photo quality matches the phone's native camera app.
   const isBack = currentFacing === 'environment';
+  // Front cam: prioritize 720p first — runs at full 30fps smoothly on mid-range
+  // phones (Samsung A52s, etc.). Forcing 1080p on a budget Android picks a
+  // slow track that runs at 15fps and lags the countdown + filter overlay.
+  // Selfies don't need 1080p; the strip output is downscaled anyway.
+  // Back cam: stay aggressive — 4K → 1080p → 720p (back sensors are stronger).
   const tiers = isBack ? [
-    { video: { facingMode: { ideal: 'environment' }, width: { min: 1920, ideal: 3840 }, height: { min: 1080, ideal: 2160 }, frameRate: { ideal: 30 } }, audio: false },
-    { video: { facingMode: { ideal: 'environment' }, width: { min: 1280, ideal: 1920 }, height: { min: 720, ideal: 1080 }, frameRate: { ideal: 30 } }, audio: false },
-    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
+    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
+    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
     { video: { facingMode: { ideal: 'environment' } }, audio: false },
     { video: true, audio: false },
   ] : [
-    { video: { facingMode: 'user', width: { min: 1280, ideal: 1920 }, height: { min: 720, ideal: 1080 }, frameRate: { ideal: 30 } }, audio: false },
-    { video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }, audio: false },
-    { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+    { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
+    { video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
+    { video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 30, max: 30 } }, audio: false },
     { video: { facingMode: 'user' }, audio: false },
     { video: true, audio: false },
   ];
@@ -193,6 +198,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const flipBtn = document.getElementById('flip-cam-btn');
   if (flipBtn) flipBtn.addEventListener('click', flipCamera);
 });
+
+// ── Release the camera when the user leaves the page / locks the phone ──
+// Without this the MediaStream stays live, the camera LED stays on, and the
+// phone keeps the camera pipeline running even after navigating away — that's
+// what causes the device to heat up and lag for minutes after closing the tab.
+function stopCameraStream() {
+  if (!stream) return;
+  try { stream.getTracks().forEach(t => t.stop()); } catch {}
+  stream = null;
+  cameraReady = false;
+  if (video) {
+    try { video.pause(); video.srcObject = null; } catch {}
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopCameraStream();
+  } else if (currentFacing) {
+    // Re-acquire when the user comes back — only if permission was previously granted
+    enableCamera().catch(() => {});
+  }
+});
+window.addEventListener('pagehide', stopCameraStream);
+window.addEventListener('beforeunload', stopCameraStream);
 
 // ── Modes ──
 const MODE_SHOTS = {
