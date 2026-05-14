@@ -2769,22 +2769,38 @@ async function replacePhotos(fileList) {
   const room  = max - working.length;
   const picked = files.slice(0, room || max);
 
-  showToast('Loading photos…');
-  for (const file of picked) {
+  showToast(`Loading 1/${picked.length}…`);
+  let failed = 0;
+  for (let i = 0; i < picked.length; i++) {
     if (working.length >= max) break;
-    const dataUrl = await new Promise(res => {
-      const r = new FileReader();
-      r.onload = () => res(r.result);
-      r.readAsDataURL(file);
-    });
-    const raw = await new Promise(res => {
-      const im = new Image(); im.onload = () => res(im);
-      // Use blob URL instead of data URL so iOS Safari doesn't taint the
-      // strip canvas when this image gets drawn — required for downloads
-      // to work after uploading photos.
-      im.src = dataURLToObjectURL(dataUrl);
-    });
-    working.push(await normalizeUploaded(raw));
+    const file = picked[i];
+    // Decode straight from a blob URL of the File — skips the base64 round-trip
+    // (FileReader → data URL → blob URL) that was inflating each photo ~33% in
+    // memory. Three big Samsung-camera JPEGs in flight at once was enough to
+    // OOM-stall the tab on mid-range Android. Blob URL also keeps iOS Safari
+    // happy (no canvas taint).
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const raw = await new Promise((res, rej) => {
+        const im = new Image();
+        // Hard timeout in case onload/onerror never fires (corrupt EXIF, bad
+        // codec) — one bad photo used to freeze the whole batch.
+        const tid = setTimeout(() => rej(new Error('decode timeout')), 15000);
+        im.onload  = () => { clearTimeout(tid); res(im); };
+        im.onerror = () => { clearTimeout(tid); rej(new Error('decode failed')); };
+        im.src = objectUrl;
+      });
+      working.push(await normalizeUploaded(raw));
+    } catch (err) {
+      failed++;
+      console.warn('Upload skipped:', file.name, err);
+    } finally {
+      // Free the original file's blob URL — normalizeUploaded made its own.
+      URL.revokeObjectURL(objectUrl);
+    }
+    // Per-photo progress so a slow phone doesn't look frozen
+    const next = Math.min(i + 2, picked.length);
+    showToast(`Loading ${next}/${picked.length}…`);
   }
 
   shots = working;
@@ -2796,8 +2812,9 @@ async function replacePhotos(fileList) {
   // If background removal is on, process the newly uploaded photos.
   if (bgRemoveOn) processAllShotsForBg().then(() => buildStrip());
   const filled = Math.min(shots.length, max);
-  if (filled >= max) showToast('All slots filled!');
-  else               showToast(`${filled}/${max} uploaded keep going`);
+  const skipNote = failed ? ` (${failed} skipped)` : '';
+  if (filled >= max) showToast('All slots filled!' + skipNote);
+  else               showToast(`${filled}/${max} uploaded keep going` + skipNote);
   document.getElementById('replace-input').value = '';
 
   // On mobile (stacked layout) the preview is above the tools panel, so the
