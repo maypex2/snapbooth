@@ -975,9 +975,37 @@ async function uploadPhotos(fileList) {
 }
 
 // ── Preview overlay ──
+// Pause / resume the live preview to free GPU+RAM. With the strip preview
+// open, the user isn't looking at the camera — but the <video> element keeps
+// decoding 30fps + running the CSS filter pass, plus 4-9 captured Image
+// bitmaps + the big strip canvas all live simultaneously. On a budget phone
+// (Samsung A52s in our testing) that combo crashes the tab to a black screen.
+function suspendLivePreview() {
+  try {
+    if (video) {
+      video.pause();
+      video.style.setProperty('filter', 'none', 'important');
+      video.style.setProperty('-webkit-filter', 'none', 'important');
+    }
+  } catch {}
+}
+function resumeLivePreview() {
+  try {
+    if (video && stream) {
+      const p = video.play();
+      if (p && p.catch) p.catch(() => {});
+      // Restore the active filter
+      const css = (typeof FILTER_CSS !== 'undefined' && currentFilter && FILTER_CSS[currentFilter]) || 'none';
+      video.style.setProperty('filter', css, 'important');
+      video.style.setProperty('-webkit-filter', css, 'important');
+    }
+  } catch {}
+}
+
 function openPreview(animate = false) {
   const header = document.querySelector('header');
   const overlay = document.getElementById('preview-overlay');
+  suspendLivePreview();
   // Animated open (end of capture session): play the printer-slot
   // animation FIRST, then reveal the preview modal once it starts to
   // dismiss. The strip canvas already has the rendered content from
@@ -998,6 +1026,7 @@ function closePreview() {
   document.getElementById('preview-overlay').classList.remove('open');
   const header = document.querySelector('header');
   if (header) header.style.display = '';
+  resumeLivePreview();
 }
 
 // ── Customize ──
@@ -1007,6 +1036,11 @@ async function goCustomize() {
     return;
   }
   if (!shots.length) return;
+  // Release the camera before navigating — otherwise on low-RAM phones the
+  // stream + filter pipeline stays live in the unloading tab and OOM-kills it
+  // (black screen / browser crash). The visibilitychange/pagehide listeners
+  // are a fallback; this is the deterministic path.
+  try { stopCameraStream(); } catch {}
   // Convert shots to data URLs and stash for customize page
   const shotData = shots.map(img => {
     const c = document.createElement('canvas');

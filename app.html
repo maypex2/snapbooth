@@ -251,8 +251,13 @@
 
     /* Capture button sits above the home-indicator / gesture area */
     #snap-btn-inner {
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 28px) !important;
-      transition: opacity 0.18s ease;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 18px) !important;
+      transition: opacity 0.18s ease, transform 0.12s ease;
+    }
+    /* On mobile (normal, non-fullscreen) push it slightly lower toward the
+       bottom edge so it doesn't crowd the filter rail above it. */
+    @media (max-width: 1023px) {
+      #snap-btn-inner { bottom: 14px !important; }
     }
 
     /* ── Glass capture button ── */
@@ -277,11 +282,17 @@
         top: calc(0.75rem + 38px) !important;                /* drop below the chip */
       }
       .ratio-chip { display: inline-flex !important; }       /* show compact chip */
-      .flash-btn  {
-        display: inline-flex !important;
-        top: 0.75rem;
-        left: calc(0.75rem + 90px);                          /* sits right of ratio chip */
+      /* Flash button lives INSIDE the ratio popover on mobile — hidden until
+         the user taps the ratio chip to open it. Keeps the camera view clean. */
+      .flash-btn {
+        position: static !important;
+        margin-left: 6px;
+        padding-left: 10px !important;
+        border-left: 1px solid rgba(255,255,255,0.18);
+        border-radius: 999px;
+        display: none !important;
       }
+      .ratio-bar.is-open .flash-btn { display: inline-flex !important; }
     }
     /* Glass cap chip-buttons too */
     .ratio-chip, .flash-btn {
@@ -362,11 +373,15 @@
        centered with it. Shown on mobile + whenever the camera is fullscreen so
        it stays reachable in both normal and immersive modes. */
     #flip-cam-btn {
-      left: calc(50% + 50px);
-      bottom: calc(24px + (64px - 44px) / 2); /* center on capture (64px tall, bottom-6) */
+      left: calc(50% + 60px);                                 /* wider gap from capture */
+      bottom: calc(14px + (64px - 44px) / 2);                 /* matches mobile snap bottom + center */
+    }
+    @media (min-width: 1024px) {
+      /* Desktop keeps the previous offset since #snap-btn-inner sits higher */
+      #flip-cam-btn { bottom: calc(18px + (64px - 44px) / 2); }
     }
     body.cam-fullscreen #flip-cam-btn {
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 28px + (64px - 44px) / 2) !important;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 18px + (64px - 44px) / 2) !important;
     }
     @media (max-width: 1023px) {
       #flip-cam-btn { display: flex !important; }
@@ -1709,7 +1724,7 @@
   <script src="js/filters.js"></script>
   <script src="js/frames.js"></script>
   <script src="js/db.js"></script>
-  <script src="js/app.js?v=7"></script>
+  <script src="js/app.js?v=9"></script>
 
   <script>
       // ── Header-height CSS variable ──────────────────────────────────
@@ -1803,7 +1818,8 @@
         item.type = 'button';
         item.className = 'mfr-item' + (src.classList.contains('active') ? ' active' : '');
         item.dataset.f = f;
-        item.innerHTML = `<div class="mfr-thumb" data-filter="${f}"></div><div class="mfr-label">${name}</div>`;
+        const thumbFilter = (typeof FILTER_CSS !== 'undefined' && FILTER_CSS[f]) ? FILTER_CSS[f] : 'none';
+        item.innerHTML = `<div class="mfr-thumb" data-filter="${f}" style="filter:${thumbFilter}; -webkit-filter:${thumbFilter}"></div><div class="mfr-label">${name}</div>`;
         item.addEventListener('click', () => {
           // Trigger the same filter logic as the panel buttons.
           src.click();
@@ -1822,6 +1838,15 @@
       }
     }
     document.addEventListener('DOMContentLoaded', buildMobileFilterRail);
+
+    // On mobile, fold the flash button into the ratio popover so the camera
+    // stays uncluttered — both controls live behind the single ratio chip.
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!window.matchMedia('(max-width: 1023px)').matches) return;
+      const bar = document.getElementById('ratio-bar');
+      const flash = document.getElementById('flash-btn');
+      if (bar && flash) bar.appendChild(flash);
+    });
 
     // Camera aspect-ratio selector
     function setAspect(btn) {
