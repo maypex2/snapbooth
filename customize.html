@@ -382,6 +382,71 @@
     }
     @keyframes bgrSpin { to { transform: rotate(360deg); } }
 
+    /* ── Collapsible bottom-sheet footer (mobile only) ── */
+    /* Default: hide handle on desktop, expandable section is just normal flex content. */
+    .footer-handle { display: none; }
+    .footer-expandable { display: contents; }
+
+    @media (max-width: 1023px) {
+      .footer-handle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        width: 100%;
+        padding: 6px 0 4px;
+        margin: -4px 0 2px;
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: none;
+      }
+      .footer-handle-bar {
+        display: block;
+        width: 44px;
+        height: 5px;
+        border-radius: 999px;
+        background: #d8cdb8;
+        transition: background .2s, width .2s;
+      }
+      .footer-handle:hover .footer-handle-bar,
+      .footer-handle:active .footer-handle-bar { background: #b5a585; width: 56px; }
+      .footer-handle-hint {
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: #9a8e7e;
+      }
+
+      /* The expandable wrapper collapses to 0 unless body.footer-expanded */
+      .footer-expandable {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height .32s cubic-bezier(.4,.0,.2,1), opacity .2s ease;
+      }
+      body.footer-expanded .footer-expandable {
+        max-height: 60vh;
+        opacity: 1;
+      }
+
+      /* One-time bounce hint on initial mobile load to advertise the handle */
+      body:not(.footer-expanded) .footer-handle.hint-bounce {
+        animation: footerHandleBounce 1.6s ease 0.4s 2;
+      }
+      @keyframes footerHandleBounce {
+        0%, 100% { transform: translateY(0); }
+        40%      { transform: translateY(-6px); }
+        70%      { transform: translateY(0); }
+      }
+    }
+
     /* ── Mobile FB-Story-style floating rail + bottom sheets ── */
     /* Desktop: hide the rail, sidebar works as normal. */
     .mobile-rail { display: none; }
@@ -862,6 +927,10 @@
        panel area visually; on mobile becomes a fixed bottom bar so download/
        upload/share never disappear behind the bottom-sheet drawer. -->
   <div id="tools-footer" class="bg-white rounded-3xl border border-sand/50 shadow-soft p-4 flex flex-col gap-2 lg:col-start-2 lg:-mt-3">
+    <button id="footer-handle" class="footer-handle" aria-label="Show more actions" aria-expanded="false" type="button">
+      <span class="footer-handle-bar"></span>
+      <span class="footer-handle-hint">More options</span>
+    </button>
     <div id="upload-counter" class="text-[11px] font-medium uppercase tracking-[0.18em] text-ink2 text-center">0 / 0 photos</div>
       <input type="file" id="replace-input" accept="image/*" multiple class="hidden">
       <div class="flex gap-2">
@@ -877,7 +946,8 @@
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Download PNG
       </button>
-      <button id="print-btn" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-white border border-sand/60 text-ink2 hover:bg-cream2 hover:text-ink text-sm transition" title="Print this strip">
+      <div class="footer-expandable">
+      <button id="print-btn" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-white border border-sand/60 text-ink2 hover:bg-cream2 hover:text-ink text-sm transition w-full" title="Print this strip">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         Print
       </button>
@@ -953,10 +1023,11 @@
           </button>
         </div>
       </div>
-      <button id="share-btn" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white border border-sand/60 text-ink2 hover:bg-cream2 hover:text-ink transition">
+      <button id="share-btn" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white border border-sand/60 text-ink2 hover:bg-cream2 hover:text-ink transition w-full">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Share
       </button>
+      </div>
   </div>
 </main>
 
@@ -1156,6 +1227,54 @@
     if (h > 0) document.documentElement.style.setProperty('--footer-h', h + 'px');
   }
   syncFooterHeight();
+
+  // ── Collapsible footer (mobile only) ──
+  // Starts collapsed so the preview gets max screen real-estate. Tap the handle
+  // bar, swipe up/down on it, or tap the bar text to expand/collapse.
+  const fHandle = document.getElementById('footer-handle');
+  if (fHandle && footerEl) {
+    const setExpanded = (on) => {
+      document.body.classList.toggle('footer-expanded', !!on);
+      fHandle.setAttribute('aria-expanded', on ? 'true' : 'false');
+      requestAnimationFrame(syncFooterHeight);
+      setTimeout(syncFooterHeight, 340);
+    };
+    const hintLabel = fHandle.querySelector('.footer-handle-hint');
+    const updateHintText = () => {
+      if (!hintLabel) return;
+      hintLabel.textContent = document.body.classList.contains('footer-expanded')
+        ? 'Less options' : 'More options';
+    };
+    fHandle.addEventListener('click', () => {
+      setExpanded(!document.body.classList.contains('footer-expanded'));
+      updateHintText();
+    });
+    // Swipe up/down on the handle
+    let sy = 0, sdrag = false;
+    fHandle.addEventListener('touchstart', e => {
+      sy = e.touches[0].clientY; sdrag = true;
+    }, { passive: true });
+    fHandle.addEventListener('touchmove', e => {
+      if (!sdrag) return;
+      const dy = e.touches[0].clientY - sy;
+      if (Math.abs(dy) > 24) {
+        sdrag = false;
+        setExpanded(dy < 0); // up = expand, down = collapse
+        updateHintText();
+      }
+    }, { passive: true });
+    fHandle.addEventListener('touchend', () => { sdrag = false; });
+    // One-time bounce hint to draw the eye to the handle, only on mobile, only
+    // if the user hasn't dismissed/expanded it before.
+    try {
+      if (isMobile() && !localStorage.getItem('sb_footer_hint_seen')) {
+        fHandle.classList.add('hint-bounce');
+        setTimeout(() => fHandle.classList.remove('hint-bounce'), 4200);
+        localStorage.setItem('sb_footer_hint_seen', '1');
+      }
+    } catch (e) {}
+  }
+
   // Re-measure whenever the footer's contents change size or the viewport resizes.
   if (window.ResizeObserver && footerEl) {
     new ResizeObserver(syncFooterHeight).observe(footerEl);
