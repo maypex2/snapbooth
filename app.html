@@ -991,7 +991,7 @@
               <path d="M3 6h18M3 12h18M3 18h18" />
             </svg>
             <span class="font-medium">Filters</span>
-            <span id="filters-active-label" class="text-white/70">· None</span>
+            <span id="filters-active-label" class="text-white/70">· Normal</span>
           </button>
 
           <div id="filters-panel"
@@ -1005,10 +1005,10 @@
               </button>
             </div>
             <div class="grid grid-cols-3 gap-2.5">
-              <button data-f="none" data-name="None"
+              <button data-f="none" data-name="Normal"
                 class="filter-btn active flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
                 <div class="filter-thumb w-12 h-12 rounded-full" data-filter="none"></div>
-                <span class="filter-label text-[10px] text-white/85">None</span>
+                <span class="filter-label text-[10px] text-white/85">Normal</span>
               </button>
               <button data-f="bw" data-name="B&amp;W"
                 class="filter-btn flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/10 transition">
@@ -1615,7 +1615,12 @@
       const max = btn.dataset.max;
       const wrap = document.getElementById('cam-wrap');
       const container = document.getElementById('cam-container');
-      if (ratio === 'full') {
+      const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+      // 9:16 is the phone's native aspect — on mobile it's better to engage
+      // fullscreen camera so the whole preview is visible rather than a tall
+      // card that overflows the viewport. Desktop stays bounded as a card.
+      const goFullscreen = ratio === 'full' || (ratio === '9/16' && isMobile);
+      if (goFullscreen) {
         wrap.style.aspectRatio = '';
         if (container) container.style.maxWidth = '';
         wrap.style.height = '';
@@ -1623,7 +1628,9 @@
       } else {
         document.body.classList.remove('cam-fullscreen');
         wrap.style.aspectRatio = ratio;
-        if (container) container.style.maxWidth = 'min(100%,' + max + ')';
+        // Cap by viewport height too — without this, 9:16 on desktop can grow
+        // taller than the screen on narrow windows.
+        if (container) container.style.maxWidth = 'min(100%,' + max + ', calc((100vh - 220px) * ' + (ratio.split('/')[0] / ratio.split('/')[1]) + '))';
         wrap.style.height = '';
       }
       document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
