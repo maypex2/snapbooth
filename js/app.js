@@ -326,16 +326,27 @@ function updateShotDots() {
 
 // ── Countdown / flash ──
 function countdown(n) {
+  // After "1" is shown we used to wait a full 1000ms before resolving,
+  // which made the capture feel laggy ("1...big pause...snap"). Shorten
+  // the final tick to 450ms so the capture fires almost immediately
+  // after the user reads "1". 3, 2, 1, *snap* — matches every native
+  // camera app's rhythm.
   return new Promise(resolve => {
     const el = document.getElementById('countdown');
     let c = n;
     el.textContent = c;
     el.classList.add('show');
-    const iv = setInterval(() => {
+    function tick() {
       c--;
-      if (c <= 0) { clearInterval(iv); el.classList.remove('show'); resolve(); }
-      else el.textContent = c;
-    }, 1000);
+      if (c <= 0) {
+        el.classList.remove('show');
+        resolve();
+      } else {
+        el.textContent = c;
+        setTimeout(tick, c === 1 ? 450 : 1000);
+      }
+    }
+    setTimeout(tick, 1000);
   });
 }
 
@@ -420,25 +431,25 @@ function captureFrame() {
     ctx.filter = 'none';
     applyFilterToCanvas(currentFilter);
 
-    // ── Async toBlob instead of sync toDataURL ──
-    // toDataURL is base64-encoding the entire canvas on the main thread —
-    // visible UI freeze on big captures. toBlob runs the JPEG encode on a
-    // background thread, so the next countdown can start immediately. The
-    // resulting blob URL is cheaper to decode than a data URL on iOS too.
-    const handleSrc = (src) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(img); // never hang the session
-      img.src = src;
-    };
-    if (canvas.toBlob) {
-      canvas.toBlob(blob => {
-        if (blob) handleSrc(URL.createObjectURL(blob));
-        else handleSrc(canvas.toDataURL('image/jpeg', 0.92));
-      }, 'image/jpeg', 0.9);
-    } else {
-      handleSrc(canvas.toDataURL('image/jpeg', 0.92));
-    }
+    // ── Clone the capture canvas directly into an offscreen canvas ──
+    // The old path was: toBlob (encode) → blob URL → new Image() → onload
+    // (decode). On phones that's 150-500ms of round-trip overhead AFTER
+    // the actual capture. We don't need an encode/decode at all — we
+    // already have the pixels in the source canvas. Just copy them into
+    // a fresh canvas (drawImage canvas→canvas is a GPU blit, ~10ms).
+    // The returned canvas has .width/.height, and we tack on natural*
+    // aliases so the existing buildStrip + customize-handoff code paths
+    // (which expect HTMLImageElement shape) work unchanged.
+    const snap = document.createElement('canvas');
+    snap.width  = canvas.width;
+    snap.height = canvas.height;
+    snap.getContext('2d', { alpha: false }).drawImage(canvas, 0, 0);
+    // HTMLImageElement-shape aliases used by buildStrip / goCustomize / etc.
+    try {
+      Object.defineProperty(snap, 'naturalWidth',  { value: snap.width,  configurable: true });
+      Object.defineProperty(snap, 'naturalHeight', { value: snap.height, configurable: true });
+    } catch (e) { /* defineProperty on canvas is supported everywhere modern */ }
+    resolve(snap);
   });
 }
 

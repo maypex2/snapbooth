@@ -1836,7 +1836,7 @@
   <script src="js/frames.js"></script>
   <script src="js/db.js"></script>
   <script src="js/webgl-filter.js?v=1"></script>
-  <script src="js/app.js?v=19"></script>
+  <script src="js/app.js?v=20"></script>
 
   <script>
     // ── WebGL filter prototype activation ──
@@ -2045,6 +2045,38 @@
       if (ft) ft.style.display = 'none';
       const fp = document.getElementById('filters-panel');
       if (fp) fp.style.display = 'none';
+
+      // ── Pre-warm GPU rasters for all 27 filter thumbnails ──
+      // The browser defers rasterizing each filtered thumb to its own GPU
+      // texture until it's actually scrolled into view. That's why the
+      // first scroll across the rail stutters on low-end phones — 27
+      // textures get rasterized on-demand at 60fps budget. After ~5s
+      // they're cached → smooth. But the GPU evicts off-screen layers,
+      // so scrolling back triggers re-rasterization → laggy again.
+      //
+      // Force the whole rail's pixels to render once after a paint, then
+      // restore the scroll position. The textures stay in GPU memory and
+      // subsequent scrolls are silk-smooth from the very first swipe.
+      requestAnimationFrame(() => {
+        const items = rail.querySelectorAll('.mfr-thumb');
+        // Reading offsetWidth on each forces the browser to lay out and
+        // rasterize the element. Doing this in a rAF + microtask chain
+        // spreads the cost across two paint frames instead of one, so
+        // the warm-up itself doesn't visibly hitch on slow phones.
+        let i = 0;
+        function warmNext() {
+          if (i >= items.length) return;
+          // Touch layout + force paint by reading + temporarily transforming
+          const el = items[i];
+          void el.offsetWidth;
+          el.style.willChange = 'transform';
+          i++;
+          // 4 thumbs per frame keeps the warm-up under one paint budget
+          if (i % 4 === 0) requestAnimationFrame(warmNext);
+          else warmNext();
+        }
+        warmNext();
+      });
     }
     document.addEventListener('DOMContentLoaded', buildMobileFilterRail);
 
