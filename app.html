@@ -255,6 +255,109 @@
       transition: opacity 0.18s ease;
     }
 
+    /* ── Glass capture button ── */
+    .snap-glass {
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      box-shadow:
+        0 8px 28px rgba(0,0,0,0.32),
+        inset 0 1px 0 rgba(255,255,255,0.55),
+        inset 0 -2px 6px rgba(0,0,0,0.18);
+    }
+    .snap-glass:hover { background: rgba(255, 255, 255, 0.28); }
+    .snap-glass:active { transform: translate(-50%, 2px) scale(0.96); }
+
+    /* ── Mobile ratio chip + flash button ── */
+    @media (max-width: 1023px) {
+      .ratio-bar { display: none; }                          /* hide full pill row */
+      .ratio-bar.is-open {
+        display: flex !important;
+        top: calc(0.75rem + 38px) !important;                /* drop below the chip */
+      }
+      .ratio-chip { display: inline-flex !important; }       /* show compact chip */
+      .flash-btn  {
+        display: inline-flex !important;
+        top: 0.75rem;
+        left: calc(0.75rem + 90px);                          /* sits right of ratio chip */
+      }
+    }
+    /* Glass cap chip-buttons too */
+    .ratio-chip, .flash-btn {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    .flash-btn.is-on {
+      background: rgba(255, 217, 80, 0.85) !important;
+      color: #2A2520 !important;
+    }
+
+    /* ── Mobile filter carousel ── */
+    .mobile-filter-rail {
+      display: none;
+      gap: 8px;
+      bottom: calc(24px + 80px);                             /* just above capture btn */
+      left: 0;
+      right: 0;
+      padding: 0 16px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+      mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+    }
+    .mobile-filter-rail::-webkit-scrollbar { display: none; }
+    @media (max-width: 1023px) {
+      .mobile-filter-rail { display: flex !important; }
+    }
+    body.cam-fullscreen .mobile-filter-rail {
+      display: flex !important;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 28px + 80px);
+    }
+    /* Hide rail during an active capture session for a clean shot */
+    body.session-running .mobile-filter-rail { opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .mfr-item {
+      flex: 0 0 auto;
+      scroll-snap-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: transparent;
+      border: 0;
+      padding: 4px 2px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mfr-thumb {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background-image: url('assets/sample.jpg');
+      background-size: cover;
+      background-position: center;
+      border: 2px solid rgba(255,255,255,0.4);
+      transition: border-color .15s, transform .15s, box-shadow .15s;
+    }
+    .mfr-item.active .mfr-thumb {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.4), 0 0 14px rgba(255,255,255,0.45);
+      transform: scale(1.08);
+    }
+    .mfr-label {
+      font-size: 9px;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.85);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+      max-width: 56px;
+      text-align: center;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .mfr-item.active .mfr-label { color: #fff; font-weight: 600; }
+
     /* Flip-camera button — sits to the right of the capture button, vertically
        centered with it. Shown on mobile + whenever the camera is fullscreen so
        it stays reachable in both normal and immersive modes. */
@@ -330,6 +433,17 @@
 
     .flash.pop {
       animation: flash .12s ease-out;
+    }
+
+    /* Strong "selfie flash" when the flash toggle is ON — longer + brighter
+       so it actually illuminates the user's face on a front-cam selfie. */
+    .flash.flash-strong.pop {
+      animation: flashStrong .22s ease-out;
+    }
+    @keyframes flashStrong {
+      0%   { opacity: 1; }
+      80%  { opacity: 0.95; }
+      100% { opacity: 0; }
     }
 
     @keyframes flash {
@@ -970,9 +1084,10 @@
             <div class="text-sm" id="gif-progress-label">Encoding GIF…</div>
           </div>
 
-          <!-- Aspect-ratio selector (top-left, dark pill over camera) -->
-          <div
-            class="absolute top-3 left-3 z-20 flex items-center gap-1 p-1 rounded-full bg-black/55 backdrop-blur text-white text-[11px]">
+          <!-- Aspect-ratio selector (top-left). Desktop: full pill row visible.
+               Mobile: collapsed into a single chip that opens the row as a popover. -->
+          <div id="ratio-bar"
+            class="ratio-bar absolute top-3 left-3 z-20 flex items-center gap-1 p-1 rounded-full bg-black/55 backdrop-blur text-white text-[11px]">
             <button data-ratio="1/1" data-max="52vh" class="ratio-btn active px-2.5 py-1 rounded-full transition"
               onclick="setAspect(this)">1:1</button>
             <button data-ratio="4/3" data-max="60vh" class="ratio-btn px-2.5 py-1 rounded-full transition"
@@ -982,6 +1097,30 @@
             <button data-ratio="full" data-max="100%" class="ratio-btn px-2.5 py-1 rounded-full transition"
               onclick="setAspect(this)">Full</button>
           </div>
+
+          <!-- Mobile-only ratio chip (opens the bar above as a popover) -->
+          <button id="ratio-chip" type="button" onclick="toggleRatioBar(event)"
+            class="ratio-chip hidden absolute top-3 left-3 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/55 hover:bg-black/70 backdrop-blur text-white text-[11px] transition"
+            aria-label="Camera aspect ratio">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect x="4" y="6" width="16" height="12" rx="1.5"/>
+            </svg>
+            <span id="ratio-chip-label" class="font-medium">1:1</span>
+            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- Flash toggle (mobile-visible; back-cam uses torch where supported,
+               front-cam uses a white-screen flash). -->
+          <button id="flash-btn" type="button" onclick="toggleFlash()"
+            class="flash-btn hidden absolute z-20 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/55 hover:bg-black/70 backdrop-blur text-white text-[11px] transition"
+            aria-label="Flash" aria-pressed="false">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" id="flash-icon">
+              <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>
+            </svg>
+            <span id="flash-label" class="font-medium">Off</span>
+          </button>
 
           <!-- Filters: burger button (top-right) + slide-down panel -->
           <button id="filters-toggle" type="button" onclick="toggleFiltersPanel()"
@@ -1183,11 +1322,15 @@
             </div>
           </div>
 
-          <!-- Inline capture button (always visible — overlays inside camera) -->
+          <!-- Mobile filter carousel: horizontal scroll strip sitting above the
+               capture button. One-tap selection, auto-hides during capture. -->
+          <div id="mobile-filter-rail" class="mobile-filter-rail hidden absolute z-[19]" aria-label="Filter strip"></div>
+
+          <!-- Inline capture button — glassmorphism (frosted translucent) -->
           <button id="snap-btn-inner" onclick="document.getElementById('snap-btn').click()" type="button"
             aria-label="Capture"
-            class="absolute left-1/2 -translate-x-1/2 bottom-6 z-[20] w-16 h-16 rounded-full bg-ink hover:bg-black text-white shadow-card border-4 border-white/90 ring-2 ring-black/30 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
-            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            class="absolute left-1/2 -translate-x-1/2 bottom-6 z-[20] w-16 h-16 rounded-full text-white transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center snap-glass">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="4" />
               <path d="M8 2h8l2 3H6l2-3z" />
               <rect x="2" y="5" width="20" height="16" rx="3" />
@@ -1566,7 +1709,7 @@
   <script src="js/filters.js"></script>
   <script src="js/frames.js"></script>
   <script src="js/db.js"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/app.js?v=7"></script>
 
   <script>
       // ── Header-height CSS variable ──────────────────────────────────
@@ -1609,6 +1752,77 @@
         .observe(outer, { attributes: true, attributeFilter: ['disabled'] });
     })();
 
+    // ── Ratio chip popover (mobile) ──
+    function toggleRatioBar(e) {
+      if (e) e.stopPropagation();
+      const bar = document.getElementById('ratio-bar');
+      if (!bar) return;
+      bar.classList.toggle('is-open');
+    }
+    // Close on outside-tap
+    document.addEventListener('click', e => {
+      const bar = document.getElementById('ratio-bar');
+      const chip = document.getElementById('ratio-chip');
+      if (!bar || !chip) return;
+      if (!bar.classList.contains('is-open')) return;
+      if (bar.contains(e.target) || chip.contains(e.target)) return;
+      bar.classList.remove('is-open');
+    });
+
+    // ── Flash toggle ──
+    let flashOn = false;
+    async function toggleFlash() {
+      flashOn = !flashOn;
+      const btn = document.getElementById('flash-btn');
+      const lbl = document.getElementById('flash-label');
+      if (btn) { btn.classList.toggle('is-on', flashOn); btn.setAttribute('aria-pressed', String(flashOn)); }
+      if (lbl) lbl.textContent = flashOn ? 'On' : 'Off';
+      // Try hardware torch (back cam only, supported phones). Front cam falls
+      // back to the existing white-screen flash effect at capture time.
+      try {
+        if (typeof stream !== 'undefined' && stream) {
+          const track = stream.getVideoTracks()[0];
+          const caps = track.getCapabilities ? track.getCapabilities() : {};
+          if (caps && 'torch' in caps) {
+            await track.applyConstraints({ advanced: [{ torch: flashOn }] });
+          }
+        }
+      } catch (e) { /* torch not supported — front-cam path uses screen-flash */ }
+    }
+    window.__sbFlashOn = () => flashOn;   // exposed for app.js capture flow
+
+    // ── Mobile filter carousel — mirrors filter-btn list above into a horizontal rail ──
+    function buildMobileFilterRail() {
+      const rail = document.getElementById('mobile-filter-rail');
+      if (!rail || rail.dataset.built) return;
+      const sources = document.querySelectorAll('#filters-panel .filter-btn');
+      sources.forEach(src => {
+        const f = src.dataset.f;
+        const name = src.dataset.name || f;
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'mfr-item' + (src.classList.contains('active') ? ' active' : '');
+        item.dataset.f = f;
+        item.innerHTML = `<div class="mfr-thumb" data-filter="${f}"></div><div class="mfr-label">${name}</div>`;
+        item.addEventListener('click', () => {
+          // Trigger the same filter logic as the panel buttons.
+          src.click();
+          // Sync visual active state in the rail.
+          rail.querySelectorAll('.mfr-item').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+          // Center the chosen filter in the rail.
+          item.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        });
+        rail.appendChild(item);
+      });
+      rail.dataset.built = '1';
+      // Hide the desktop Filters chip on mobile — the rail replaces it
+      if (window.matchMedia('(max-width: 1023px)').matches) {
+        const ft = document.getElementById('filters-toggle');
+        if (ft) ft.style.display = 'none';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', buildMobileFilterRail);
+
     // Camera aspect-ratio selector
     function setAspect(btn) {
       const ratio = btn.dataset.ratio;
@@ -1635,6 +1849,11 @@
       }
       document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      // Sync the mobile chip label + close the popover
+      const lbl = document.getElementById('ratio-chip-label');
+      if (lbl) lbl.textContent = btn.textContent;
+      const bar = document.getElementById('ratio-bar');
+      if (bar) bar.classList.remove('is-open');
     }
 
     // Timer selector

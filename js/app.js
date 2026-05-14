@@ -343,8 +343,16 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function flashEffect() {
   const f = document.getElementById('flash');
+  // Intensify the white-screen flash when the flash toggle is ON. Front cams
+  // have no hardware torch, so the bright white preview overlay doubles as a
+  // "selfie flash" — meaningfully brightens the subject in low light.
+  const on = typeof window.__sbFlashOn === 'function' && window.__sbFlashOn();
+  if (on) f.classList.add('flash-strong');
   f.classList.add('pop');
-  setTimeout(() => f.classList.remove('pop'), 120);
+  setTimeout(() => {
+    f.classList.remove('pop');
+    f.classList.remove('flash-strong');
+  }, on ? 220 : 120);
 }
 
 // Match what the user actually sees in the live preview. The <video> element
