@@ -51,7 +51,19 @@ function showCameraState(state) {
   errorEl.style.display   = state === 'error'   ? 'flex' : 'none';
 }
 
-async function enableCamera() {
+// Tracks which camera is active. Persisted so returning users skip the flip.
+let currentFacing = (() => {
+  try { return localStorage.getItem('sb_facing') || 'user'; } catch { return 'user'; }
+})();
+
+async function enableCamera(facing) {
+  if (facing) currentFacing = facing;
+  // If we're switching facing on an already-live stream, tear it down first.
+  if (cameraReady && facing && stream) {
+    try { stream.getTracks().forEach(t => t.stop()); } catch {}
+    cameraReady = false;
+    stream = null;
+  }
   if (cameraReady) return true;
   showCameraState('loading');
 
@@ -62,8 +74,17 @@ async function enableCamera() {
 
   // Try tiers from highest → lowest. Android Chrome silently picks a low
   // track if you only specify `ideal`, so we try `min` first to force HD,
-  // then progressively relax if the device can't satisfy.
-  const tiers = [
+  // then progressively relax if the device can't satisfy. Back cameras on
+  // modern phones support 4K — try that first when facing="environment" so
+  // photo quality matches the phone's native camera app.
+  const isBack = currentFacing === 'environment';
+  const tiers = isBack ? [
+    { video: { facingMode: { ideal: 'environment' }, width: { min: 1920, ideal: 3840 }, height: { min: 1080, ideal: 2160 }, frameRate: { ideal: 30 } }, audio: false },
+    { video: { facingMode: { ideal: 'environment' }, width: { min: 1280, ideal: 1920 }, height: { min: 720, ideal: 1080 }, frameRate: { ideal: 30 } }, audio: false },
+    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+    { video: { facingMode: { ideal: 'environment' } }, audio: false },
+    { video: true, audio: false },
+  ] : [
     { video: { facingMode: 'user', width: { min: 1280, ideal: 1920 }, height: { min: 720, ideal: 1080 }, frameRate: { ideal: 30 } }, audio: false },
     { video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }, audio: false },
     { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
@@ -136,6 +157,41 @@ video.addEventListener('loadedmetadata', () => {
   canvas.height        = video.videoHeight;
   overlayCanvas.width  = canvas.width;
   overlayCanvas.height = canvas.height;
+});
+
+// ── Flip camera (mobile / fullscreen) ──
+// Front cam previews are mirrored (selfie convention); back cam must NOT be
+// mirrored because the user is shooting the world, not themselves.
+function applyFacingMirror() {
+  const isBack = currentFacing === 'environment';
+  mirrorCamera = !isBack;
+  document.body.classList.toggle('no-mirror', isBack);
+}
+applyFacingMirror();
+
+async function flipCamera() {
+  if (isRunning) {
+    showToast('Wait for the capture to finish before switching cameras');
+    return;
+  }
+  const btn = document.getElementById('flip-cam-btn');
+  if (btn) { btn.classList.remove('flipping'); void btn.offsetWidth; btn.classList.add('flipping'); }
+  const next = currentFacing === 'user' ? 'environment' : 'user';
+  const ok = await enableCamera(next);
+  if (!ok) {
+    // Restore prior facing if the requested camera isn't available
+    currentFacing = currentFacing === 'user' ? 'environment' : 'user';
+    showToast("Couldn't switch camera");
+    await enableCamera(currentFacing);
+    return;
+  }
+  applyFacingMirror();
+  try { localStorage.setItem('sb_facing', currentFacing); } catch {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const flipBtn = document.getElementById('flip-cam-btn');
+  if (flipBtn) flipBtn.addEventListener('click', flipCamera);
 });
 
 // ── Modes ──

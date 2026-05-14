@@ -255,6 +255,28 @@
       transition: opacity 0.18s ease;
     }
 
+    /* Flip-camera button — sits to the right of the capture button, vertically
+       centered with it. Shown on mobile + whenever the camera is fullscreen so
+       it stays reachable in both normal and immersive modes. */
+    #flip-cam-btn {
+      left: calc(50% + 50px);
+      bottom: calc(24px + (64px - 44px) / 2); /* center on capture (64px tall, bottom-6) */
+    }
+    body.cam-fullscreen #flip-cam-btn {
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 28px + (64px - 44px) / 2) !important;
+    }
+    @media (max-width: 1023px) {
+      #flip-cam-btn { display: flex !important; }
+    }
+    body.cam-fullscreen #flip-cam-btn { display: flex !important; }
+    /* Hide during an active capture session — switching mid-shoot would break the strip. */
+    body.session-running #flip-cam-btn { opacity: 0.35; pointer-events: none; }
+    #flip-cam-btn.flipping svg { animation: flipSpin 0.5s ease; }
+    @keyframes flipSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(180deg); }
+    }
+
     /* While a capture session is active, dim and disable the layout carousel
        + filter button so users can't switch mid-session and break the strip. */
     body.session-running #layout-scroll,
@@ -1169,6 +1191,18 @@
               <circle cx="12" cy="12" r="4" />
               <path d="M8 2h8l2 3H6l2-3z" />
               <rect x="2" y="5" width="20" height="16" rx="3" />
+            </svg>
+          </button>
+
+          <!-- Flip camera button (mobile / fullscreen only — see CSS) -->
+          <button id="flip-cam-btn" type="button" aria-label="Switch camera"
+            class="hidden absolute z-[20] w-11 h-11 rounded-full bg-ink/70 hover:bg-ink/90 text-white border border-white/30 backdrop-blur-sm shadow-soft transition items-center justify-center">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M15 4h3a2 2 0 0 1 2 2v3"/>
+              <path d="M20 9l-3-3M20 9l3-3"/>
+              <path d="M9 20H6a2 2 0 0 1-2-2v-3"/>
+              <path d="M4 15l3 3M4 15l-3 3"/>
+              <circle cx="12" cy="12" r="3"/>
             </svg>
           </button>
 
