@@ -1505,7 +1505,7 @@
         <button id="snap-btn" onclick="startSession()" class="hidden"><span id="snap-label">Capture</span></button>
 
         <!-- Layouts showcase: big photo-strip preview cards in a horizontal carousel -->
-        <section class="mt-10 max-w-[1100px] mx-auto">
+        <section id="layouts-section" class="mt-10 max-w-[1100px] mx-auto">
           <div class="text-center mb-6">
             <h2 class="font-serif text-xl md:text-2xl text-ink2">Choose your layout</h2>
             <p class="text-sm text-muted mt-1">Tap a style we'll set up the right number of shots for you</p>
@@ -2219,6 +2219,62 @@
   </script>
 
   <script src="js/inapp-banner.js"></script>
+
+  <!-- ── First-visit onboarding: layout-first ──
+       New visitors land on the layouts section (so they discover that BopBooth
+       does more than 4-cut), then auto-scroll down to the camera once they
+       pick one. After that, the flag in localStorage routes returning users
+       straight to the camera. Within the same session, swapping layouts a
+       second time does NOT re-scroll — keeps the camera in view while they
+       experiment. -->
+  <script>
+  (function () {
+    const FLAG = 'sb_has_picked_layout';
+    const params = new URLSearchParams(location.search);
+    // Landing page deep-links (?mode=xxx) already imply a layout choice, so
+    // skip onboarding so the user goes straight to the camera.
+    const hasModeParam = !!params.get('mode');
+    const hasPicked = (() => { try { return localStorage.getItem(FLAG) === '1'; } catch { return false; } })();
+    const isFirstVisit = !hasPicked && !hasModeParam;
+
+    function smoothScrollTo(el, opts) {
+      if (!el) return;
+      try { el.scrollIntoView({ behavior: 'smooth', block: opts && opts.block || 'start' }); }
+      catch { el.scrollIntoView(); }
+    }
+
+    if (isFirstVisit) {
+      // Defer until the layouts section is laid out (images set its height).
+      // Two rAFs survives Safari's "layout settles a tick later" quirk.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const section = document.getElementById('layouts-section');
+        if (section) smoothScrollTo(section, { block: 'start' });
+      }));
+    }
+
+    // Wrap setMode: first pick of the session sets the flag and scrolls to
+    // the camera. Subsequent picks do nothing extra — the camera stays in
+    // view, no jumpy auto-scroll.
+    let scrolledForFirstPick = false;
+    const originalSetMode = window.setMode;
+    if (typeof originalSetMode === 'function') {
+      window.setMode = function (m) {
+        const result = originalSetMode.apply(this, arguments);
+        if (isFirstVisit && !scrolledForFirstPick) {
+          scrolledForFirstPick = true;
+          try { localStorage.setItem(FLAG, '1'); } catch {}
+          // Small delay so the layout-card's own scroll-into-view inside
+          // the carousel completes before we move the page.
+          setTimeout(() => {
+            const cam = document.getElementById('cam-wrap');
+            smoothScrollTo(cam, { block: 'center' });
+          }, 120);
+        }
+        return result;
+      };
+    }
+  })();
+  </script>
 
 </body>
 

@@ -770,18 +770,23 @@ function buildStrip() {
   let sw, sh, positions;
 
   if (currentMode === '4cut') {
+    // Slot height = full photo height to match customize.html's 4:3 slot
+    // exactly. Previously the printer animation used a cinematic 0.78 crop
+    // here but customize used the full height — so users saw face+shoulders
+    // in the printer strip then a different crop on the customize page.
+    // WYSIWYG: keep both renderers aligned.
     const PAD = 28, GAP = 20, TOP = 90, BOT = 220;
-    const pH = Math.round(H * 0.78); // cinematic crop: ~640×374
+    const pH = H;
     sw = W + PAD * 2; sh = pH * 4 + GAP * 3 + TOP + BOT;
     positions = Array.from({ length: 4 }, (_, i) => ({ x: PAD, y: TOP + i * (pH + GAP), w: W, h: pH }));
   } else if (currentMode === '3cut') {
     const PAD = 28, GAP = 20, TOP = 90, BOT = 220;
-    const pH = Math.round(H * 0.78);
+    const pH = H;
     sw = W + PAD * 2; sh = pH * 3 + GAP * 2 + TOP + BOT;
     positions = Array.from({ length: 3 }, (_, i) => ({ x: PAD, y: TOP + i * (pH + GAP), w: W, h: pH }));
   } else if (currentMode === '2cut') {
     const PAD = 28, GAP = 20, TOP = 90, BOT = 220;
-    const pH = Math.round(H * 0.78);
+    const pH = H;
     sw = W + PAD * 2; sh = pH * 2 + GAP + TOP + BOT;
     positions = Array.from({ length: 2 }, (_, i) => ({ x: PAD, y: TOP + i * (pH + GAP), w: W, h: pH }));
   } else if (currentMode === '6cut') {
