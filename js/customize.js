@@ -3175,6 +3175,47 @@ if (dateToggle) {
 }
 
 // ── Adjust panel: per-photo crop sliders ──
+// Each row gets a LIVE mini-preview canvas next to its sliders. On mobile
+// the bottom sheet covers most of the strip, so the user can't see what
+// their adjustment does — the inline preview is the only WYSIWYG they get.
+// Mirrors the slot's cover-crop math from drawCoverImage so what's in the
+// mini-preview is exactly what ends up in the strip slot.
+function _adjustPreviewAspectFor(mode) {
+  // Most layouts use a 4:3 slot. The portrait-ish ones use ~5:4 visually.
+  // Approximate per-mode so the live preview matches the slot's crop shape.
+  switch (mode) {
+    case 'vertical4':  return 0.85;   // slim portrait
+    case '3horiz':     return 0.75;   // tall portrait (slot is rotated 4:3)
+    case 'photocard':
+    case 'polaroid':
+    case 'double-polaroid':
+    case 'diptych':
+    case '9cut':
+    case '6cut':
+    case 'squaregrid':
+    case 'grid4':
+    case '4plus1':
+    case '1large3small':
+    default:           return 4 / 3;
+  }
+}
+
+function drawAdjustPreview(idx) {
+  const list = document.getElementById('adjust-list');
+  if (!list) return;
+  const c = list.querySelector(`canvas[data-preview-idx="${idx}"]`);
+  if (!c) return;
+  const img = shots[idx];
+  if (!img) return;
+  const off = photoOffsets[idx] || { ox: 0, oy: 0 };
+  const cx = c.getContext('2d');
+  cx.clearRect(0, 0, c.width, c.height);
+  // Subtle backing so empty slots / loading states aren't pure transparent
+  cx.fillStyle = '#EEE6D2';
+  cx.fillRect(0, 0, c.width, c.height);
+  drawCoverImage(cx, img, 0, 0, c.width, c.height, off.ox, off.oy);
+}
+
 function renderAdjustPanel() {
   const list = document.getElementById('adjust-list');
   if (!list) return;
@@ -3183,14 +3224,20 @@ function renderAdjustPanel() {
     list.innerHTML = '<p class="text-xs text-muted italic">Upload photos first to reposition them.</p>';
     return;
   }
+  const aspect = _adjustPreviewAspectFor(currentMode);
+  // Preview height fixed; width derived from layout's slot aspect so the
+  // mini-preview matches the actual crop shape (portrait/landscape).
+  const PH = 96;
+  const PW = Math.max(60, Math.round(PH * aspect));
   shots.forEach((img, i) => {
     if (!photoOffsets[i]) photoOffsets[i] = { ox: 0, oy: 0 };
     const off = photoOffsets[i];
     const row = document.createElement('div');
     row.className = 'p-3 rounded-xl bg-cream2/40 border border-sand/40 flex gap-3 items-center';
     row.innerHTML = `
-      <img src="${img.src}" alt="" class="w-14 h-14 rounded-lg object-cover border border-sand/60 shrink-0">
-      <div class="flex-1 flex flex-col gap-2">
+      <canvas data-preview-idx="${i}" width="${PW}" height="${PH}" style="width:${PW}px;height:${PH}px"
+        class="rounded-lg border border-sand/60 shrink-0 bg-cream2"></canvas>
+      <div class="flex-1 flex flex-col gap-2 min-w-0">
         <div class="text-[11px] font-medium uppercase tracking-[0.18em] text-ink2">Photo ${i + 1}</div>
         <label class="flex items-center gap-2 text-[11px] text-muted">
           <span class="w-5">↔</span>
@@ -3203,13 +3250,18 @@ function renderAdjustPanel() {
       </div>
     `;
     list.appendChild(row);
+    drawAdjustPreview(i);
   });
   // Coalesce slider input via rAF instead of a timer — gives 1 redraw per
   // frame (max), so slider feels instant on capable devices and gracefully
   // drops frames on slow phones without queuing up stale rebuilds.
   let rafQueued = false;
+  let pendingIdx = -1;
   function flushAdjust() {
     rafQueued = false;
+    // Always refresh the inline preview — it's the user's primary visual
+    // feedback when the strip is hidden behind the bottom sheet on mobile.
+    if (pendingIdx >= 0) drawAdjustPreview(pendingIdx);
     buildStrip();
   }
   function onSliderInput(e) {
@@ -3217,6 +3269,7 @@ function renderAdjustPanel() {
     const axis = e.target.dataset.axis;
     if (!photoOffsets[idx]) photoOffsets[idx] = { ox: 0, oy: 0 };
     photoOffsets[idx][axis] = parseFloat(e.target.value);
+    pendingIdx = idx;
     renderScale = 0.5;
     _isAdjusting = true;
     if (!rafQueued) { rafQueued = true; requestAnimationFrame(flushAdjust); }
@@ -3224,6 +3277,7 @@ function renderAdjustPanel() {
   function onSliderRelease() {
     renderScale = 1;
     _isAdjusting = false;
+    if (pendingIdx >= 0) drawAdjustPreview(pendingIdx);
     buildStrip();
   }
   list.querySelectorAll('input[type="range"]').forEach(input => {
