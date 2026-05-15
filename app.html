@@ -1505,7 +1505,10 @@
         <button id="snap-btn" onclick="startSession()" class="hidden"><span id="snap-label">Capture</span></button>
 
         <!-- Layouts showcase: big photo-strip preview cards in a horizontal carousel -->
-        <section id="layouts-section" class="mt-10 max-w-[1100px] mx-auto">
+        <!-- scroll-margin-top keeps the "Choose your layout" heading + subtext
+             visible above the cards when the onboarding scroll lands here,
+             instead of hiding them behind the sticky header. -->
+        <section id="layouts-section" class="mt-10 max-w-[1100px] mx-auto" style="scroll-margin-top: 90px;">
           <div class="text-center mb-6">
             <h2 class="font-serif text-xl md:text-2xl text-ink2">Choose your layout</h2>
             <p class="text-sm text-muted mt-1">Tap a style we'll set up the right number of shots for you</p>
