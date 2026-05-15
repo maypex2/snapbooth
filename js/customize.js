@@ -123,27 +123,108 @@ function drawShotInto(ctx, shotImg, x, y, w, h, ox, oy) {
     ctx.clip();
     ctx.fillStyle = bgRemoveColor;
     ctx.fillRect(x, y, w, h);
-    drawCoverImage(ctx, cutout, x, y, w, h, ox, oy);
+    drawCoverImage(ctx, getFilteredImage(cutout), x, y, w, h, ox, oy);
     ctx.restore();
   } else {
-    drawCoverImage(ctx, shotImg, x, y, w, h, ox, oy);
+    drawCoverImage(ctx, getFilteredImage(shotImg), x, y, w, h, ox, oy);
   }
 }
 
+// ── Per-photo color filter ────────────────────────────────────────
+// Filter is applied once per (image, filter-id) and cached on an offscreen
+// canvas so re-renders (drags, color picks, sticker moves) stay fast even
+// with all 28 looks available. We feed the cached canvas into drawCoverImage
+// just like a regular HTMLImageElement.
+let currentCustomFilter = 'none';
+const filteredCache = new WeakMap();
+
+function getFilteredImage(img) {
+  if (!img) return img;
+  if (!currentCustomFilter || currentCustomFilter === 'none') return img;
+  const cached = filteredCache.get(img);
+  if (cached && cached.filter === currentCustomFilter) return cached.canvas;
+
+  const w = img.naturalWidth || img.width;
+  const h = img.naturalHeight || img.height;
+  if (!w || !h) return img;
+
+  const oc = document.createElement('canvas');
+  oc.width = w; oc.height = h;
+  const octx = oc.getContext('2d');
+  const css = (typeof FILTER_CSS !== 'undefined' && FILTER_CSS[currentCustomFilter]) || 'none';
+  const filterOk = typeof ctxFilterSupported === 'function' ? ctxFilterSupported() : true;
+  if (filterOk) octx.filter = css;
+  octx.drawImage(img, 0, 0, w, h);
+  if (filterOk) octx.filter = 'none';
+  if (!filterOk) {
+    // iOS Safari < 14.1 fallback: applyManualFilter operates on the
+    // ambient `ctx` + `canvas` globals from filters.js, so we briefly
+    // shadow them with our offscreen pair.
+    try {
+      const prevCtx = window.ctx, prevCanvas = window.canvas;
+      window.ctx = octx; window.canvas = oc;
+      if (typeof applyManualFilter === 'function') applyManualFilter(currentCustomFilter);
+      window.ctx = prevCtx; window.canvas = prevCanvas;
+    } catch (e) { /* ignore */ }
+  }
+  filteredCache.set(img, { filter: currentCustomFilter, canvas: oc });
+  return oc;
+}
+
+function setCustomFilter(f) {
+  if (currentCustomFilter === f) return;
+  currentCustomFilter = f || 'none';
+  document.querySelectorAll('#cf-rail .cf-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.f === currentCustomFilter);
+  });
+  buildStrip();
+}
+
+const CF_FILTERS = [
+  ['none', 'Normal'], ['bw', 'B&W'], ['vintage', 'Vintage'], ['retro', 'Retro'],
+  ['glow', 'Glow'], ['warm', 'Warm'], ['cool', 'Cool'], ['noir', 'Noir'],
+  ['fade', 'Fade'], ['sunset', 'Sunset'], ['dreamy', 'Dreamy'], ['drama', 'Drama'],
+  ['pastel', 'Pastel'], ['punch', 'Punch'], ['chrome', 'Chrome'], ['cinematic', 'Cinematic'],
+  ['film', 'Film'], ['vhs', 'VHS'], ['kawaii', 'Kawaii'], ['moody', 'Moody'],
+  ['honey', 'Honey'], ['bluehour', 'Blue Hour'], ['aura', 'Aura'], ['disposable', 'Disposable'],
+  ['mocha', 'Mocha'], ['sage', 'Sage'], ['twilight', 'Twilight'],
+];
+
+function initFilterRail() {
+  const rail = document.getElementById('cf-rail');
+  if (!rail || rail.dataset.ready) return;
+  rail.dataset.ready = '1';
+  rail.innerHTML = CF_FILTERS.map(([id, label]) => `
+    <button type="button" class="cf-btn${id === currentCustomFilter ? ' active' : ''}" data-f="${id}" aria-label="${label}">
+      <div class="cf-thumb w-14 h-14 rounded-full" data-filter="${id}"></div>
+      <span class="cf-label text-[10px] text-ink2">${label}</span>
+    </button>
+  `).join('');
+  rail.addEventListener('click', e => {
+    const btn = e.target.closest('.cf-btn');
+    if (!btn) return;
+    setCustomFilter(btn.dataset.f);
+  });
+  const reset = document.getElementById('cf-reset');
+  if (reset) reset.addEventListener('click', () => setCustomFilter('none'));
+}
+
 function drawCoverImage(ctx, img, x, y, w, h, ox = 0, oy = 0) {
-  const imgAspect = img.naturalWidth / img.naturalHeight;
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  const imgAspect = iw / ih;
   const boxAspect = w / h;
   let sx, sy, sw, sh;
   if (imgAspect > boxAspect) {
-    sh = img.naturalHeight;
+    sh = ih;
     sw = sh * boxAspect;
-    const slack = img.naturalWidth - sw;
+    const slack = iw - sw;
     sx = slack * (0.5 + ox * 0.5);
     sy = 0;
   } else {
-    sw = img.naturalWidth;
+    sw = iw;
     sh = sw / boxAspect;
-    const slack = img.naturalHeight - sh;
+    const slack = ih - sh;
     sx = 0;
     sy = slack * (0.5 + oy * 0.5);
   }
@@ -798,6 +879,14 @@ function buildTemplateStrip() {
     drawCustomTextOverlay();
   };
 
+  // Fast sync path: if the template image is already cached and decoded,
+  // draw photos right now. Otherwise download flows read stripCanvas before
+  // the .then microtask fires and end up saving a white PNG.
+  const cached = (typeof _templateImgCache !== 'undefined') ? _templateImgCache[tpl.file] : null;
+  if (cached && cached.complete && cached.naturalWidth) {
+    drawPhotosAndOverlay(cached);
+    return Promise.resolve();
+  }
   return loadTemplateImage(tpl.file)
     .then(drawPhotosAndOverlay)
     .catch(() => drawPhotosAndOverlay(null));
@@ -2758,8 +2847,44 @@ function normalizeUploaded(srcImg) {
   });
 }
 
+// iPhone photos default to HEIC/HEIF, which Chrome/Edge/Firefox can't decode
+// natively via <img>. We lazy-load heic2any (~150 KB) only when a HEIC file
+// is actually picked, then convert it to a JPEG Blob so the rest of the
+// upload pipeline runs unchanged. Detection covers both the MIME type (when
+// the OS sets one) and the file extension (Android often leaves type empty).
+function isHeicFile(f) {
+  const t = (f.type || '').toLowerCase();
+  const n = (f.name || '').toLowerCase();
+  return t === 'image/heic' || t === 'image/heif' ||
+         n.endsWith('.heic') || n.endsWith('.heif');
+}
+
+let _heic2anyPromise = null;
+function ensureHeic2any() {
+  if (window.heic2any) return Promise.resolve(window.heic2any);
+  if (_heic2anyPromise) return _heic2anyPromise;
+  _heic2anyPromise = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+    s.onload = () => res(window.heic2any);
+    s.onerror = () => { _heic2anyPromise = null; rej(new Error('heic2any load failed')); };
+    document.head.appendChild(s);
+  });
+  return _heic2anyPromise;
+}
+
+async function convertHeicToJpegFile(file) {
+  const heic2any = await ensureHeic2any();
+  const out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+  const blob = Array.isArray(out) ? out[0] : out;
+  return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+}
+
 async function replacePhotos(fileList) {
-  const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/'));
+  // Accept image/* AND any file with a HEIC/HEIF extension (Android often
+  // leaves file.type empty for HEIC, so the strict image/* filter would
+  // wrongly drop iPhone shots before we get a chance to convert them).
+  const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/') || isHeicFile(f));
   if (!files.length) return;
   const max  = maxShots();
   const visible = Math.min(shots.length, max);
@@ -2773,7 +2898,20 @@ async function replacePhotos(fileList) {
   let failed = 0;
   for (let i = 0; i < picked.length; i++) {
     if (working.length >= max) break;
-    const file = picked[i];
+    let file = picked[i];
+    // Convert HEIC/HEIF iPhone photos to JPEG before decoding so they work
+    // on every browser, not just Safari. The library is fetched lazily on
+    // first use.
+    if (isHeicFile(file)) {
+      try {
+        showToast(`Converting iPhone photo ${i + 1}/${picked.length}…`);
+        file = await convertHeicToJpegFile(file);
+      } catch (err) {
+        failed++;
+        console.warn('HEIC conversion failed:', file.name, err);
+        continue;
+      }
+    }
     // Decode straight from a blob URL of the File — skips the base64 round-trip
     // (FileReader → data URL → blob URL) that was inflating each photo ~33% in
     // memory. Three big Samsung-camera JPEGs in flight at once was enough to
@@ -2803,9 +2941,19 @@ async function replacePhotos(fileList) {
     showToast(`Loading ${next}/${picked.length}…`);
   }
 
+  // If the user filled all slots and re-uploaded, treat as a full replace
+  // and wipe stale offsets. If they only appended into empty slots, keep
+  // the offsets they already tuned for photos that didn't change.
+  const wasFullReplace = visible >= max;
   shots = working;
-  // Reset offsets for replaced photos so old positioning doesn't carry over
-  photoOffsets = shots.map(() => ({ ox: 0, oy: 0 }));
+  if (wasFullReplace) {
+    photoOffsets = shots.map(() => ({ ox: 0, oy: 0 }));
+  } else {
+    for (let i = 0; i < shots.length; i++) {
+      if (!photoOffsets[i]) photoOffsets[i] = { ox: 0, oy: 0 };
+    }
+    photoOffsets.length = shots.length;
+  }
   buildStrip();
   updateUploadCounter();
   if (typeof renderAdjustPanel === 'function') renderAdjustPanel();
@@ -3010,6 +3158,7 @@ initLayoutGrid();
 initTemplateGrid();
 initFrameGrid();
 initColorSwatches();
+initFilterRail();
 initStickerGrid();
 initBgRemove();
 setupCanvasDrag();
