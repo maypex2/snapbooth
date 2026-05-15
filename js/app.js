@@ -198,6 +198,12 @@ async function flipCamera() {
     return;
   }
   applyFacingMirror();
+  // Re-apply flash state to the freshly opened stream so the user's choice
+  // follows them across the flip. The new track defaults to torch=off, so
+  // without this the back-cam flash silently switches off after every flip.
+  if (typeof window.__sbApplyFlash === 'function') {
+    try { await window.__sbApplyFlash(); } catch {}
+  }
   try { localStorage.setItem('sb_facing', currentFacing); } catch {}
 }
 

@@ -45,6 +45,12 @@ let photoOffsets = [];
 // adjustments so weak phones can keep up; restored to 1 when interaction
 // ends so downloads stay full quality.
 let renderScale = 1;
+// While true, buildStrip skips the costly non-photo passes (frame title,
+// frame decorations, brand footer, stickers, custom text). Adjust-slider
+// drags only change photo crop positions, so re-painting all that art on
+// every rAF tick burns CPU for no visual benefit. We restore the full
+// render on slider release.
+let _isAdjusting = false;
 // Footer visibility toggles (Text tab → Footer section)
 const showWordmark = true; // always-on now
 let showDate     = true;
@@ -131,22 +137,31 @@ function drawShotInto(ctx, shotImg, x, y, w, h, ox, oy) {
 }
 
 // ── Per-photo color filter ────────────────────────────────────────
-// Filter is applied once per (image, filter-id) and cached on an offscreen
-// canvas so re-renders (drags, color picks, sticker moves) stay fast even
-// with all 28 looks available. We feed the cached canvas into drawCoverImage
-// just like a regular HTMLImageElement.
+// IG/TikTok feel = instant on tap, full quality settles after. We do that
+// with two layers:
+//   1. A small (~480 px long edge) PREVIEW filter that pops in <50 ms even
+//      on iPhone SE / mid-range Androids, used while the user is browsing.
+//   2. A FULL-resolution filter that we kick off on idle and swap in once
+//      the user stops tapping — so the final strip + download stays sharp.
+// Both layers are keyed on (image, filter, tier) in a WeakMap so cycling
+// through filters never recomputes pixels we've already seen.
 let currentCustomFilter = 'none';
 const filteredCache = new WeakMap();
+const PREVIEW_MAX = 480;   // long-edge cap for the fast tier
+const FULL_MAX    = 1280;  // long-edge cap for the final tier (strip slot ≤ 640 px)
+let _filterFullPending = null;   // pending hi-res upgrade scheduled by setCustomFilter
+let _filterQualityTier = 'preview'; // 'preview' or 'full' — which tier to fetch
+let _filterTapBusy = false;       // coalesces back-to-back taps into one render
 
-function getFilteredImage(img) {
-  if (!img) return img;
-  if (!currentCustomFilter || currentCustomFilter === 'none') return img;
-  const cached = filteredCache.get(img);
-  if (cached && cached.filter === currentCustomFilter) return cached.canvas;
+function _filterTierMax() { return _filterQualityTier === 'full' ? FULL_MAX : PREVIEW_MAX; }
 
-  const w = img.naturalWidth || img.width;
-  const h = img.naturalHeight || img.height;
-  if (!w || !h) return img;
+function _renderFilteredTier(img, tierMax) {
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return null;
+  const scale = Math.min(1, tierMax / Math.max(iw, ih));
+  const w = Math.max(1, Math.round(iw * scale));
+  const h = Math.max(1, Math.round(ih * scale));
 
   const oc = document.createElement('canvas');
   oc.width = w; oc.height = h;
@@ -157,9 +172,9 @@ function getFilteredImage(img) {
   octx.drawImage(img, 0, 0, w, h);
   if (filterOk) octx.filter = 'none';
   if (!filterOk) {
-    // iOS Safari < 14.1 fallback: applyManualFilter operates on the
-    // ambient `ctx` + `canvas` globals from filters.js, so we briefly
-    // shadow them with our offscreen pair.
+    // iOS Safari < 14.1 fallback. The per-pixel JS path is slow at full
+    // res — running it on the downscaled preview tier keeps even old
+    // iPhones snappy.
     try {
       const prevCtx = window.ctx, prevCanvas = window.canvas;
       window.ctx = octx; window.canvas = oc;
@@ -167,8 +182,47 @@ function getFilteredImage(img) {
       window.ctx = prevCtx; window.canvas = prevCanvas;
     } catch (e) { /* ignore */ }
   }
-  filteredCache.set(img, { filter: currentCustomFilter, canvas: oc });
   return oc;
+}
+
+function getFilteredImage(img) {
+  if (!img) return img;
+  if (!currentCustomFilter || currentCustomFilter === 'none') return img;
+  const entry = filteredCache.get(img);
+  // Hit the cache greedily: a full-tier canvas satisfies a preview request
+  // (so cycling back to a filter we already rendered fully is instant), but
+  // a preview-tier canvas does NOT satisfy a full request — we want the
+  // upgrade pass to actually upgrade.
+  if (entry && entry.filter === currentCustomFilter) {
+    if (_filterQualityTier === 'preview' || entry.tier === 'full') return entry.canvas;
+  }
+  const tierMax = _filterTierMax();
+  const oc = _renderFilteredTier(img, tierMax);
+  if (!oc) return img;
+  filteredCache.set(img, { filter: currentCustomFilter, tier: _filterQualityTier, canvas: oc });
+  return oc;
+}
+
+function _scheduleFilterUpgrade() {
+  // Cancel any prior upgrade we hadn't gotten to yet — the user picked a
+  // new filter and the old upgrade target is stale.
+  if (_filterFullPending) {
+    clearTimeout(_filterFullPending);
+    _filterFullPending = null;
+  }
+  if (!currentCustomFilter || currentCustomFilter === 'none') return;
+  // Idle delay long enough that fast scrubbing through the rail never
+  // queues a hi-res render we'll immediately throw away.
+  const idle = window.requestIdleCallback || (cb => setTimeout(cb, 1));
+  _filterFullPending = setTimeout(() => {
+    _filterFullPending = null;
+    idle(() => {
+      _filterQualityTier = 'full';
+      renderScale = 1;
+      buildStrip();
+      _filterQualityTier = 'preview';   // next tap starts fast again
+    });
+  }, 260);
 }
 
 function setCustomFilter(f) {
@@ -177,7 +231,19 @@ function setCustomFilter(f) {
   document.querySelectorAll('#cf-rail .cf-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.f === currentCustomFilter);
   });
-  buildStrip();
+  // Render at half canvas + small filter cache for an instant preview, then
+  // upgrade once the user pauses. Coalesce tap bursts so we only do one
+  // preview render per animation frame even if the user mashes the rail.
+  _filterQualityTier = 'preview';
+  renderScale = 0.5;
+  if (!_filterTapBusy) {
+    _filterTapBusy = true;
+    requestAnimationFrame(() => {
+      _filterTapBusy = false;
+      buildStrip();
+    });
+  }
+  _scheduleFilterUpgrade();
 }
 
 const CF_FILTERS = [
@@ -616,7 +682,7 @@ function buildStrip() {
   // custom text when provided. Falls back to bottom space (e.g. polaroid,
   // photocard) when there's no usable top area.
   const topReserve = positions[0] ? positions[0].y : 0;
-  if (topReserve > 30) {
+  if (topReserve > 30 && !_isAdjusting) {
     drawFrameTitle(sctx, currentFrame, sw, sh, topReserve);
   }
 
@@ -663,7 +729,7 @@ function buildStrip() {
   // Coquette, Holiday, etc.) can't bleed art over BopBooth + date.
   const footerReserve = footerReserveFor(currentMode);
   const ownFooter = typeof frameHasOwnFooter === 'function' && frameHasOwnFooter(currentFrame);
-  if (currentMode !== 'photocard' && !bgOverride) {
+  if (currentMode !== 'photocard' && !bgOverride && !_isAdjusting) {
     if (ownFooter) {
       // Frame has its own designed bottom wordmark/date — draw unclipped.
       drawFrameDecorations(sctx, currentFrame, sw, sh);
@@ -681,7 +747,15 @@ function buildStrip() {
 
   // Unified brand footer — one consistent placement across every layout.
   // Skipped when the frame already paints its own designed footer.
-  if (currentMode !== 'tilt3' && !ownFooter) drawBrandFooter(sctx, sw, sh, footerReserve);
+  if (currentMode !== 'tilt3' && !ownFooter && !_isAdjusting) drawBrandFooter(sctx, sw, sh, footerReserve);
+
+  if (_isAdjusting) {
+    // Fast path: don't bother re-snapshotting the base canvas or drawing
+    // stickers/text — they don't change with crop offset. The release
+    // handler runs a full buildStrip so the user sees the complete look
+    // the moment they let go.
+    return;
+  }
 
   // Snapshot the base (everything except stickers) so sticker drags can
   // skip re-rasterizing photos & frame on every pointer event.
@@ -2422,7 +2496,14 @@ async function downloadStrip() {
   // doesn't get baked into the exported image.
   const savedSel = selectedStickerIdx;
   selectedStickerIdx = null;
+  // Force the hi-res filter pass for the export, even if the user hit
+  // download before the idle upgrade fired. Otherwise the saved PNG would
+  // freeze the 480 px preview-tier filter into a 1280 px strip.
+  if (_filterFullPending) { clearTimeout(_filterFullPending); _filterFullPending = null; }
+  renderScale = 1;
+  _filterQualityTier = 'full';
   buildStrip();
+  _filterQualityTier = 'preview';
   const filename = 'BopBooth-' + currentMode + '-' + Date.now() + '.png';
 
   // iOS: synchronous toDataURL keeps navigator.share / window.open inside
@@ -2480,7 +2561,11 @@ function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColor = '#
   selectedStickerIdx = null;
   // Sync buildStrip — any async boundary here destroys iOS user activation,
   // which is the whole reason the IG export download was silently failing.
+  if (_filterFullPending) { clearTimeout(_filterFullPending); _filterFullPending = null; }
+  renderScale = 1;
+  _filterQualityTier = 'full';
   buildStrip();
+  _filterQualityTier = 'preview';
   const out = document.createElement('canvas');
   out.width = canvasW;
   out.height = canvasH;
@@ -2761,7 +2846,11 @@ async function shareStrip() {
   // Hide sticker selection UI so it doesn't get baked into the shared image.
   const savedSel = selectedStickerIdx;
   selectedStickerIdx = null;
+  if (_filterFullPending) { clearTimeout(_filterFullPending); _filterFullPending = null; }
+  renderScale = 1;
+  _filterQualityTier = 'full';
   buildStrip();
+  _filterQualityTier = 'preview';
   const restoreSelection = () => {
     if (savedSel !== null) {
       selectedStickerIdx = savedSel;
@@ -3129,10 +3218,12 @@ function renderAdjustPanel() {
     if (!photoOffsets[idx]) photoOffsets[idx] = { ox: 0, oy: 0 };
     photoOffsets[idx][axis] = parseFloat(e.target.value);
     renderScale = 0.5;
+    _isAdjusting = true;
     if (!rafQueued) { rafQueued = true; requestAnimationFrame(flushAdjust); }
   }
   function onSliderRelease() {
     renderScale = 1;
+    _isAdjusting = false;
     buildStrip();
   }
   list.querySelectorAll('input[type="range"]').forEach(input => {

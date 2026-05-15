@@ -2032,26 +2032,43 @@
     });
 
     // ── Flash toggle ──
+    // Two-tier flash: hardware torch on back cams that expose it (most modern
+    // Android Chrome), bright white-screen pulse at capture on everything
+    // else (front cams, iOS Safari, any phone without a torch constraint).
+    // Split into state + apply so app.js can re-apply the user's flash choice
+    // after a camera flip — otherwise the new stream starts with torch off
+    // and the user has to toggle again.
     let flashOn = false;
-    async function toggleFlash() {
-      flashOn = !flashOn;
+    async function applyFlashState() {
       const btn = document.getElementById('flash-btn');
       const lbl = document.getElementById('flash-label');
       if (btn) { btn.classList.toggle('is-on', flashOn); btn.setAttribute('aria-pressed', String(flashOn)); }
       if (lbl) lbl.textContent = flashOn ? 'On' : 'Off';
-      // Try hardware torch (back cam only, supported phones). Front cam falls
-      // back to the existing white-screen flash effect at capture time.
+      let torchApplied = false;
       try {
         if (typeof stream !== 'undefined' && stream) {
           const track = stream.getVideoTracks()[0];
-          const caps = track.getCapabilities ? track.getCapabilities() : {};
+          const caps = track && track.getCapabilities ? track.getCapabilities() : {};
           if (caps && 'torch' in caps) {
             await track.applyConstraints({ advanced: [{ torch: flashOn }] });
+            torchApplied = true;
           }
         }
-      } catch (e) { /* torch not supported — front-cam path uses screen-flash */ }
+      } catch (e) { /* torch refused — screen flash still fires at capture */ }
+      return torchApplied;
     }
-    window.__sbFlashOn = () => flashOn;   // exposed for app.js capture flow
+    async function toggleFlash() {
+      flashOn = !flashOn;
+      const torchApplied = await applyFlashState();
+      // Let the user know something will happen even if their phone has no
+      // controllable torch (the white-screen pulse). Without this, users on
+      // iOS / older Androids think the flash button does nothing.
+      if (flashOn && !torchApplied && typeof showToast === 'function') {
+        showToast('Flash on — screen will flash at capture');
+      }
+    }
+    window.__sbFlashOn = () => flashOn;      // capture flow reads this
+    window.__sbApplyFlash = applyFlashState;  // app.js calls after flipping
 
     // ── Active filter name badge ──
     // Briefly shows the filter name after selection so users feel confident
