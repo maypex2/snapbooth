@@ -2913,17 +2913,14 @@ function showToast(msg) {
 // Downscale large uploads to a sane max dimension while preserving the
 // original aspect ratio — the strip renderer will fit them with `contain`
 // so nothing gets cropped.
-function normalizeUploaded(srcImg) {
-  const MAX = 1600;
-  let w = srcImg.width, h = srcImg.height;
-  if (w > MAX || h > MAX) {
-    if (w >= h) { h = Math.round(h * (MAX / w)); w = MAX; }
-    else        { w = Math.round(w * (MAX / h)); h = MAX; }
-  }
+const UPLOAD_MAX_DIM = 1600;
+
+// Canvas-from-source → blob-URL Image. Shared by both decode paths.
+function canvasToBlobImage(source, w, h) {
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   const cx = c.getContext('2d');
-  cx.drawImage(srcImg, 0, 0, w, h);
+  cx.drawImage(source, 0, 0, w, h);
   // Use blob URL (via toBlob) instead of data URL (via toDataURL) so iOS
   // Safari doesn't taint the strip canvas when this normalized image is
   // drawn on it later — taint = download fails silently with SecurityError.
@@ -2934,6 +2931,68 @@ function normalizeUploaded(srcImg) {
       out.src = blob ? URL.createObjectURL(blob) : c.toDataURL('image/jpeg', 0.92);
     }, 'image/jpeg', 0.92);
   });
+}
+
+function normalizeUploaded(srcImg) {
+  let w = srcImg.width, h = srcImg.height;
+  if (w > UPLOAD_MAX_DIM || h > UPLOAD_MAX_DIM) {
+    if (w >= h) { h = Math.round(h * (UPLOAD_MAX_DIM / w)); w = UPLOAD_MAX_DIM; }
+    else        { w = Math.round(w * (UPLOAD_MAX_DIM / h)); h = UPLOAD_MAX_DIM; }
+  }
+  return canvasToBlobImage(srcImg, w, h);
+}
+
+// High-MP-safe decoder. Phones now ship 13–108 MP cameras; loading those into
+// an <img> forces the browser to allocate the full RGBA buffer (a 50 MP photo
+// = ~200 MB of RAM), which Chrome on mid-range Android and Safari on older
+// iPhones will refuse. createImageBitmap with resizeWidth/Height streams the
+// decode and downsamples in one pass, so a 50 MP Samsung JPEG goes through
+// using ~the same memory as a 2 MP photo. Falls back to the <img> path when
+// createImageBitmap or the resize options aren't supported.
+async function decodeAndNormalize(file) {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      // Pass only one of resizeWidth/Height so aspect ratio is preserved.
+      // We don't know the orientation yet, so request the long edge via
+      // resizeWidth and let the browser pick the matching height; if the
+      // photo turns out to be portrait, normalizeUploaded() will fix it on
+      // the second pass. (For most cameras the cost is one extra canvas
+      // draw at ≤1600 px — negligible.)
+      const bmp = await createImageBitmap(file, {
+        resizeWidth: UPLOAD_MAX_DIM,
+        resizeQuality: 'high',
+        imageOrientation: 'from-image'  // respect EXIF rotation
+      });
+      let w = bmp.width, h = bmp.height;
+      // If the photo was portrait, resizeWidth produced a too-tall bitmap —
+      // scale down the long edge.
+      if (Math.max(w, h) > UPLOAD_MAX_DIM) {
+        if (w >= h) { h = Math.round(h * (UPLOAD_MAX_DIM / w)); w = UPLOAD_MAX_DIM; }
+        else        { w = Math.round(w * (UPLOAD_MAX_DIM / h)); h = UPLOAD_MAX_DIM; }
+      }
+      const img = await canvasToBlobImage(bmp, w, h);
+      bmp.close && bmp.close();
+      return img;
+    } catch (err) {
+      console.warn('createImageBitmap failed, falling back to <img>:', err);
+      // fall through to <img> path
+    }
+  }
+  // Fallback: classic <img> decode (works on every browser, but capped at
+  // whatever max-MP the browser allows for <img>).
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const raw = await new Promise((res, rej) => {
+      const im = new Image();
+      const tid = setTimeout(() => rej(new Error('decode timeout')), 15000);
+      im.onload  = () => { clearTimeout(tid); res(im); };
+      im.onerror = () => { clearTimeout(tid); rej(new Error('decode failed')); };
+      im.src = objectUrl;
+    });
+    return await normalizeUploaded(raw);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 // iPhone photos default to HEIC/HEIF, which Chrome/Edge/Firefox can't decode
@@ -3001,29 +3060,14 @@ async function replacePhotos(fileList) {
         continue;
       }
     }
-    // Decode straight from a blob URL of the File — skips the base64 round-trip
-    // (FileReader → data URL → blob URL) that was inflating each photo ~33% in
-    // memory. Three big Samsung-camera JPEGs in flight at once was enough to
-    // OOM-stall the tab on mid-range Android. Blob URL also keeps iOS Safari
-    // happy (no canvas taint).
-    const objectUrl = URL.createObjectURL(file);
+    // decodeAndNormalize handles high-MP photos (13–100+ MP) via
+    // createImageBitmap with resizeWidth, falling back to <img> for older
+    // browsers. Same blob-URL output either way (no iOS canvas taint).
     try {
-      const raw = await new Promise((res, rej) => {
-        const im = new Image();
-        // Hard timeout in case onload/onerror never fires (corrupt EXIF, bad
-        // codec) — one bad photo used to freeze the whole batch.
-        const tid = setTimeout(() => rej(new Error('decode timeout')), 15000);
-        im.onload  = () => { clearTimeout(tid); res(im); };
-        im.onerror = () => { clearTimeout(tid); rej(new Error('decode failed')); };
-        im.src = objectUrl;
-      });
-      working.push(await normalizeUploaded(raw));
+      working.push(await decodeAndNormalize(file));
     } catch (err) {
       failed++;
       console.warn('Upload skipped:', file.name, err);
-    } finally {
-      // Free the original file's blob URL — normalizeUploaded made its own.
-      URL.revokeObjectURL(objectUrl);
     }
     // Per-photo progress so a slow phone doesn't look frozen
     const next = Math.min(i + 2, picked.length);
