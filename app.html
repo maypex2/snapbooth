@@ -34,7 +34,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
-    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Caveat:wght@400;600&display=swap"
     rel="stylesheet">
 
   <!-- Tailwind -->
@@ -525,6 +525,13 @@
       background: #fff;
       color: #2A2520;
     }
+
+    .datestamp-btn.active {
+      background: #FF8C2E;
+      color: #fff;
+      border-color: #FF8C2E;
+    }
+    .datestamp-btn.active svg { color: #fff; }
 
     #video.cam-active {
       opacity: 1;
@@ -1167,13 +1174,41 @@
               <span id="mode-indicator-count" class="text-ink2">4 shots</span>
             </div>
 
-            <!-- Timer selector -->
-            <div class="flex items-center p-0.5 rounded-full bg-sand/30 border border-sand shadow-sm text-[11px] font-medium text-ink2">
-              <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 0)">Manual</button>
-              <button class="timer-btn active px-3 py-1 rounded-full transition bg-white text-ink shadow-sm" onclick="setTimer(this, 3)">3s</button>
-              <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 5)">5s</button>
-              <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 8)">8s</button>
+            <div class="flex items-center gap-2 flex-wrap justify-end">
+              <!-- Date stamp toggle -->
+              <button id="datestamp-btn"
+                onclick="toggleDateStamp(this)"
+                aria-pressed="false"
+                title="Burn-in digicam date stamp"
+                class="datestamp-btn px-2.5 py-1 rounded-full bg-sand/30 border border-sand shadow-sm text-[11px] font-medium text-ink2 hover:text-ink transition flex items-center gap-1">
+                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18"/>
+                </svg>
+                <span>Date</span>
+              </button>
+
+              <!-- Timer selector -->
+              <div class="flex items-center p-0.5 rounded-full bg-sand/30 border border-sand shadow-sm text-[11px] font-medium text-ink2">
+                <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 0)">Manual</button>
+                <button class="timer-btn active px-3 py-1 rounded-full transition bg-white text-ink shadow-sm" onclick="setTimer(this, 3)">3s</button>
+                <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 5)">5s</button>
+                <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 8)">8s</button>
+              </div>
             </div>
+          </div>
+
+          <!-- Polaroid caption (shows only for polaroid / photocard / double-polaroid) -->
+          <div id="caption-wrap" class="mb-3 px-1" style="display:none;">
+            <label class="block text-[11px] uppercase tracking-wide text-ink2/70 mb-1">Caption (handwritten)</label>
+            <input
+              id="caption-input"
+              type="text"
+              maxlength="40"
+              placeholder="summer &lsquo;26 ♡"
+              oninput="setPolaroidCaption(this.value)"
+              class="w-full px-3 py-2 rounded-xl bg-white/70 border border-sand shadow-sm text-ink placeholder:text-ink2/40 focus:outline-none focus:border-accent transition"
+              style="font-family:'Caveat',cursive; font-size:1.1rem;">
           </div>
 
           <!-- Camera -->
@@ -1538,8 +1573,8 @@
                   <span class="sc-badge try">TRY IT NOW</span>
                   <img class="sc-preview" src="assets/layouts-real/4cut-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">4-Cut Strip</div>
-                <div class="sc-meta">Size 6 × 2 Strip<br>(4 Pose)</div>
+                <div class="sc-label">Besties Strip</div>
+                <div class="sc-meta">Classic 4-cut<br>(4 Pose)</div>
               </div>
 
               <!-- 3-Cut Strip -->
@@ -1547,8 +1582,8 @@
                 <div class="sc-frame sc-frame--real">
                   <img class="sc-preview" src="assets/layouts-real/3cut-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">3-Cut Strip</div>
-                <div class="sc-meta">Size 6 × 2 Strip<br>(3 Pose)</div>
+                <div class="sc-label">Trio Mode</div>
+                <div class="sc-meta">3-cut strip<br>(3 Pose)</div>
               </div>
 
               <!-- 2-Cut Strip -->
@@ -1556,8 +1591,8 @@
                 <div class="sc-frame sc-frame--real">
                   <img class="sc-preview" src="assets/layouts-real/2cut-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">2-Cut Strip</div>
-                <div class="sc-meta">Couples format<br>(2 Pose)</div>
+                <div class="sc-label">Couple Mode</div>
+                <div class="sc-meta">2-cut strip<br>(2 Pose)</div>
               </div>
 
               <!-- 6-Cut Grid -->
@@ -1566,8 +1601,8 @@
                   <span class="sc-badge">POPULAR</span>
                   <img class="sc-preview" src="assets/layouts-real/6cut-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">6-Cut Grid</div>
-                <div class="sc-meta">Contact sheet<br>(6 Pose)</div>
+                <div class="sc-label">Photo Dump</div>
+                <div class="sc-meta">6-cut grid<br>(6 Pose)</div>
               </div>
 
               <!-- 3-Cut Horizontal -->
@@ -1575,8 +1610,8 @@
                 <div class="sc-frame sc-frame--real">
                   <img class="sc-preview" src="assets/layouts-real/3horiz-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">3-Cut Horizontal</div>
-                <div class="sc-meta">Panorama / story<br>(3 Pose)</div>
+                <div class="sc-label">Story Strip</div>
+                <div class="sc-meta">3-cut horizontal<br>(3 Pose)</div>
               </div>
 
               <!-- Square Collage -->
@@ -1584,8 +1619,8 @@
                 <div class="sc-frame sc-frame--real">
                   <img class="sc-preview" src="assets/layouts-real/squaregrid-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">Square Collage</div>
-                <div class="sc-meta">IG-post ready<br>(4 Pose)</div>
+                <div class="sc-label">IG-Ready</div>
+                <div class="sc-meta">Square collage<br>(4 Pose)</div>
               </div>
 
               <!-- 1 Large + 3 Small -->
@@ -1593,8 +1628,8 @@
                 <div class="sc-frame sc-frame--real">
                   <img class="sc-preview" src="assets/layouts-real/1large3small-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">1 Large + 3 Small</div>
-                <div class="sc-meta">Featured layout<br>(4 Pose)</div>
+                <div class="sc-label">Main Character</div>
+                <div class="sc-meta">1 large + 3 small<br>(4 Pose)</div>
               </div>
 
               <!-- 2x2 Grid -->
@@ -1602,8 +1637,8 @@
                 <div class="sc-frame sc-frame--real">
                   <img class="sc-preview" src="assets/layouts-real/grid4-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">2x2 Grid</div>
-                <div class="sc-meta">Classic grid<br>(4 Pose)</div>
+                <div class="sc-label">Squad Quad</div>
+                <div class="sc-meta">2×2 grid<br>(4 Pose)</div>
               </div>
 
               <!-- 4 + 1 Group -->
@@ -1612,8 +1647,8 @@
                   <span class="sc-badge">NEW</span>
                   <img class="sc-preview" src="assets/layouts-real/4plus1-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">4 + 1 Group</div>
-                <div class="sc-meta">Group format<br>(5 Pose)</div>
+                <div class="sc-label">Group Hang</div>
+                <div class="sc-meta">4 + 1 layout<br>(5 Pose)</div>
               </div>
 
               <!-- Double Polaroid -->
@@ -1621,8 +1656,8 @@
                 <div class="sc-frame sc-frame--real">
                   <img class="sc-preview" src="assets/layouts-real/double-polaroid-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">Double Polaroid</div>
-                <div class="sc-meta">Stacked print<br>(2 Pose)</div>
+                <div class="sc-label">Date Night</div>
+                <div class="sc-meta">Double polaroid<br>(2 Pose)</div>
               </div>
 
               <!-- 9-Cut Grid -->
@@ -1641,8 +1676,8 @@
                     <img src="assets/sample.webp" alt="" decoding="async">
                   </div>
                 </div>
-                <div class="sc-label">9-Cut Grid</div>
-                <div class="sc-meta">Photo dump<br>(9 Pose)</div>
+                <div class="sc-label">Solo Dump</div>
+                <div class="sc-meta">9-cut grid<br>(9 Pose)</div>
               </div>
 
               <!-- Puri 4-Cut (vertical) -->
@@ -1656,8 +1691,8 @@
                     <img src="assets/sample.webp" alt="" decoding="async">
                   </div>
                 </div>
-                <div class="sc-label">Puri 4-Cut</div>
-                <div class="sc-meta">Korean slim strip<br>(4 Pose)</div>
+                <div class="sc-label">K-Pop 4-Cut</div>
+                <div class="sc-meta">Puri / Photoism<br>(4 Pose)</div>
               </div>
 
               <!-- Diptych -->
@@ -1669,8 +1704,8 @@
                     <img src="assets/sample.webp" alt="" decoding="async">
                   </div>
                 </div>
-                <div class="sc-label">Diptych</div>
-                <div class="sc-meta">Side-by-side duo<br>(2 Pose)</div>
+                <div class="sc-label">Side-by-Side</div>
+                <div class="sc-meta">Diptych duo<br>(2 Pose)</div>
               </div>
 
               <!-- Tilted 3-Cut -->
@@ -1679,7 +1714,7 @@
                   <span class="sc-badge">NEW LAYOUT</span>
                   <img class="sc-preview" src="assets/layouts-real/tilt3-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">Tilted 3-Cut</div>
+                <div class="sc-label">Tilted Trio</div>
                 <div class="sc-meta">Solace style<br>(3 Pose)</div>
               </div>
 
@@ -1688,7 +1723,7 @@
                 <div class="sc-frame sc-frame--real">
                   <img class="sc-preview" src="assets/layouts-real/polaroid-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">Polaroid</div>
+                <div class="sc-label">Solo Polaroid</div>
                 <div class="sc-meta">Classic instant<br>(1 Pose)</div>
               </div>
 
@@ -1697,7 +1732,7 @@
                 <div class="sc-frame sc-frame--real">
                   <img class="sc-preview" src="assets/layouts-real/photocard-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">Photo Card</div>
+                <div class="sc-label">Idol Card</div>
                 <div class="sc-meta">Instax mini<br>(1 Pose)</div>
               </div>
 
@@ -1706,8 +1741,21 @@
                 <div class="sc-frame sc-frame--real">
                   <img class="sc-preview" src="assets/layouts-real/single-preview.webp" alt="" decoding="async">
                 </div>
-                <div class="sc-label">Single Shot</div>
+                <div class="sc-label">Solo Shot</div>
                 <div class="sc-meta">One framed photo<br>(1 Pose)</div>
+              </div>
+
+              <!-- Dual Cam (BeReal-style) -->
+              <div class="sc-card snap-start" id="mode-dual" onclick="setMode('dual')">
+                <div class="sc-frame sc-frame--real" style="position:relative;background:#1a1a1a;border-radius:12px;overflow:hidden;">
+                  <span class="sc-badge">NEW</span>
+                  <img class="sc-preview" src="assets/sample.webp" alt="" decoding="async">
+                  <div style="position:absolute;top:8px;left:8px;width:38%;aspect-ratio:4/5;border-radius:8px;overflow:hidden;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);">
+                    <img src="assets/sample.webp" alt="" decoding="async" style="width:100%;height:100%;object-fit:cover;">
+                  </div>
+                </div>
+                <div class="sc-label">Dual Cam</div>
+                <div class="sc-meta">BeReal style<br>(front + back)</div>
               </div>
 
               <!-- GIF -->

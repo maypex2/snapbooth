@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 110">
+  <path d="M14 14 l4 -8 l4 8 l8 4 l-8 4 l-4 8 l-4 -8 l-8 -4 z" fill="#ff6ad5"/>
+  <path d="M258 90 l4 -8 l4 8 l8 4 l-8 4 l-4 8 l-4 -8 l-8 -4 z" fill="#ff6ad5"/>
+  <text x="140" y="78" text-anchor="middle"
+        font-family="'Caveat', 'Dancing Script', cursive"
+        font-size="78" font-weight="700"
+        fill="#5a2a55">vibes</text>
+</svg>

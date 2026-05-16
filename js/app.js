@@ -10,6 +10,53 @@ let stream         = null;
 let currentGifBlob = null;
 let cameraReady    = false;
 let mirrorCamera   = true;
+let polaroidCaption = '';
+
+function setPolaroidCaption(value) {
+  polaroidCaption = (value || '').slice(0, 40);
+  if (shots.length) buildStrip();
+}
+
+// Modes where a handwritten user caption replaces BopBooth + date
+// in the white-border footer.
+const CAPTIONABLE_MODES = new Set(['polaroid', 'photocard', 'double-polaroid']);
+
+let dateStampOn    = (() => {
+  try { return localStorage.getItem('sb_datestamp') === '1'; } catch { return false; }
+})();
+
+function toggleDateStamp(btn) {
+  dateStampOn = !dateStampOn;
+  try { localStorage.setItem('sb_datestamp', dateStampOn ? '1' : '0'); } catch {}
+  if (btn) {
+    btn.classList.toggle('active', dateStampOn);
+    btn.setAttribute('aria-pressed', String(dateStampOn));
+  }
+  if (shots.length) buildStrip();
+}
+
+// Burned-in orange digicam-style date stamp (Sony Mavica vibe).
+// Drawn over the strip canvas regardless of which frame is selected.
+function drawDateStamp(sctx, sw, sh) {
+  const pad = Math.max(20, Math.round(sw * 0.035));
+  const d = new Date();
+  const stamp =
+    "'" + String(d.getFullYear()).slice(-2) + ' ' +
+    String(d.getMonth() + 1).padStart(2, '0') + ' ' +
+    String(d.getDate()).padStart(2, '0');
+  const stampSize = Math.round(sw * 0.045);
+  sctx.save();
+  sctx.font = '700 ' + stampSize + 'px "DM Sans", monospace';
+  sctx.textAlign = 'right';
+  sctx.textBaseline = 'alphabetic';
+  // Sit above the reserved brand-footer band if one was set by buildStrip.
+  const bottomY = (typeof window !== 'undefined' && window.__frameBottomY) || sh;
+  sctx.fillStyle = 'rgba(0,0,0,0.4)';
+  sctx.fillText(stamp, sw - pad + 2, bottomY - pad + 2);
+  sctx.fillStyle = '#FF8C2E';
+  sctx.fillText(stamp, sw - pad, bottomY - pad);
+  sctx.restore();
+}
 
 function toggleMirror(btn) {
   mirrorCamera = !mirrorCamera;
@@ -210,6 +257,12 @@ async function flipCamera() {
 document.addEventListener('DOMContentLoaded', () => {
   const flipBtn = document.getElementById('flip-cam-btn');
   if (flipBtn) flipBtn.addEventListener('click', flipCamera);
+  // Sync date-stamp toggle button to persisted state
+  const dsBtn = document.getElementById('datestamp-btn');
+  if (dsBtn && dateStampOn) {
+    dsBtn.classList.add('active');
+    dsBtn.setAttribute('aria-pressed', 'true');
+  }
 });
 
 // ── Release the camera when the user leaves the page / locks the phone ──
@@ -243,6 +296,9 @@ const MODE_SHOTS = {
   'squaregrid': 4, '1large3small': 4, 'grid4': 4, 'single': 1, 'polaroid': 1,
   'double-polaroid': 2, 'photocard': 1, 'gif': 1, 'tilt3': 3, '4plus1': 5,
   '9cut': 9, 'vertical4': 4, 'diptych': 2,
+  // BeReal-style dual cam: shot 0 = front (selfie), shot 1 = back (scene).
+  // Front shot is composited as a small PIP over the back shot at build time.
+  'dual': 2,
 };
 
 function maxShots() { return MODE_SHOTS[currentMode] || 1; }
@@ -291,6 +347,10 @@ function setMode(m) {
     if (m === 'gif') countEl.textContent = 'Animated';
     else countEl.textContent = count + (count === 1 ? ' shot' : ' shots');
   }
+
+  // Show caption input only for polaroid-style modes
+  const capWrap = document.getElementById('caption-wrap');
+  if (capWrap) capWrap.style.display = CAPTIONABLE_MODES.has(m) ? '' : 'none';
 }
 
 // ── Filters ──
@@ -492,12 +552,30 @@ async function startPhotoSession() {
   // isRunning + button-disabled were set in startSession()
   document.getElementById('rec-ring').classList.add('active');
 
+  // Remember the initial facing so dual mode can restore it after the session.
+  const initialFacing = currentFacing;
+
   for (let i = 0; i < max; i++) {
     if (shots.length >= max) break;
+
+    // Dual cam: shot 0 = front, shot 1 = back. Flip the camera before
+    // shot 1 (BeReal-style sequential capture — iOS only allows one active
+    // MediaStream at a time, so we can't grab both simultaneously).
+    if (currentMode === 'dual' && i === 1) {
+      showToast('Flipping to back camera…');
+      await enableCamera('environment');
+      // Give the new stream a beat to deliver its first real frame so the
+      // capture isn't a black/frozen-buffer shot.
+      await sleep(600);
+    }
+
     if (currentTimer > 0) {
       await countdown(currentTimer);
     } else {
-      showToast(`Tap Capture for shot ${i + 1} of ${max}`);
+      const label = currentMode === 'dual'
+        ? (i === 0 ? 'Tap for selfie (front cam)' : 'Tap for scene (back cam)')
+        : `Tap Capture for shot ${i + 1} of ${max}`;
+      showToast(label);
       await waitForSnap();
     }
     flashEffect();
@@ -507,6 +585,12 @@ async function startPhotoSession() {
     updateShotDots();
     ejectPolaroid(img);
     if (i < max - 1 && currentTimer > 0) await sleep(600);
+  }
+
+  // Dual cam: restore the original facing so the live preview goes back
+  // to selfie after the strip is built.
+  if (currentMode === 'dual' && currentFacing !== initialFacing) {
+    enableCamera(initialFacing).catch(() => {});
   }
 
   document.getElementById('rec-ring').classList.remove('active');
@@ -652,6 +736,22 @@ async function startSession() {
   else startPhotoSession();
 }
 
+// Trace a rounded-rectangle path (no fill/stroke). Caller decides what to do.
+function roundedRectPath(ctx, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
 // Fill the slot completely (cover) — image is center-cropped.
 function drawCoverImage(ctx, img, x, y, w, h) {
   const imgAspect = img.naturalWidth / img.naturalHeight;
@@ -683,6 +783,7 @@ function footerReserveFor(mode) {
     case 'photocard':       return 100;
     case 'polaroid':
     case 'double-polaroid': return 90;
+    case 'dual':            return 100;
     case '4plus1':
     case 'diptych':         return 100;
     case '1large3small':    return 60;
@@ -718,6 +819,21 @@ function drawBrandFooter(sctx, sw, sh, reserveH) {
   const dark = currentMode === 'photocard' ? false : isDarkHex(getFrameBg(currentFrame));
   const wmColor   = dark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.55)';
   const dateColor = dark ? 'rgba(255,255,255,0.6)'  : 'rgba(0,0,0,0.35)';
+
+  // Polaroid-style modes with a user caption: write the caption in a
+  // handwritten font over the white border, like Sharpie on a Polaroid.
+  if (CAPTIONABLE_MODES.has(currentMode) && polaroidCaption.trim()) {
+    const captionSize = Math.max(24, Math.min(reserveH * 0.55, sw * 0.06));
+    const cY = footerTop + reserveH * 0.7;
+    sctx.save();
+    sctx.textAlign = 'center';
+    sctx.textBaseline = 'alphabetic';
+    sctx.fillStyle = dark ? 'rgba(255,255,255,0.9)' : 'rgba(40,30,20,0.85)';
+    sctx.font = `400 ${Math.round(captionSize)}px "Caveat", "Dancing Script", "DM Serif Display", cursive`;
+    sctx.fillText(polaroidCaption, cx, cY);
+    sctx.restore();
+    return;
+  }
 
   sctx.save();
   sctx.textAlign = 'center';
@@ -893,6 +1009,18 @@ function buildStrip() {
       { x: BP, y: BT, w: W, h: H },
       { x: BP, y: BT + H + GAP, w: W, h: H },
     ];
+  } else if (currentMode === 'dual') {
+    // BeReal layout: back-cam fills the whole frame, front-cam is a small
+    // rounded PIP in the top-left corner. The shot-loop only fills the back
+    // slot (index 1); the front PIP (index 0) is drawn separately below so
+    // it can carry rounded corners + a white border without disturbing the
+    // standard photo-rendering path.
+    const PAD = 24, BOT = 100;
+    sw = W + PAD * 2; sh = H + PAD + BOT;
+    positions = [
+      undefined,                                  // shot 0 = front, drawn as PIP later
+      { x: PAD, y: PAD, w: W, h: H },             // shot 1 = back, fills the main frame
+    ];
   } else {
     const BP = 16;
     sw = W + BP * 2; sh = H + BP * 2;
@@ -914,6 +1042,28 @@ function buildStrip() {
     sctx.lineWidth = 2;
     sctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
   });
+
+  // Dual cam: composite the front-cam selfie as a small rounded PIP
+  // in the top-left corner, BeReal style.
+  if (currentMode === 'dual' && shots[0] && shots[1]) {
+    const back = positions[1];
+    const pipW = Math.round(back.w * 0.28);
+    const pipH = Math.round(pipW * (back.h / back.w));
+    const pad  = Math.round(back.w * 0.025);
+    const px = back.x + pad;
+    const py = back.y + pad;
+    const r  = Math.round(pipW * 0.06);
+    sctx.save();
+    // White border background
+    sctx.fillStyle = '#fff';
+    roundedRectPath(sctx, px - 4, py - 4, pipW + 8, pipH + 8, r + 3);
+    sctx.fill();
+    // Clip to rounded rect, then draw front-cam shot
+    roundedRectPath(sctx, px, py, pipW, pipH, r);
+    sctx.clip();
+    drawCoverImage(sctx, shots[0], px, py, pipW, pipH);
+    sctx.restore();
+  }
 
   // Frame decorations render ABOVE photos so themed text (REC, date stamp,
   // wordmarks, borders) is never hidden by photo content. Clipped above the
@@ -938,6 +1088,14 @@ function buildStrip() {
   // Unified brand footer — same italic centered "BopBooth" + date on every layout.
   // Skipped when the frame already paints its own designed footer.
   if (currentMode !== 'tilt3' && !ownFooter) drawBrandFooter(sctx, sw, sh, footerReserve);
+
+  // Optional burned-in digicam date stamp (toggle in capture controls).
+  // Skip on 'digicam' frame since it already paints the same stamp.
+  if (dateStampOn && currentFrame !== 'digicam') {
+    window.__frameBottomY = sh - footerReserve;
+    drawDateStamp(sctx, sw, sh);
+    window.__frameBottomY = null;
+  }
 
   stripCanvas.style.display = 'block';
   gifResult.classList.add('hidden');
@@ -1170,6 +1328,7 @@ async function goCustomize() {
     await saveShots(shotData);
     sessionStorage.setItem('sb_mode', currentMode);
     sessionStorage.setItem('sb_filter', currentFilter);
+    sessionStorage.setItem('sb_caption', polaroidCaption || '');
   } catch (e) {
     showToast('Could not save photos');
     return;
@@ -1193,6 +1352,7 @@ const DOWNLOAD_NAMES = {
   '3horiz':'BopBooth-3cut-horizontal','squaregrid':'BopBooth-square-collage',
   '9cut':'BopBooth-9cut-grid','vertical4':'BopBooth-puri-4cut','diptych':'BopBooth-diptych',
   'polaroid':'BopBooth-polaroid','photocard':'BopBooth-photo-card','single':'BopBooth',
+  'dual':'BopBooth-dual-cam',
 };
 
 // iOS Safari can't actually download via <a download> — clicks are silently

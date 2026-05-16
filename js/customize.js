@@ -15,6 +15,29 @@ let _bgLibPromise = null;
 let _bgInflight   = 0;
 let customText   = '';
 let customFont   = 'serif-italic';
+// Date stamp carry-over from app.js (persisted in localStorage by toggleDateStamp).
+let _dateStampOn = (() => {
+  try { return localStorage.getItem('sb_datestamp') === '1'; } catch { return false; }
+})();
+function _drawDateStamp(sctx, sw, sh) {
+  const pad = Math.max(20, Math.round(sw * 0.035));
+  const d = new Date();
+  const stamp =
+    "'" + String(d.getFullYear()).slice(-2) + ' ' +
+    String(d.getMonth() + 1).padStart(2, '0') + ' ' +
+    String(d.getDate()).padStart(2, '0');
+  const stampSize = Math.round(sw * 0.045);
+  sctx.save();
+  sctx.font = '700 ' + stampSize + 'px "DM Sans", monospace';
+  sctx.textAlign = 'right';
+  sctx.textBaseline = 'alphabetic';
+  const bottomY = (typeof window !== 'undefined' && window.__frameBottomY) || sh;
+  sctx.fillStyle = 'rgba(0,0,0,0.4)';
+  sctx.fillText(stamp, sw - pad + 2, bottomY - pad + 2);
+  sctx.fillStyle = '#FF8C2E';
+  sctx.fillText(stamp, sw - pad, bottomY - pad);
+  sctx.restore();
+}
 // Draggable position for customText overlay. Fractions of canvas (0..1).
 // Default to center so text appears in the middle when first added.
 let customTextPos = { x: 0.5, y: 0.5 };
@@ -78,7 +101,7 @@ const MODE_SHOTS = {
   '4cut': 4, '3cut': 3, '2cut': 2, '6cut': 6, '3horiz': 3,
   'squaregrid': 4, '1large3small': 4, 'grid4': 4, 'single': 1, 'polaroid': 1,
   'double-polaroid': 2, 'photocard': 1, 'gif': 1, 'tilt3': 3, '4plus1': 5,
-  '9cut': 9, 'vertical4': 4, 'diptych': 2,
+  '9cut': 9, 'vertical4': 4, 'diptych': 2, 'dual': 2,
 };
 function maxShots() { return MODE_SHOTS[currentMode] || 1; }
 
@@ -120,6 +143,21 @@ async function loadShots() {
 // Draw a single photo slot. If bg-removal is enabled and a cutout exists for
 // this shot, fills the slot with the chosen color and paints the transparent
 // cutout on top so the person appears against the new background.
+function _roundedRectPathCust(ctx, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
 function drawShotInto(ctx, shotImg, x, y, w, h, ox, oy) {
   const cutout = bgRemoveOn ? cutouts.get(shotImg) : null;
   if (cutout) {
@@ -314,7 +352,8 @@ function footerReserveFor(mode) {
     case 'polaroid':
     case 'double-polaroid': return 90;
     case '4plus1':
-    case 'diptych':         return 100;
+    case 'diptych':
+    case 'dual':            return 100;
     case '1large3small':    return 60;
     case '9cut':            return 60;
     case '6cut':
@@ -348,6 +387,8 @@ function isDarkHex(hex) {
   return lum < 0.5;
 }
 
+const _CAPTIONABLE_MODES = new Set(['polaroid', 'photocard', 'double-polaroid']);
+
 function drawBrandFooter(sctx, sw, sh, reserveH) {
   if (!showWordmark && !showDate) return;
   const wmSize   = Math.max(20, Math.min(reserveH * 0.42, sw * 0.045));
@@ -359,6 +400,21 @@ function drawBrandFooter(sctx, sw, sh, reserveH) {
   const dark = isDarkStripBg();
   const wmColor   = dark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.55)';
   const dateColor = dark ? 'rgba(255,255,255,0.6)'  : 'rgba(0,0,0,0.35)';
+
+  // Caption replaces the BopBooth + date pair on polaroid-style modes.
+  const cap = (sessionStorage.getItem('sb_caption') || '').trim();
+  if (cap && _CAPTIONABLE_MODES.has(currentMode)) {
+    const captionSize = Math.max(24, Math.min(reserveH * 0.55, sw * 0.06));
+    const cY = footerTop + reserveH * 0.7;
+    sctx.save();
+    sctx.textAlign = 'center';
+    sctx.textBaseline = 'alphabetic';
+    sctx.fillStyle = dark ? 'rgba(255,255,255,0.9)' : 'rgba(40,30,20,0.85)';
+    sctx.font = `400 ${Math.round(captionSize)}px "Caveat", "Dancing Script", "DM Serif Display", cursive`;
+    sctx.fillText(cap, cx, cY);
+    sctx.restore();
+    return;
+  }
 
   sctx.save();
   sctx.textAlign = 'center';
@@ -659,6 +715,15 @@ function buildStrip() {
       { x: BP, y: BT, w: W, h: H },
       { x: BP, y: BT + H + GAP, w: W, h: H },
     ];
+  } else if (currentMode === 'dual') {
+    // BeReal-style: back-cam fills the frame, front-cam is a small PIP.
+    // Front (index 0) is drawn separately after the photo loop below.
+    const PAD = 24, BOT = 100;
+    sw = W + PAD * 2; sh = H + PAD + BOT;
+    positions = [
+      undefined,
+      { x: PAD, y: PAD, w: W, h: H },
+    ];
   } else {
     const BP=16;
     sw = W + BP*2; sh = H + BP*2;
@@ -688,6 +753,7 @@ function buildStrip() {
 
   const mirror = typeof frameMirrorsPhotos === 'function' && frameMirrorsPhotos(currentFrame);
   positions.forEach((pos, i) => {
+    if (!pos) return;  // dual-cam: slot 0 (front) is drawn separately as a PIP
     const {x,y,w,h} = pos;
     const img = shots[i];
     if (img) {
@@ -723,6 +789,26 @@ function buildStrip() {
     }
   });
 
+  // Dual cam: composite shots[0] (front-cam) as a rounded PIP in the
+  // top-left corner of the back-cam slot.
+  if (currentMode === 'dual' && shots[0] && shots[1] && positions[1]) {
+    const back = positions[1];
+    const pipW = Math.round(back.w * 0.28);
+    const pipH = Math.round(pipW * (back.h / back.w));
+    const padPx = Math.round(back.w * 0.025);
+    const px = back.x + padPx;
+    const py = back.y + padPx;
+    const r  = Math.round(pipW * 0.06);
+    sctx.save();
+    sctx.fillStyle = '#fff';
+    _roundedRectPathCust(sctx, px - 4, py - 4, pipW + 8, pipH + 8, r + 3);
+    sctx.fill();
+    _roundedRectPathCust(sctx, px, py, pipW, pipH, r);
+    sctx.clip();
+    drawShotInto(sctx, shots[0], px, py, pipW, pipH, 0, 0);
+    sctx.restore();
+  }
+
   // Frame decorations render ABOVE photos so themed text (REC, date stamp,
   // wordmarks, borders, sparkles) is never hidden by photo content. Clip to
   // the area above the brand-footer band so heavy frames (Y2K Chrome,
@@ -748,6 +834,14 @@ function buildStrip() {
   // Unified brand footer — one consistent placement across every layout.
   // Skipped when the frame already paints its own designed footer.
   if (currentMode !== 'tilt3' && !ownFooter && !_isAdjusting) drawBrandFooter(sctx, sw, sh, footerReserve);
+
+  // Optional burned-in digicam date stamp carried over from app.js.
+  // Skip on 'digicam' frame since it already paints the same stamp.
+  if (!_isAdjusting && _dateStampOn && currentFrame !== 'digicam') {
+    window.__frameBottomY = sh - footerReserve;
+    _drawDateStamp(sctx, sw, sh);
+    window.__frameBottomY = null;
+  }
 
   if (_isAdjusting) {
     // Fast path: don't bother re-snapshotting the base canvas or drawing

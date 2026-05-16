@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 110">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff7ecf"/>
+      <stop offset="50%" stop-color="#c66bff"/>
+      <stop offset="100%" stop-color="#7ecfff"/>
+    </linearGradient>
+  </defs>
+  <text x="120" y="80" text-anchor="middle"
+        font-family="Arial Black, Impact, sans-serif"
+        font-size="82" font-weight="900"
+        fill="url(#g1)" stroke="#fff" stroke-width="3"
+        paint-order="stroke fill"
+        letter-spacing="-2">SLAY</text>
+  <circle cx="22" cy="22" r="3" fill="#ffd166"/>
+  <circle cx="220" cy="88" r="3" fill="#ffd166"/>
+  <circle cx="32" cy="86" r="2" fill="#fff"/>
+  <circle cx="210" cy="22" r="2" fill="#fff"/>
+</svg>

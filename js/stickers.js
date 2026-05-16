@@ -89,6 +89,16 @@ const STICKERS = [
   { name: 'Hot Dog',       file: 'assets/stickers/hotdog.svg' },
   { name: 'Cookie',        file: 'assets/stickers/cookie.svg' },
   { name: 'Taco',          file: 'assets/stickers/taco.svg' },
+
+  // Trendy text stickers (2026-05-16 pack)
+  { name: 'brat',          file: 'assets/stickers/text-brat.svg' },
+  { name: 'iykyk',         file: 'assets/stickers/text-iykyk.svg' },
+  { name: 'vibes',         file: 'assets/stickers/text-vibes.svg' },
+  { name: 'Main Character',file: 'assets/stickers/text-era.svg' },
+  { name: 'bestie',        file: 'assets/stickers/text-bestie.svg' },
+  { name: 'SLAY',          file: 'assets/stickers/text-slay.svg' },
+  { name: 'MOOD',          file: 'assets/stickers/text-mood.svg' },
+  { name: 'Hearts Trio',   file: 'assets/stickers/text-hearts.svg' },
 ];
 
 const stickerImgCache = {};

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 110">
+  <text x="130" y="74" text-anchor="middle"
+        font-family="'Caveat', 'Dancing Script', cursive"
+        font-size="80" font-weight="700"
+        fill="#2A2520">iykyk</text>
+  <circle cx="32" cy="32" r="5" fill="#f2b8c6"/>
+  <circle cx="228" cy="78" r="5" fill="#f2b8c6"/>
+  <path d="M210 22 l5 -10 l5 10 l10 5 l-10 5 l-5 10 l-5 -10 l-10 -5 z" fill="#ffd166"/>
+</svg>
