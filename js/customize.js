@@ -602,12 +602,29 @@ function buildStrip() {
   _prevTextBox = null;
   if (currentTemplate) { return buildTemplateStrip(); }
   if (currentMode === 'tilt3') { buildTilt3Strip(); return; }
-  // Use fixed slot dimensions so layouts stay consistent no matter what
-  // aspect ratios the user uploads. Each photo gets cover-fit into the
-  // same standard slot, so mixed-aspect uploads still line up. renderScale
-  // drops to 0.5 during interactive drags so the canvas redraws ~4× faster.
-  const W = Math.round(1280 * renderScale);
-  const H = Math.round(960 * renderScale);
+  // Match slot aspect to the first shot's actual aspect ratio so what the
+  // user composed in the camera (e.g. a 9:16 selfie) is what they see on
+  // the customize page — fixes the WYSIWYG break where 9:16 captures got
+  // re-cropped into a 4:3 slot and ended up showing just the head.
+  //
+  // Mixed-aspect uploads still center-cover-crop into this slot; first
+  // photo wins the aspect, others fit.
+  //
+  // Long edge capped at 1280 so customize canvases stay GPU-friendly on
+  // budget Androids — captured 1920px shots get rendered at 1280px in slot.
+  const MAX_BASE_EDGE = 1280;
+  let baseW = (shots[0] && shots[0].naturalWidth)  || 1280;
+  let baseH = (shots[0] && shots[0].naturalHeight) || 960;
+  const longest = Math.max(baseW, baseH);
+  if (longest > MAX_BASE_EDGE) {
+    const k = MAX_BASE_EDGE / longest;
+    baseW = Math.round(baseW * k);
+    baseH = Math.round(baseH * k);
+  }
+  // renderScale drops to 0.5 during interactive drags so the canvas
+  // redraws ~4× faster.
+  const W = Math.round(baseW * renderScale);
+  const H = Math.round(baseH * renderScale);
   let sw, sh, positions;
 
   if (currentMode === '4cut') {
