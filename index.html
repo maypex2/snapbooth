@@ -175,6 +175,10 @@
   <!-- ── Styles ── -->
   <link rel="stylesheet" href="css/landing.css">
 
+  <!-- ── Animation library: GSAP (via CDN). 70KB gzipped, GPU-accelerated,
+       used for the hero parallax + marquee + magnetic CTA buttons. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+
 </head>
 
 <body>
@@ -222,6 +226,31 @@
   <!-- HERO                                               -->
   <!-- ═══════════════════════════════════════════════════ -->
   <section class="hero" aria-label="Hero">
+
+    <!-- Background marquee: infinite horizontal scroll of mini photo strips
+         sitting behind the hero content. Visual energy for the first-impression
+         vibe ("ang cute" hook). -->
+    <div class="hero-marquee" aria-hidden="true">
+      <div class="hero-marquee-track">
+        <div class="mq-strip"><img src="assets/hero/strip-back-1.webp" alt=""><img src="assets/hero/strip-back-2.webp" alt=""><img src="assets/hero/strip-back-3.webp" alt=""><img src="assets/hero/strip-back-4.webp" alt=""></div>
+        <div class="mq-strip mq-strip--polaroid"><img src="assets/hero/strip-front-1.webp" alt=""><span class="mq-caption">summer ‘26 ♡</span></div>
+        <div class="mq-strip mq-strip--photocard"><img src="assets/hero/strip-front-2.webp" alt=""></div>
+        <div class="mq-strip"><img src="assets/hero/strip-front-3.webp" alt=""><img src="assets/hero/strip-front-4.webp" alt=""><img src="assets/hero/strip-back-1.webp" alt=""></div>
+        <div class="mq-strip mq-strip--y2k"><img src="assets/hero/strip-back-2.webp" alt=""><img src="assets/hero/strip-back-3.webp" alt=""></div>
+        <div class="mq-strip mq-strip--polaroid"><img src="assets/hero/strip-front-2.webp" alt=""><span class="mq-caption">bestie ✦</span></div>
+        <!-- Duplicate the set so the marquee loop is seamless -->
+        <div class="mq-strip"><img src="assets/hero/strip-back-1.webp" alt=""><img src="assets/hero/strip-back-2.webp" alt=""><img src="assets/hero/strip-back-3.webp" alt=""><img src="assets/hero/strip-back-4.webp" alt=""></div>
+        <div class="mq-strip mq-strip--polaroid"><img src="assets/hero/strip-front-1.webp" alt=""><span class="mq-caption">summer ‘26 ♡</span></div>
+        <div class="mq-strip mq-strip--photocard"><img src="assets/hero/strip-front-2.webp" alt=""></div>
+        <div class="mq-strip"><img src="assets/hero/strip-front-3.webp" alt=""><img src="assets/hero/strip-front-4.webp" alt=""><img src="assets/hero/strip-back-1.webp" alt=""></div>
+        <div class="mq-strip mq-strip--y2k"><img src="assets/hero/strip-back-2.webp" alt=""><img src="assets/hero/strip-back-3.webp" alt=""></div>
+        <div class="mq-strip mq-strip--polaroid"><img src="assets/hero/strip-front-2.webp" alt=""><span class="mq-caption">bestie ✦</span></div>
+      </div>
+    </div>
+
+    <!-- Floating sparkles painted by GSAP on load — adds the "magic" vibe -->
+    <div class="hero-sparkles" aria-hidden="true"></div>
+
     <div class="hero-content">
       <span class="hero-eyebrow" data-animate data-delay="1">Free · No signup · Browser-based</span>
       <h1 data-animate data-delay="1">

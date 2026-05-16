@@ -290,6 +290,125 @@ body::before {
   padding: 80px 32px 80px;
   max-width: var(--max-w);
   margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Background marquee (infinite scrolling photo strips) ──
+   Sits behind hero-content + hero-visual. Low opacity so foreground text
+   stays readable — the marquee is just texture, not the main subject. */
+.hero-marquee {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.32;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 8%, #000 92%, transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 8%, #000 92%, transparent 100%);
+}
+.hero-marquee-track {
+  display: flex;
+  gap: 28px;
+  animation: hero-marquee-scroll 60s linear infinite;
+  will-change: transform;
+  padding: 0 20px;
+}
+@keyframes hero-marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.hero-marquee:hover .hero-marquee-track { animation-play-state: paused; }
+
+.mq-strip {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 7px 7px 14px;
+  background: #fafaf6;
+  border-radius: 6px;
+  box-shadow: 0 8px 18px rgba(0,0,0,.28);
+  width: 90px;
+}
+.mq-strip:nth-child(odd)  { transform: rotate(-4deg); }
+.mq-strip:nth-child(even) { transform: rotate(5deg); }
+.mq-strip:nth-child(3n)   { transform: rotate(-2deg) translateY(-12px); }
+.mq-strip:nth-child(5n)   { transform: rotate(7deg) translateY(8px); }
+.mq-strip img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 2px;
+}
+.mq-strip--polaroid {
+  background: #fff;
+  width: 110px;
+  padding: 10px 10px 28px;
+  position: relative;
+}
+.mq-strip--polaroid img { aspect-ratio: 1/1; }
+.mq-caption {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 4px;
+  text-align: center;
+  font-family: 'Caveat', cursive;
+  font-size: 14px;
+  color: rgba(0,0,0,0.7);
+}
+.mq-strip--photocard {
+  background: #fff;
+  width: 80px;
+  padding: 6px 6px 16px;
+}
+.mq-strip--photocard img { aspect-ratio: 3/4; }
+.mq-strip--y2k {
+  background: #1a1a22;
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #dde2ee 0%, #9aa0b4 50%, #f0f3fa 100%) 1;
+  width: 85px;
+}
+
+/* ── Floating sparkles canvas — pure decoration ── */
+.hero-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.hero-sparkle {
+  position: absolute;
+  font-size: 18px;
+  opacity: 0;
+  filter: drop-shadow(0 0 8px rgba(255, 220, 180, 0.6));
+}
+
+/* Lift hero content + visual above the marquee/sparkles */
+.hero-content { position: relative; z-index: 3; }
+.hero-visual  { position: relative; z-index: 2; }
+
+/* Magnetic CTA hover state (GSAP drives the actual translate) */
+.cta-primary { will-change: transform; }
+
+/* On phones the hero compresses to a single column — drop the marquee
+   opacity further so it doesn't fight with the headline + hero-visual. */
+@media (max-width: 900px) {
+  .hero-marquee { opacity: 0.18; }
+  .mq-strip { width: 70px; padding: 5px 5px 10px; }
+  .mq-strip--polaroid { width: 86px; padding: 7px 7px 22px; }
+  .mq-strip--photocard { width: 62px; }
+  .mq-strip--y2k { width: 66px; }
+  .mq-caption { font-size: 11px; }
+}
+
+/* Touch devices don't have a hovering cursor — the parallax + magnetic
+   listeners are no-ops there, but make sure transform from any leftover
+   GSAP state doesn't stick. */
+@media (hover: none) {
+  .hero .cta-primary { transform: none !important; }
 }
 
 .hero-badge {
