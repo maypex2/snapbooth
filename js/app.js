@@ -555,15 +555,25 @@ async function startPhotoSession() {
   // Remember the initial facing so dual mode can restore it after the session.
   const initialFacing = currentFacing;
 
+  // Dual cam: force the BACK camera before shot 0 so the scene shot is
+  // always from the rear cam (regardless of whichever facing was persisted
+  // from a previous session). Without this, a user who left the app on
+  // front-cam previously would shoot front for BOTH shots.
+  if (currentMode === 'dual' && currentFacing !== 'environment') {
+    showToast('Switching to back camera…');
+    await enableCamera('environment');
+    await sleep(600);
+  }
+
   for (let i = 0; i < max; i++) {
     if (shots.length >= max) break;
 
-    // Dual cam: shot 0 = front, shot 1 = back. Flip the camera before
-    // shot 1 (BeReal-style sequential capture — iOS only allows one active
-    // MediaStream at a time, so we can't grab both simultaneously).
+    // Dual cam: shot 0 = back (scene/main), shot 1 = front (selfie/PIP).
+    // Flip from back to front between the two shots. iOS only allows one
+    // active MediaStream at a time, so this has to be sequential.
     if (currentMode === 'dual' && i === 1) {
-      showToast('Flipping to back camera…');
-      await enableCamera('environment');
+      showToast('Flipping to front camera…');
+      await enableCamera('user');
       // Give the new stream a beat to deliver its first real frame so the
       // capture isn't a black/frozen-buffer shot.
       await sleep(600);
@@ -573,7 +583,7 @@ async function startPhotoSession() {
       await countdown(currentTimer);
     } else {
       const label = currentMode === 'dual'
-        ? (i === 0 ? 'Tap for selfie (front cam)' : 'Tap for scene (back cam)')
+        ? (i === 0 ? 'Tap for the scene (back cam)' : 'Tap for your selfie (front cam)')
         : `Tap Capture for shot ${i + 1} of ${max}`;
       showToast(label);
       await waitForSnap();
@@ -1010,16 +1020,16 @@ function buildStrip() {
       { x: BP, y: BT + H + GAP, w: W, h: H },
     ];
   } else if (currentMode === 'dual') {
-    // BeReal layout: back-cam fills the whole frame, front-cam is a small
-    // rounded PIP in the top-left corner. The shot-loop only fills the back
-    // slot (index 1); the front PIP (index 0) is drawn separately below so
-    // it can carry rounded corners + a white border without disturbing the
-    // standard photo-rendering path.
+    // BeReal layout: back-cam (shot 0) fills the whole frame, front-cam
+    // (shot 1) is a small rounded PIP in the top-left corner. The shot
+    // loop only fills the back slot (index 0); the front PIP (index 1) is
+    // drawn separately below so it can carry rounded corners + a white
+    // border without disturbing the standard photo-rendering path.
     const PAD = 24, BOT = 100;
     sw = W + PAD * 2; sh = H + PAD + BOT;
     positions = [
-      undefined,                                  // shot 0 = front, drawn as PIP later
-      { x: PAD, y: PAD, w: W, h: H },             // shot 1 = back, fills the main frame
+      { x: PAD, y: PAD, w: W, h: H },             // shot 0 = back, fills the main frame
+      undefined,                                  // shot 1 = front, drawn as PIP later
     ];
   } else {
     const BP = 16;
@@ -1043,10 +1053,10 @@ function buildStrip() {
     sctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
   });
 
-  // Dual cam: composite the front-cam selfie as a small rounded PIP
-  // in the top-left corner, BeReal style.
+  // Dual cam: composite the front-cam selfie (shot 1) as a small rounded
+  // PIP in the top-left corner over the back-cam scene (shot 0), BeReal style.
   if (currentMode === 'dual' && shots[0] && shots[1]) {
-    const back = positions[1];
+    const back = positions[0];
     const pipW = Math.round(back.w * 0.28);
     const pipH = Math.round(pipW * (back.h / back.w));
     const pad  = Math.round(back.w * 0.025);
@@ -1061,7 +1071,7 @@ function buildStrip() {
     // Clip to rounded rect, then draw front-cam shot
     roundedRectPath(sctx, px, py, pipW, pipH, r);
     sctx.clip();
-    drawCoverImage(sctx, shots[0], px, py, pipW, pipH);
+    drawCoverImage(sctx, shots[1], px, py, pipW, pipH);
     sctx.restore();
   }
 

@@ -716,13 +716,13 @@ function buildStrip() {
       { x: BP, y: BT + H + GAP, w: W, h: H },
     ];
   } else if (currentMode === 'dual') {
-    // BeReal-style: back-cam fills the frame, front-cam is a small PIP.
-    // Front (index 0) is drawn separately after the photo loop below.
+    // BeReal-style: back-cam (shot 0) fills the frame, front-cam (shot 1)
+    // is drawn separately as a rounded PIP after the photo loop below.
     const PAD = 24, BOT = 100;
     sw = W + PAD * 2; sh = H + PAD + BOT;
     positions = [
-      undefined,
       { x: PAD, y: PAD, w: W, h: H },
+      undefined,
     ];
   } else {
     const BP=16;
@@ -789,10 +789,10 @@ function buildStrip() {
     }
   });
 
-  // Dual cam: composite shots[0] (front-cam) as a rounded PIP in the
-  // top-left corner of the back-cam slot.
-  if (currentMode === 'dual' && shots[0] && shots[1] && positions[1]) {
-    const back = positions[1];
+  // Dual cam: composite shots[1] (front-cam selfie) as a rounded PIP over
+  // shots[0] (back-cam scene) in the top-left corner.
+  if (currentMode === 'dual' && shots[0] && shots[1] && positions[0]) {
+    const back = positions[0];
     const pipW = Math.round(back.w * 0.28);
     const pipH = Math.round(pipW * (back.h / back.w));
     const padPx = Math.round(back.w * 0.025);
@@ -805,7 +805,7 @@ function buildStrip() {
     sctx.fill();
     _roundedRectPathCust(sctx, px, py, pipW, pipH, r);
     sctx.clip();
-    drawShotInto(sctx, shots[0], px, py, pipW, pipH, 0, 0);
+    drawShotInto(sctx, shots[1], px, py, pipW, pipH, 0, 0);
     sctx.restore();
   }
 
