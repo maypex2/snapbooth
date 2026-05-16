@@ -604,6 +604,14 @@ function encodeGif(rawFrames, w, h) {
     const url      = URL.createObjectURL(blob);
     gifResult.src  = url;
     gifResult.classList.remove('hidden');
+    // Seed strip-canvas with the last captured frame so the printer-slide
+    // animation has something to render (the GIF blob isn't decoded yet,
+    // but `canvas` already holds the final frame from the boomerang loop).
+    try {
+      stripCanvas.width  = canvas.width;
+      stripCanvas.height = canvas.height;
+      stripCanvas.getContext('2d').drawImage(canvas, 0, 0);
+    } catch {}
     stripCanvas.style.display = 'none';
     document.getElementById('snap-btn').disabled = false;
     openPreview(true);
@@ -1087,6 +1095,10 @@ function resumeLivePreview() {
 function openPreview(animate = false) {
   const header = document.querySelector('header');
   const overlay = document.getElementById('preview-overlay');
+  // GIF mode has nothing to customize (no shots array, no editable strip),
+  // so hide the Customize button. Also retitle the download label.
+  const customizeBtn = document.getElementById('customize-btn');
+  if (customizeBtn) customizeBtn.style.display = (currentMode === 'gif') ? 'none' : '';
   suspendLivePreview();
   // Animated open (end of capture session): play the printer-slot
   // animation FIRST, then reveal the preview modal once it starts to
