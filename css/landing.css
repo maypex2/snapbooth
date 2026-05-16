@@ -312,6 +312,7 @@ body::before {
 .hero-marquee-track {
   display: flex;
   gap: 28px;
+  align-items: center;             /* let each card keep its natural height */
   animation: hero-marquee-scroll 60s linear infinite;
   will-change: transform;
   padding: 0 20px;
@@ -976,15 +977,12 @@ body::before {
   width: 140px;
   left: 130px;
   top: 50px;
-  padding: 10px;
-  background: #1a1a22;
-  border: 3px solid;
-  border-image: linear-gradient(135deg, #dde2ee 0%, #9aa0b4 25%, #f0f3fa 50%, #8a90a8 75%, #cfd5e2 100%) 1;
+  padding: 10px 10px 14px;
+  background: #ffffff;
   border-radius: 4px;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.2) inset,
-    0 14px 40px rgba(0, 0, 0, .4),
-    0 6px 14px rgba(0, 0, 0, .25);
+    0 14px 40px rgba(0, 0, 0, .18),
+    0 6px 14px rgba(0, 0, 0, .10);
   --rest: rotate(3deg) translateY(0);
   --rest-up: rotate(3deg) translateY(-8px);
   transform: var(--rest);
@@ -1001,11 +999,10 @@ body::before {
   font-family: 'DM Serif Display', serif;
   font-style: italic;
   font-size: 13px;
-  color: #dde2ee;
+  color: rgba(0, 0, 0, 0.55);
   text-align: center;
-  letter-spacing: 0.12em;
-  margin-top: 4px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.04em;
+  margin-top: 6px;
 }
 .y2k-spark {
   position: absolute;
