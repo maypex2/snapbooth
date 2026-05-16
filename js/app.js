@@ -1633,6 +1633,153 @@ function fallbackCopy() {
   }, 'image/png');
 }
 
+// ── Platform-specific share helpers ────────────────────────────────
+// Each builds a canvas at the right aspect ratio for that platform
+// (IG Story 9:16, IG Post 1:1, TikTok 9:16), then routes through
+// Web Share or download depending on what the device supports.
+
+// Render the current strip onto a target canvas at platform-specific
+// aspect ratio, with the strip centered + a tasteful background.
+function _composeForPlatform(targetW, targetH, bg) {
+  if (currentMode === 'gif' && currentGifBlob) return null;  // GIF uses its own flow
+  if (!shots.length) return null;
+  buildStrip();
+
+  const c = document.createElement('canvas');
+  c.width = targetW;
+  c.height = targetH;
+  const cx = c.getContext('2d');
+
+  // Background — soft cream by default, or platform-specific
+  cx.fillStyle = bg || '#FAF6EE';
+  cx.fillRect(0, 0, targetW, targetH);
+
+  // Fit the strip canvas into the frame with margin
+  const margin = Math.min(targetW, targetH) * 0.08;
+  const availW = targetW - margin * 2;
+  const availH = targetH - margin * 2;
+  const sa = stripCanvas.width / stripCanvas.height;
+  const fa = availW / availH;
+  let dw, dh;
+  if (sa > fa) { dw = availW; dh = availW / sa; }
+  else         { dh = availH; dw = availH * sa; }
+  const dx = (targetW - dw) / 2;
+  const dy = (targetH - dh) / 2;
+  // Soft drop shadow
+  cx.shadowColor = 'rgba(0,0,0,0.18)';
+  cx.shadowBlur = 24;
+  cx.shadowOffsetY = 8;
+  cx.drawImage(stripCanvas, dx, dy, dw, dh);
+  cx.shadowColor = 'transparent';
+
+  // Subtle BopBooth wordmark at the bottom
+  cx.fillStyle = 'rgba(0,0,0,0.4)';
+  cx.font = `italic ${Math.round(targetW * 0.025)}px "DM Serif Display", serif`;
+  cx.textAlign = 'center';
+  cx.fillText('bopbooth.com', targetW / 2, targetH - margin * 0.35);
+  return c;
+}
+
+async function _shareCanvas(canvas, filename, shareTitle, fallbackMsg) {
+  if (!canvas) { showToast('Take a photo first!'); return; }
+  // Try Web Share first (best UX on iOS/Android — opens system share sheet)
+  try {
+    if (navigator.share && navigator.canShare) {
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+      const file = new File([blob], filename, { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: shareTitle });
+        return;
+      }
+    }
+  } catch (e) {
+    // User cancelled or share failed — fall through to download
+    if (e && e.name === 'AbortError') return;
+  }
+  // Fallback: download the image so user can manually post
+  canvas.toBlob(blob => {
+    if (!blob) { showToast('Could not export'); return; }
+    if (IS_IOS) {
+      saveBlob(blob, filename, 'image/png');
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+    showToast(fallbackMsg);
+  }, 'image/png');
+}
+
+function shareToIGStory() {
+  const c = _composeForPlatform(1080, 1920, '#FAF6EE');
+  _shareCanvas(c, 'BopBooth-IGStory-' + Date.now() + '.png',
+    'My BopBooth strip!',
+    'Saved! Open Instagram → Story → paste from gallery');
+}
+
+function shareToIGPost() {
+  const c = _composeForPlatform(1080, 1080, '#FAF6EE');
+  _shareCanvas(c, 'BopBooth-IGPost-' + Date.now() + '.png',
+    'My BopBooth strip!',
+    'Saved! Open Instagram → Post → pick from gallery');
+}
+
+function shareToTikTok() {
+  const c = _composeForPlatform(1080, 1920, '#000000');
+  _shareCanvas(c, 'BopBooth-TikTok-' + Date.now() + '.png',
+    'My BopBooth strip!',
+    'Saved! Open TikTok → Upload → use as slideshow');
+}
+
+function copyImageToClipboard() {
+  if (currentMode === 'gif') { showToast('Use Download for GIFs'); return; }
+  if (!shots.length) { showToast('Take a photo first!'); return; }
+  buildStrip();
+  if (!navigator.clipboard || !window.ClipboardItem) {
+    showToast('Clipboard not supported — use Download');
+    return;
+  }
+  stripCanvas.toBlob(blob => {
+    try {
+      navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+        .then(() => showToast('Copied! Paste anywhere ♡'))
+        .catch(() => showToast('Could not copy — try Download'));
+    } catch {
+      showToast('Could not copy — try Download');
+    }
+  }, 'image/png');
+}
+
+function shareToFacebook() {
+  // FB doesn't let web apps share images directly via URL — best UX is to
+  // (a) try Web Share (opens system sheet with FB option), else
+  // (b) open the FB share dialog with the page URL and remind user to
+  // attach the image they just downloaded.
+  if (navigator.share && navigator.canShare) {
+    const c = _composeForPlatform(1200, 1200, '#FAF6EE');
+    _shareCanvas(c, 'BopBooth-FB-' + Date.now() + '.png',
+      'My BopBooth strip!',
+      'Saved! Open Facebook → New Post → attach');
+    return;
+  }
+  const url = encodeURIComponent('https://bopbooth.com/');
+  window.open('https://www.facebook.com/sharer/sharer.php?u=' + url, '_blank', 'noopener,width=600,height=560');
+  showToast('Download the image first to attach it');
+}
+
+function copyLink() {
+  const link = 'https://bopbooth.com/';
+  try {
+    navigator.clipboard.writeText(link)
+      .then(() => showToast('Link copied! ♡'))
+      .catch(() => showToast('Could not copy link'));
+  } catch {
+    showToast('Could not copy link');
+  }
+}
+
 // ── Toast ──
 function showToast(msg) {
   const t = document.getElementById('toast');
