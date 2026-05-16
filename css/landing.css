@@ -341,7 +341,9 @@ body::before {
   width: 100%;
   aspect-ratio: 4/3;
   object-fit: cover;
+  object-position: center 28%;   /* anchor crop to the face area, not the middle */
   border-radius: 2px;
+  background: #f0e9dc;            /* fallback while loading so it never looks fully blank */
 }
 .mq-strip--polaroid {
   background: #fff;
@@ -349,7 +351,7 @@ body::before {
   padding: 10px 10px 28px;
   position: relative;
 }
-.mq-strip--polaroid img { aspect-ratio: 1/1; }
+.mq-strip--polaroid img { aspect-ratio: 1/1; object-position: center 22%; }
 .mq-caption {
   position: absolute;
   left: 0; right: 0;
@@ -364,7 +366,7 @@ body::before {
   width: 80px;
   padding: 6px 6px 16px;
 }
-.mq-strip--photocard img { aspect-ratio: 3/4; }
+.mq-strip--photocard img { aspect-ratio: 3/4; object-position: center 18%; }
 .mq-strip--y2k {
   background: #1a1a22;
   border: 2px solid;
