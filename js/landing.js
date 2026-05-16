@@ -43,7 +43,7 @@ document.querySelectorAll('.hero [data-animate]').forEach((el, i) => {
 // the image finishes loading. CSS fades the image in and stops the parent
 // container's shimmer animation.
 (function () {
-  const sel = '.strip-photo img, .sc-frame--real img.sc-preview';
+  const sel = '.strip-photo img, .sc-frame--real img.sc-preview, .mq-strip img';
   document.querySelectorAll(sel).forEach(img => {
     if (img.complete && img.naturalWidth > 0) {
       img.classList.add('sb-loaded');

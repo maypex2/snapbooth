@@ -344,7 +344,21 @@ body::before {
   object-fit: cover;
   object-position: center 28%;   /* anchor crop to the face area, not the middle */
   border-radius: 2px;
-  background: #f0e9dc;            /* fallback while loading so it never looks fully blank */
+  /* Shimmer skeleton while the photo loads — way less awful than a blank
+     box on slow networks. Replaced once the <img> fires `load`. */
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.5) 100%) #e6dfd0;
+  background-size: 200% 100%;
+  animation: mq-shimmer 1.6s ease-in-out infinite;
+}
+.mq-strip img.sb-loaded,
+.mq-strip img[src][complete] {
+  animation: none;
+  background: none;
+}
+@keyframes mq-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 .mq-strip--polaroid {
   background: #fff;
@@ -389,8 +403,22 @@ body::before {
   filter: drop-shadow(0 0 8px rgba(255, 220, 180, 0.6));
 }
 
-/* Lift hero content + visual above the marquee/sparkles */
-.hero-content { position: relative; z-index: 3; }
+/* Lift hero content + visual above the marquee/sparkles.
+   Soft cream gradient backdrop on hero-content keeps the headline + sub
+   readable even when polaroid cards from the marquee drift behind them. */
+.hero-content {
+  position: relative;
+  z-index: 3;
+  isolation: isolate;
+}
+.hero-content::before {
+  content: '';
+  position: absolute;
+  inset: -20px -40px -20px -20px;
+  z-index: -1;
+  background: radial-gradient(ellipse 70% 80% at 30% 50%, rgba(250, 246, 238, 0.92) 0%, rgba(250, 246, 238, 0.7) 55%, rgba(250, 246, 238, 0) 100%);
+  pointer-events: none;
+}
 .hero-visual  { position: relative; z-index: 2; }
 
 /* Magnetic CTA hover state (GSAP drives the actual translate) */
