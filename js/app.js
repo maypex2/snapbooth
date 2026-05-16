@@ -344,8 +344,9 @@ function setMode(m) {
     const label = card && card.querySelector('.sc-label') ? card.querySelector('.sc-label').textContent : m;
     nameEl.textContent = label;
     const count = maxShots();
-    if (m === 'gif') countEl.textContent = 'Animated';
-    else countEl.textContent = count + (count === 1 ? ' shot' : ' shots');
+    countEl.textContent = new Date().toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
+    });
   }
 
   // Show caption input only for polaroid-style modes
