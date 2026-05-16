@@ -72,10 +72,13 @@
   <style>
     html, body {
       background: #FAF6EE;
+      overflow-x: hidden;
+      max-width: 100%;
     }
     body {
       font-family: 'DM Sans', sans-serif;
       color: #2A2520;
+      overscroll-behavior-x: none;
     }
 
     main {
@@ -341,16 +344,26 @@
     /* ── Mobile filter carousel ── */
     .mobile-filter-rail {
       display: none;
-      gap: 8px;
+      gap: 14px;
       bottom: calc(10px + 64px + 6px);                       /* clears the mobile capture row */
       left: 0;
       right: 0;
-      padding: 0 16px;
+      padding: 6px 20px;
       overflow-x: auto;
       overflow-y: hidden;
       scrollbar-width: none;
       -ms-overflow-style: none;
       -webkit-overflow-scrolling: touch;
+      /* Snap each filter circle to a clean position so users never end up
+         with a thumb half-clipped at the edge. */
+      scroll-snap-type: x mandatory;
+      scroll-padding-left: 20px;
+      scroll-padding-right: 20px;
+      /* Soft fade at both edges so any partially-visible thumb at the
+         scroll boundary reads as "scroll for more" instead of "broken
+         cut-off". */
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+              mask-image: linear-gradient(to right, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
       /* ── Low-end-device scroll optimizations ──
          - will-change tells the browser to promote the rail to its own
            compositor layer up front so scrolling doesn't trigger repaints
@@ -395,6 +408,7 @@
       border: 0;
       padding: 4px 2px;
       cursor: pointer;
+      scroll-snap-align: center;
       -webkit-tap-highlight-color: transparent;
       /* Each item gets its own compositor layer + paint containment so
          scrolling 27 filtered thumbs doesn't repaint the rail on every
