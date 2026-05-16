@@ -547,25 +547,18 @@ async function startPhotoSession() {
   // Remember the initial facing so dual mode can restore it after the session.
   const initialFacing = currentFacing;
 
-  // Dual cam: force the BACK camera before shot 0 so the scene shot is
-  // always from the rear cam (regardless of whichever facing was persisted
-  // from a previous session). Without this, a user who left the app on
-  // front-cam previously would shoot front for BOTH shots.
-  if (currentMode === 'dual' && currentFacing !== 'environment') {
-    showToast('Switching to back camera…');
-    await enableCamera('environment');
-    await sleep(600);
-  }
-
   for (let i = 0; i < max; i++) {
     if (shots.length >= max) break;
 
-    // Dual cam: shot 0 = back (scene/main), shot 1 = front (selfie/PIP).
-    // Flip from back to front between the two shots. iOS only allows one
+    // Dual cam: shot 0 uses whichever camera the user is on. Shot 1 flips
+    // to the OPPOSITE camera. So front→back or back→front depending on
+    // what the user had active when they hit capture. iOS only allows one
     // active MediaStream at a time, so this has to be sequential.
     if (currentMode === 'dual' && i === 1) {
-      showToast('Flipping to front camera…');
-      await enableCamera('user');
+      const opposite = currentFacing === 'user' ? 'environment' : 'user';
+      const oppName = opposite === 'user' ? 'front' : 'back';
+      showToast('Flipping to ' + oppName + ' camera…');
+      await enableCamera(opposite);
       // Give the new stream a beat to deliver its first real frame so the
       // capture isn't a black/frozen-buffer shot.
       await sleep(600);
@@ -575,7 +568,9 @@ async function startPhotoSession() {
       await countdown(currentTimer);
     } else {
       const label = currentMode === 'dual'
-        ? (i === 0 ? 'Tap for the scene (back cam)' : 'Tap for your selfie (front cam)')
+        ? (i === 0
+            ? 'Tap for shot 1 (' + (currentFacing === 'user' ? 'front' : 'back') + ' cam)'
+            : 'Tap for shot 2 (' + (currentFacing === 'user' ? 'front' : 'back') + ' cam)')
         : `Tap Capture for shot ${i + 1} of ${max}`;
       showToast(label);
       await waitForSnap();

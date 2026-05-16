@@ -90,6 +90,18 @@ const STICKERS = [
   { name: 'Cookie',        file: 'assets/stickers/cookie.svg' },
   { name: 'Taco',          file: 'assets/stickers/taco.svg' },
 
+  // Cute food pack (2026-05-16)
+  { name: 'Strawberry',    file: 'assets/stickers/strawberry.svg' },
+  { name: 'Watermelon',    file: 'assets/stickers/watermelon.svg' },
+  { name: 'Avocado',       file: 'assets/stickers/avocado.svg' },
+  { name: 'Onigiri',       file: 'assets/stickers/onigiri.svg' },
+  { name: 'Pancakes',      file: 'assets/stickers/pancakes.svg' },
+  { name: 'Croissant',     file: 'assets/stickers/croissant.svg' },
+  { name: 'Macaron',       file: 'assets/stickers/macaron.svg' },
+  { name: 'Pudding',       file: 'assets/stickers/pudding.svg' },
+  { name: 'Dumpling',      file: 'assets/stickers/dumpling.svg' },
+  { name: 'Cotton Candy',  file: 'assets/stickers/cotton-candy.svg' },
+
   // Trendy text stickers (2026-05-16 pack)
   { name: 'brat',          file: 'assets/stickers/text-brat.svg' },
   { name: 'iykyk',         file: 'assets/stickers/text-iykyk.svg' },

@@ -47,13 +47,14 @@ let customTextSize = 0.06;
 let customTextColor = 'auto';
 
 const TITLE_FONT_OPTIONS = [
-  { id: 'serif-italic', label: 'Classic',   weight: 'italic ', family: '"DM Serif Display", serif' },
-  { id: 'serif',        label: 'Editorial', weight: '700 ',    family: '"Playfair Display", serif' },
-  { id: 'script',       label: 'Script',    weight: '700 ',    family: '"Dancing Script", cursive' },
-  { id: 'pacifico',     label: 'Retro',     weight: '400 ',    family: '"Pacifico", cursive' },
-  { id: 'fredoka',      label: 'Bubbly',    weight: '600 ',    family: '"Fredoka", sans-serif' },
-  { id: 'bebas',        label: 'Bold',      weight: '400 ',    family: '"Bebas Neue", sans-serif' },
-  { id: 'sans',         label: 'Modern',    weight: '500 ',    family: '"DM Sans", sans-serif' },
+  { id: 'serif-italic', label: 'Classic',     weight: 'italic ', family: '"DM Serif Display", serif' },
+  { id: 'serif',        label: 'Editorial',   weight: '700 ',    family: '"Playfair Display", serif' },
+  { id: 'script',       label: 'Script',      weight: '700 ',    family: '"Dancing Script", cursive' },
+  { id: 'caveat',       label: 'Handwritten', weight: '600 ',    family: '"Caveat", "Dancing Script", cursive' },
+  { id: 'pacifico',     label: 'Retro',       weight: '400 ',    family: '"Pacifico", cursive' },
+  { id: 'fredoka',      label: 'Bubbly',      weight: '600 ',    family: '"Fredoka", sans-serif' },
+  { id: 'bebas',        label: 'Bold',        weight: '400 ',    family: '"Bebas Neue", sans-serif' },
+  { id: 'sans',         label: 'Modern',      weight: '500 ',    family: '"DM Sans", sans-serif' },
 ];
 
 function getCustomFontSpec(px) {
@@ -3273,7 +3274,16 @@ if (customTextClear) {
 const fontPicker = document.getElementById('font-picker');
 if (fontPicker) {
   fontPicker.innerHTML = TITLE_FONT_OPTIONS.map(f => {
-    const previewStyle = `font-family:${f.family};font-weight:${f.weight.trim() || 400};${f.id==='serif-italic'?'font-style:italic;':''}`;
+    const isItalic = f.id === 'serif-italic' || f.weight.includes('italic');
+    const weight = f.weight.replace('italic', '').trim() || '400';
+    // Inline !important on font-family so the picker's own CSS can't strip the
+    // preview font — without this, every pill renders in the body fallback and
+    // users can't tell the typefaces apart.
+    const previewStyle = [
+      `font-family:${f.family} !important`,
+      `font-weight:${weight}`,
+      isItalic ? 'font-style:italic' : '',
+    ].filter(Boolean).join(';');
     return `<button type="button" class="font-pill${f.id===customFont?' active':''}" data-font="${f.id}" style="${previewStyle}">${f.label}</button>`;
   }).join('');
   fontPicker.addEventListener('click', e => {
