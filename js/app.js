@@ -338,16 +338,7 @@ function setMode(m) {
     dlLabel.textContent   = 'Download PNG';
   }
 
-  const nameEl = document.getElementById('mode-indicator-name');
-  const countEl = document.getElementById('mode-indicator-count');
-  if (nameEl && countEl) {
-    const label = card && card.querySelector('.sc-label') ? card.querySelector('.sc-label').textContent : m;
-    nameEl.textContent = label;
-    const count = maxShots();
-    countEl.textContent = new Date().toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric'
-    });
-  }
+  // Mode indicator pill was removed in favor of the Date toggle button.
 
   // Show caption input only for polaroid-style modes
   const capWrap = document.getElementById('caption-wrap');

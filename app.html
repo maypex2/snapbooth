@@ -1181,34 +1181,25 @@
         <div id="cam-container" class="w-full mx-auto" style="max-width:min(100%,52vh);">
           <!-- Controls above camera -->
           <div class="flex items-center justify-between mb-3 gap-2 px-1">
-            <!-- Layout indicator -->
-            <div class="px-3 py-1.5 rounded-full bg-white/60 border border-sand shadow-sm text-ink text-[11px] font-medium tracking-wide flex items-center gap-1.5 transition-all" id="mode-indicator-wrap">
-              <span id="mode-indicator-name">Besties Strip</span>
-              <span class="text-muted">•</span>
-              <span id="mode-indicator-count" class="text-ink2"></span>
-            </div>
+            <!-- Date stamp toggle -->
+            <button id="datestamp-btn"
+              onclick="toggleDateStamp(this)"
+              aria-pressed="false"
+              title="Burn-in digicam date stamp"
+              class="datestamp-btn px-3 py-1.5 rounded-full bg-sand/30 border border-sand shadow-sm text-[11px] font-medium text-ink2 hover:text-ink transition flex items-center gap-1.5">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <path d="M16 2v4M8 2v4M3 10h18"/>
+              </svg>
+              <span>Date</span>
+            </button>
 
-            <div class="flex items-center gap-2 flex-wrap justify-end">
-              <!-- Date stamp toggle -->
-              <button id="datestamp-btn"
-                onclick="toggleDateStamp(this)"
-                aria-pressed="false"
-                title="Burn-in digicam date stamp"
-                class="datestamp-btn px-2.5 py-1 rounded-full bg-sand/30 border border-sand shadow-sm text-[11px] font-medium text-ink2 hover:text-ink transition flex items-center gap-1">
-                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="3" y="4" width="18" height="18" rx="2"/>
-                  <path d="M16 2v4M8 2v4M3 10h18"/>
-                </svg>
-                <span>Date</span>
-              </button>
-
-              <!-- Timer selector -->
-              <div class="flex items-center p-0.5 rounded-full bg-sand/30 border border-sand shadow-sm text-[11px] font-medium text-ink2">
-                <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 0)">Manual</button>
-                <button class="timer-btn active px-3 py-1 rounded-full transition bg-white text-ink shadow-sm" onclick="setTimer(this, 3)">3s</button>
-                <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 5)">5s</button>
-                <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 8)">8s</button>
-              </div>
+            <!-- Timer selector -->
+            <div class="flex items-center p-0.5 rounded-full bg-sand/30 border border-sand shadow-sm text-[11px] font-medium text-ink2">
+              <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 0)">Manual</button>
+              <button class="timer-btn active px-3 py-1 rounded-full transition bg-white text-ink shadow-sm" onclick="setTimer(this, 3)">3s</button>
+              <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 5)">5s</button>
+              <button class="timer-btn px-3 py-1 rounded-full transition hover:text-ink" onclick="setTimer(this, 8)">8s</button>
             </div>
           </div>
 
