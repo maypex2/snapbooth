@@ -102,6 +102,24 @@ const STICKERS = [
   { name: 'Dumpling',      file: 'assets/stickers/dumpling.svg' },
   { name: 'Cotton Candy',  file: 'assets/stickers/cotton-candy.svg' },
 
+  // Cute cats pack (2026-05-17)
+  { name: 'Orange Cat',   file: 'assets/stickers/cat-orange.svg' },
+  { name: 'Black Cat',    file: 'assets/stickers/cat-black.svg' },
+  { name: 'White Cat',    file: 'assets/stickers/cat-white.svg' },
+  { name: 'Calico Cat',   file: 'assets/stickers/cat-calico.svg' },
+  { name: 'Grey Kitten',  file: 'assets/stickers/cat-grey.svg' },
+  { name: 'Sleepy Cat',   file: 'assets/stickers/cat-sleepy.svg' },
+  { name: 'Cat Loaf',     file: 'assets/stickers/cat-loaf.svg' },
+
+  // Cute dogs pack (2026-05-17)
+  { name: 'Shiba Inu',    file: 'assets/stickers/dog-shiba.svg' },
+  { name: 'Pug',          file: 'assets/stickers/dog-pug.svg' },
+  { name: 'Corgi',        file: 'assets/stickers/dog-corgi.svg' },
+  { name: 'Poodle',       file: 'assets/stickers/dog-poodle.svg' },
+  { name: 'Dalmatian',    file: 'assets/stickers/dog-dalmatian.svg' },
+  { name: 'Bulldog',      file: 'assets/stickers/dog-bulldog.svg' },
+  { name: 'Puppy',        file: 'assets/stickers/dog-puppy.svg' },
+
   // Trendy text stickers (2026-05-16 pack)
   { name: 'brat',          file: 'assets/stickers/text-brat.svg' },
   { name: 'iykyk',         file: 'assets/stickers/text-iykyk.svg' },
