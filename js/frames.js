@@ -122,6 +122,10 @@ const FRAMES = [
     id: 'naver', label: 'Naver Minimal', bg: '#ffffff', preview: '한',
   },
 
+  // 35mm Film Strip — black film body with sprocket holes down both edges
+  // and faux Kodak-style edge text. Pure canvas, zero image assets.
+  { id: 'filmstrip', label: '35mm Film', bg: '#0a0a0a', preview: '▮' },
+
   // Sanrio-ish pastel — soft border, cloud + bow corners (generic, IP-safe).
   {
     id: 'sanrio', label: 'Pastel Soft', bg: '#FFF1F6', preview: '☁',
@@ -361,6 +365,54 @@ function drawFrameDecorations(sctx, frameId, sw, sh) {
     sctx.font = '400 ' + Math.round(sw * 0.020) + 'px "DM Sans", sans-serif';
     sctx.fillText(stamp, x, y);
     sctx.textAlign = 'start';
+  } else if (frameId === 'filmstrip') {
+    // 35mm film: black side bars with white sprocket holes + faux Kodak text.
+    const barW = Math.max(36, Math.round(sw * 0.085));
+    sctx.fillStyle = '#0a0a0a';
+    sctx.fillRect(0, 0, barW, sh);
+    sctx.fillRect(sw - barW, 0, barW, sh);
+    // Sprocket holes: white rounded rects repeating evenly down both bars.
+    const holeW = barW * 0.55;
+    const holeH = Math.max(10, sw * 0.022);
+    const holeGap = holeH * 0.85;
+    const pitch = holeH + holeGap;
+    const holeX_L = barW * 0.5 - holeW / 2;
+    const holeX_R = sw - barW * 0.5 - holeW / 2;
+    const radius = Math.max(2, holeH * 0.18);
+    sctx.fillStyle = '#ffffff';
+    for (let y = holeGap; y + holeH <= sh - holeGap; y += pitch) {
+      sctx.beginPath();
+      if (sctx.roundRect) {
+        sctx.roundRect(holeX_L, y, holeW, holeH, radius);
+        sctx.roundRect(holeX_R, y, holeW, holeH, radius);
+      } else {
+        sctx.rect(holeX_L, y, holeW, holeH);
+        sctx.rect(holeX_R, y, holeW, holeH);
+      }
+      sctx.fill();
+    }
+    // Faux Kodak-style edge text on the LEFT bar, rotated 90 degrees.
+    sctx.save();
+    sctx.fillStyle = '#d4b94a';
+    const edgeFont = Math.max(8, Math.round(barW * 0.22));
+    sctx.font = '700 ' + edgeFont + 'px "DM Sans", monospace';
+    sctx.textAlign = 'left';
+    sctx.textBaseline = 'middle';
+    sctx.translate(barW * 0.18, sh * 0.5);
+    sctx.rotate(-Math.PI / 2);
+    const yr = String(new Date().getFullYear()).slice(-2);
+    sctx.fillText('BOPBOOTH  400  ' + yr + 'A  KODAK  →  24', -sh * 0.42, 0);
+    sctx.restore();
+    // Frame numbers on the RIGHT bar (e.g. "→ 23", "→ 23A").
+    sctx.save();
+    sctx.fillStyle = '#d4b94a';
+    sctx.font = '700 ' + edgeFont + 'px "DM Sans", monospace';
+    sctx.textAlign = 'left';
+    sctx.textBaseline = 'middle';
+    sctx.translate(sw - barW * 0.18, sh * 0.5);
+    sctx.rotate(Math.PI / 2);
+    sctx.fillText('→  23   →  23A   →  24   →  24A', -sh * 0.42, 0);
+    sctx.restore();
   } else if (frameId === 'sanrio') {
     // Soft pastel rounded border with cloud bumps + tiny hearts in corners.
     const borderW = Math.max(12, Math.round(sw * 0.018));

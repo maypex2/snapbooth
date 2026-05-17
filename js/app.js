@@ -356,7 +356,6 @@ function setFilter(id, btn) {
     v.style.setProperty('filter', css, 'important');
     v.style.setProperty('-webkit-filter', css, 'important');
   }
-  console.log('[setFilter]', id, '→', css);
   // Toggle .active state on buttons
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
