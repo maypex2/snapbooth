@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <polygon points="18,30 26,10 32,30" fill="#d4b89a"/>
+  <polygon points="48,30 54,10 62,30" fill="#d4b89a"/>
+  <polygon points="21,28 26,16 30,28" fill="#f0d8c0"/>
+  <polygon points="50,28 54,16 58,28" fill="#f0d8c0"/>
+  <ellipse cx="40" cy="50" rx="26" ry="24" fill="#e8cdb0"/>
+  <path d="M26 46 Q31 49 36 46" stroke="#2d1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M44 46 Q49 49 54 46" stroke="#2d1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <polygon points="40,53 37,56 43,56" fill="#d65a7a"/>
+  <path d="M36 59 Q40 64 44 59" stroke="#a04060" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <line x1="16" y1="54" x2="32" y2="56" stroke="#8a6a4a" stroke-width="1" opacity="0.6"/>
+  <line x1="16" y1="58" x2="32" y2="58" stroke="#8a6a4a" stroke-width="1" opacity="0.6"/>
+  <line x1="48" y1="56" x2="64" y2="54" stroke="#8a6a4a" stroke-width="1" opacity="0.6"/>
+  <line x1="48" y1="58" x2="64" y2="58" stroke="#8a6a4a" stroke-width="1" opacity="0.6"/>
+  <circle cx="25" cy="53" r="5" fill="#ffb8c8" opacity="0.5"/>
+  <circle cx="55" cy="53" r="5" fill="#ffb8c8" opacity="0.5"/>
+  <text x="60" y="20" font-family="Arial, sans-serif" font-weight="bold" font-size="10" fill="#7a90a8">z</text>
+  <text x="65" y="14" font-family="Arial, sans-serif" font-weight="bold" font-size="8" fill="#7a90a8">z</text>
+  <text x="69" y="9" font-family="Arial, sans-serif" font-weight="bold" font-size="6" fill="#7a90a8">z</text>
+</svg>
