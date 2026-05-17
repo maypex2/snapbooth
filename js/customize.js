@@ -2378,6 +2378,37 @@ function initTabs() {
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+// iOS-only fallback save modal. The native share sheet hides "Save Image"
+// on some iOS versions/file sizes, leaving users stuck. This shows the
+// final image full-screen with explicit long-press → Save to Photos
+// instructions a gesture that works on every iOS version reliably.
+function showIosSaveModal(dataUrl) {
+  // Tear down any existing one first.
+  const old = document.getElementById('ios-save-modal');
+  if (old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'ios-save-modal';
+  overlay.style.cssText =
+    'position:fixed;inset:0;z-index:99999;background:rgba(10,8,6,0.96);' +
+    'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+    'padding:16px;gap:14px;overflow:auto;-webkit-overflow-scrolling:touch;';
+  overlay.innerHTML =
+    '<div style="color:#FAF6EE;font:600 13px/1.4 \'DM Sans\',sans-serif;text-align:center;letter-spacing:0.04em;text-transform:uppercase;opacity:0.85;">Save your photo</div>' +
+    '<div style="color:#FAF6EE;font:400 17px/1.45 \'DM Sans\',sans-serif;text-align:center;max-width:320px;">Tap and hold the photo below, then choose <b style="color:#E8C4A0">Save to Photos</b>.</div>' +
+    '<img id="ios-save-modal-img" src="' + dataUrl + '" alt="Your BopBooth photo" ' +
+      'style="max-width:88vw;max-height:62vh;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,0.6);background:#fff;-webkit-touch-callout:default;touch-action:manipulation;" />' +
+    '<div style="color:#FAF6EE;font:400 13px/1.4 \'DM Sans\',sans-serif;text-align:center;opacity:0.65;max-width:300px;">Hold finger on the image for ~1 second the iOS menu will appear.</div>' +
+    '<button id="ios-save-modal-close" style="margin-top:6px;padding:12px 28px;background:#FAF6EE;color:#2A2520;border:none;border-radius:999px;font:600 15px \'DM Sans\',sans-serif;letter-spacing:0.04em;cursor:pointer;">Done</button>';
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+  const close = () => { overlay.remove(); document.body.style.overflow = ''; };
+  overlay.querySelector('#ios-save-modal-close').addEventListener('click', close);
+  // Tapping the dim background (but not the image) also closes.
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+}
+
 // Synchronously convert a data URL to a Blob. Required for iOS where the
 // async toBlob() callback fires AFTER user activation has expired, blocking
 // navigator.share() and window.open(). toDataURL() runs in the same tick as
@@ -2632,15 +2663,11 @@ async function downloadStrip() {
       showToast('Could not save image' + errName);
       return;
     }
-    const blob = dataURLToBlob(dataUrl);
     if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
-    // If the data URL is a JPEG fallback, fix the file extension to match.
-    const finalName = dataUrl.startsWith('data:image/jpeg')
-      ? filename.replace(/\.png$/, '.jpg')
-      : filename;
-    const finalMime = dataUrl.startsWith('data:image/jpeg') ? 'image/jpeg' : 'image/png';
-    saveBlob(blob, finalName, finalMime);
-    playPrinterAnim();
+    // Skip navigator.share / blob URLs the share sheet sometimes hides
+    // "Save Image" on iOS 17+. Long-press on a data-URL <img> in the same
+    // page always exposes "Save to Photos" reliably.
+    showIosSaveModal(dataUrl);
     return;
   }
 
@@ -2734,11 +2761,8 @@ function exportComposed(canvasW, canvasH, filename, padding = 0.06, bgColor = '#
       showToast('Could not save image' + errName);
       return;
     }
-    const blob = dataURLToBlob(dataUrl);
     if (savedSel !== null) { selectedStickerIdx = savedSel; buildStrip(); }
-    const isJpeg = dataUrl.startsWith('data:image/jpeg');
-    const finalName = isJpeg ? filename.replace(/\.png$/, '.jpg') : filename;
-    saveBlob(blob, finalName, isJpeg ? 'image/jpeg' : 'image/png');
+    showIosSaveModal(dataUrl);
     return;
   }
 
