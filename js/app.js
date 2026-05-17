@@ -1150,7 +1150,12 @@ function sliceImageVertically(img, count) {
 }
 
 async function uploadPhotos(fileList) {
-  const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/'));
+  // Realme/Oppo/Xiaomi file pickers sometimes return an empty file.type
+  // for photos saved from messaging apps fall back to extension sniffing.
+  const files = Array.from(fileList || []).filter(f => {
+    if (f.type && f.type.startsWith('image/')) return true;
+    return /\.(jpe?g|png|webp|gif|bmp|avif|heic|heif)$/i.test(f.name || '');
+  });
   if (!files.length) return;
 
   showToast('Loading photos…');

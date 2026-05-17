@@ -3144,7 +3144,15 @@ async function replacePhotos(fileList) {
   // Accept image/* AND any file with a HEIC/HEIF extension (Android often
   // leaves file.type empty for HEIC, so the strict image/* filter would
   // wrongly drop iPhone shots before we get a chance to convert them).
-  const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/') || isHeicFile(f));
+  // Some Android phones (Realme/Oppo/Xiaomi ColorOS+MIUI) return an empty
+  // file.type from their file picker, so fall back to extension sniffing.
+  const looksLikeImage = f => {
+    if (f.type && f.type.startsWith('image/')) return true;
+    if (isHeicFile(f)) return true;
+    const n = (f.name || '').toLowerCase();
+    return /\.(jpe?g|png|webp|gif|bmp|avif)$/.test(n);
+  };
+  const files = Array.from(fileList || []).filter(looksLikeImage);
   if (!files.length) return;
   const max  = maxShots();
   const visible = Math.min(shots.length, max);
